@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BarChart3, Bell, CalendarDays, ChevronRight, Church, Command,
   Crown, HeartHandshake, LayoutDashboard, Menu, Music2, Search, Settings,
@@ -11,6 +11,7 @@ import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS } from './data/mockData';
 import { JEBATHOTTA_JEYAGEETHANGAL_SONGS } from './data/jebathotta-jeyageethangal';
 import { useSyncedCollection } from './hooks/useSyncedCollection';
+import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata } from './services/recordMetadata';
@@ -104,6 +105,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('landing');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [demoRole, setDemoRole] = useState<Role>('choir_admin');
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [isSearchResultsOpen, setIsSearchResultsOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
 
   const authState = useFirebaseAuth();
 
@@ -114,7 +118,7 @@ export default function App() {
   const syncEnabled = Boolean(authState.user);
 
   const { records: members, isLive: membersLive, syncError: membersSyncError, actions: memberSync } =
-    useSyncedCollection<Member>('members', MOCK_MEMBERS, syncEnabled);
+    useMembersWithPrivateData(MOCK_MEMBERS, syncEnabled);
   const { records: masses, actions: massSync } =
     useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled);
   const { records: payments, actions: paymentSync } =
@@ -134,6 +138,86 @@ export default function App() {
     setActiveTab(tab);
     setMobileNavOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ---------------------------------------------------------------------
+  // GLOBAL SEARCH — searches members, songs, and masses already loaded in
+  // memory. Was previously a decorative input with no logic behind it.
+  // ---------------------------------------------------------------------
+  type GlobalSearchResult = {
+    key: string;
+    category: 'People' | 'Songs' | 'Masses';
+    title: string;
+    subtitle: string;
+    onSelect: () => void;
+  };
+
+  const globalSearchResults = useMemo<GlobalSearchResult[]>(() => {
+    const query = globalSearchQuery.trim().toLowerCase();
+    if (query.length < 2) return [];
+
+    const memberResults: GlobalSearchResult[] = members
+      .filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(query)
+        || (m.voiceType || '').toLowerCase().includes(query)
+        || (m.choirName || '').toLowerCase().includes(query)
+      )
+      .slice(0, 4)
+      .map((m) => ({
+        key: `member-${m.id}`,
+        category: 'People' as const,
+        title: `${m.firstName} ${m.lastName}`,
+        subtitle: `${m.voiceType || 'Member'} · ${m.status}`,
+        onSelect: () => navigate('registration'),
+      }));
+
+    const songResults: GlobalSearchResult[] = ALL_SONGS
+      .filter((s) =>
+        (s.displayTitle || s.title || '').toLowerCase().includes(query)
+        || (s.lyrics || '').toLowerCase().includes(query)
+        || (s.composer || '').toLowerCase().includes(query)
+      )
+      .slice(0, 4)
+      .map((s) => ({
+        key: `song-${s.id}`,
+        category: 'Songs' as const,
+        title: s.displayTitle || s.title || 'Untitled Song',
+        subtitle: `Page ${s.pageNumber ?? s.sourcePageNumber ?? '-'} · ${s.category}`,
+        onSelect: () => navigate('song_library'),
+      }));
+
+    const massResults: GlobalSearchResult[] = masses
+      .filter((m) =>
+        (m.name || '').toLowerCase().includes(query)
+        || (m.category || '').toLowerCase().includes(query)
+      )
+      .slice(0, 4)
+      .map((m) => ({
+        key: `mass-${m.id}`,
+        category: 'Masses' as const,
+        title: m.name,
+        subtitle: `${m.date} · ${m.time}`,
+        onSelect: () => navigate('masses'),
+      }));
+
+    return [...memberResults, ...songResults, ...massResults].slice(0, 10);
+  }, [globalSearchQuery, members, masses]);
+
+  useEffect(() => {
+    if (!isSearchResultsOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchResultsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSearchResultsOpen]);
+
+  const handleSelectSearchResult = (result: GlobalSearchResult) => {
+    result.onSelect();
+    setGlobalSearchQuery('');
+    setIsSearchResultsOpen(false);
   };
 
   const handleDemoRoleChange = (role: Role) => {
@@ -175,10 +259,47 @@ export default function App() {
             </div>
           </button>
 
-          <div className="ml-auto hidden max-w-md flex-1 items-center rounded-xl border border-white/10 bg-white/8 px-3 lg:flex">
-            <Search className="h-4 w-4 text-slate-400" />
-            <input className="w-full bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400" placeholder="Search people, songs, masses..." aria-label="Global search" />
-            <Command className="h-3.5 w-3.5 text-slate-500" />
+          <div ref={searchContainerRef} className="relative ml-auto hidden max-w-md flex-1 lg:block">
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/8 px-3">
+              <Search className="h-4 w-4 text-slate-400" />
+              <input
+                value={globalSearchQuery}
+                onChange={(e) => { setGlobalSearchQuery(e.target.value); setIsSearchResultsOpen(true); }}
+                onFocus={() => setIsSearchResultsOpen(true)}
+                className="w-full bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400"
+                placeholder="Search people, songs, masses..."
+                aria-label="Global search"
+              />
+              <Command className="h-3.5 w-3.5 text-slate-500" />
+            </div>
+
+            {isSearchResultsOpen && globalSearchQuery.trim().length >= 2 && (
+              <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
+                {globalSearchResults.length === 0 ? (
+                  <p className="px-4 py-4 text-sm text-slate-500">No matches for "{globalSearchQuery}".</p>
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto py-1">
+                    {globalSearchResults.map((result) => (
+                      <li key={result.key}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSearchResult(result)}
+                          className="flex w-full flex-col items-start gap-0.5 px-4 py-2 text-left hover:bg-slate-50"
+                        >
+                          <span className="flex w-full items-center justify-between gap-2">
+                            <span className="truncate text-sm font-bold text-slate-900">{result.title}</span>
+                            <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">
+                              {result.category}
+                            </span>
+                          </span>
+                          <span className="truncate text-xs text-slate-500">{result.subtitle}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex items-center gap-2 lg:ml-0">

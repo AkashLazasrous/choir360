@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, ExternalLink, Layers, Loader2, RefreshCw, RotateCcw, ScrollText } from 'lucide-react';
 import { DailyReading, DailyReadingSection } from '../../types';
 import { FALLBACK_DAILY_READING } from '../../data/dailyReadingsFallback';
 import { ReadingDatePicker } from './ReadingDatePicker';
 import { ReadingSourceStatus } from './ReadingSourceStatus';
 import { apiFetch } from '../../services/apiClient';
+import { DailyReadingTabs } from '../../features/readings/components/DailyReadingTabs';
+import { MobileReadingTabs } from '../../features/readings/components/MobileReadingTabs';
 
 const SOURCE_URL = 'https://www.arulvakku.com/calendar.php';
 
@@ -112,6 +114,7 @@ export const DailyReadingsCard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const activeReadingTabRef = useRef<HTMLButtonElement | null>(null);
 
   const loadReading = useCallback(async (date: string, forceRefresh = false) => {
     setIsLoading(true);
@@ -156,6 +159,14 @@ export const DailyReadingsCard: React.FC = () => {
     setActiveTab('all');
   }, [selectedDate]);
 
+  useEffect(() => {
+    activeReadingTabRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+  }, [activeTab]);
+
   const formattedDate = useMemo(() => {
     if (!selectedDate) return '';
     return new Intl.DateTimeFormat('en-IN', {
@@ -178,6 +189,11 @@ export const DailyReadingsCard: React.FC = () => {
   // source site exactly. Tabs with no content for the date render a disabled
   // "no content" state instead of disappearing.
   const availableTabs = TAB_DEFINITIONS;
+  const readingTabs = availableTabs.map((tab) => ({
+    key: tab.key,
+    label: tab.label,
+    disabled: !(tab.key === 'all' || sectionHasContent(reading?.[tab.key])),
+  }));
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -287,7 +303,7 @@ export const DailyReadingsCard: React.FC = () => {
               {/* Mobile / tablet tab chips — same options as the desktop rail, just horizontal */}
               {hasContent && (
                 <div
-                  className="flex gap-2 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_proximity] lg:hidden"
+                  className="reading-tabs-scroll flex gap-2 overflow-x-auto whitespace-nowrap pb-2 lg:hidden"
                   role="tablist"
                   aria-label="Reading sections"
                 >
@@ -296,6 +312,7 @@ export const DailyReadingsCard: React.FC = () => {
                     return (
                       <button
                         key={tab.key}
+                        ref={activeTab === tab.key ? activeReadingTabRef : undefined}
                         type="button"
                         role="tab"
                         aria-selected={activeTab === tab.key}

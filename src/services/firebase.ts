@@ -45,6 +45,7 @@ export const db: Firestore | null = firebaseApp ? getFirestore(firebaseApp) : nu
 
 export const COLLECTIONS = {
   members: 'members',
+  privateMembers: 'privateMembers',
   choirs: 'choirs',
   masses: 'masses',
   events: 'events',

@@ -32,7 +32,8 @@ import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import type { RenderTask } from 'pdfjs-dist/types/src/display/api';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { apiFetch } from '../services/apiClient';
-import { buildTamilSearchText, expandSearchQuery, normalizeSearchText } from '../utils/tamilSearch';
+import { buildTamilSearchText, expandSearchQuery } from '../utils/tamilSearch';
+import { getSongIdFromLocation, getSongSearchFromLocation, setSongHash, setSongSearchParam } from '../features/songs/utils/songDeepLink';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -232,7 +233,7 @@ const SongIndex: React.FC<SongIndexProps> = ({ songs, selectedSongId, searchQuer
         {songs.map((song) => {
           const title = getDisplayTitle(song);
           const isSelected = song.id === selectedSongId;
-          const isMatch = normalizedQuery.length > 0 && getSongSearchText(song).includes(normalizedQuery);
+          const isMatch = normalizedQuery.length > 0 && songMatchesQuery(song, normalizedQuery);
 
           return (
             <li key={song.id} className="break-inside-avoid pb-2">
@@ -284,6 +285,9 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
   const [isDualLanguage, setIsDualLanguage] = useState(true);
   const [viewerMode, setViewerMode] = useState<'index' | 'detail'>('index');
   const [offlineSaved, setOfflineSaved] = useState<Record<string, boolean>>({});
+  const [favoriteSongs, setFavoriteSongs] = useState<Record<string, boolean>>({});
+  const [recentSongIds, setRecentSongIds] = useState<string[]>([]);
+  const [isMobileLyricsOpen, setIsMobileLyricsOpen] = useState(false);
   const [isPlayingScroll, setIsPlayingScroll] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState<number>(20);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
@@ -294,6 +298,24 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
   }, [songs]);
 
   const selectedSong = songs.find((song) => song.id === selectedSongId) ?? songs[0] ?? null;
+
+  useEffect(() => {
+    const linkedSongId = getSongIdFromLocation();
+    const linkedSearch = getSongSearchFromLocation();
+    if (linkedSearch) setSearchQuery(linkedSearch);
+    if (linkedSongId && songs.some((song) => song.id === linkedSongId)) {
+      setSelectedSongId(linkedSongId);
+      setViewerMode('detail');
+      setIsMobileLyricsOpen(true);
+    }
+    try {
+      setRecentSongIds(JSON.parse(localStorage.getItem('choir360:songs:recent') || '[]'));
+      setFavoriteSongs(JSON.parse(localStorage.getItem('choir360:songs:favorites') || '{}'));
+    } catch {
+      setRecentSongIds([]);
+      setFavoriteSongs({});
+    }
+  }, [songs]);
 
   useEffect(() => {
     if (!selectedSongId && songs[0]) {
@@ -329,6 +351,12 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
     if (lyricsContainerRef.current) {
       lyricsContainerRef.current.scrollTop = 0;
     }
+    window.setTimeout(() => {
+      document.getElementById(`song-index-${selectedSongId}`)?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }, 0);
   }, [selectedSongId]);
 
   const triggerAiSmartSearch = async () => {
@@ -359,9 +387,8 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         setAiExplainText('No PDF songbook match found.');
       }
     } catch {
-      const q = searchQuery.toLowerCase().trim();
       const matchedIds = songs
-        .filter((song) => getSongSearchText(song).includes(q))
+        .filter((song) => songMatchesQuery(song, searchQuery))
         .map((song) => song.id);
       setFilteredSongIds(matchedIds);
       setAiExplainText(`Local PDF search found ${matchedIds.length} song page(s).`);
@@ -374,9 +401,15 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
     if (selectedCategory !== 'All' && song.category !== selectedCategory) return false;
     if (selectedLanguage !== 'All' && song.language !== selectedLanguage) return false;
     if (filteredSongIds !== null) return filteredSongIds.includes(song.id);
-    if (searchQuery.trim()) return getSongSearchText(song).includes(searchQuery.toLowerCase().trim());
+    if (searchQuery.trim()) return songMatchesQuery(song, searchQuery);
     return true;
   });
+
+  const indexedSongs = [...displaySongs].sort((a, b) => getDisplayTitle(a).localeCompare(getDisplayTitle(b), 'ta'));
+  const recentSongs = recentSongIds
+    .map((id) => songs.find((song) => song.id === id))
+    .filter((song): song is Song => Boolean(song));
+  const favoriteSongItems = songs.filter((song) => favoriteSongs[song.id]);
 
   const handleToggleOffline = (songId: string) => {
     setOfflineSaved((current) => ({
@@ -388,6 +421,36 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
   const handleSelectSong = (song: Song) => {
     setSelectedSongId(song.id);
     setViewerMode('detail');
+    setIsMobileLyricsOpen(true);
+    setSongHash(song.id);
+    setRecentSongIds((current) => {
+      const next = [song.id, ...current.filter((id) => id !== song.id)].slice(0, 8);
+      localStorage.setItem('choir360:songs:recent', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleCopyLyrics = async (song: Song) => {
+    const text = `${getDisplayTitle(song)}\n${song.category} - ${song.language}\nPage ${song.sourcePageNumber ?? song.pageNumber ?? '-'}\n\n${song.lyrics || song.sourceSearchText || 'Lyrics extraction pending.'}`;
+    await navigator.clipboard?.writeText(text);
+  };
+
+  const handleShareSong = async (song: Song) => {
+    const url = `${window.location.origin}${window.location.pathname}#song-${encodeURIComponent(song.id)}`;
+    const text = `${getDisplayTitle(song)} - Page ${song.sourcePageNumber ?? song.pageNumber ?? '-'}`;
+    if (navigator.share) {
+      await navigator.share({ title: getDisplayTitle(song), text, url });
+    } else {
+      await navigator.clipboard?.writeText(url);
+    }
+  };
+
+  const toggleFavoriteSong = (songId: string) => {
+    setFavoriteSongs((current) => {
+      const next = { ...current, [songId]: !current[songId] };
+      localStorage.setItem('choir360:songs:favorites', JSON.stringify(next));
+      return next;
+    });
   };
 
   if (!selectedSong) {
@@ -429,6 +492,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                 onKeyDown={(event) => { if (event.key === 'Enter') triggerAiSmartSearch(); }}
                 onChange={(event) => {
                   setSearchQuery(event.target.value);
+                  setSongSearchParam(event.target.value);
                   if (!event.target.value) {
                     setFilteredSongIds(null);
                     setAiExplainText(null);
@@ -486,22 +550,134 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         )}
       </div>
 
+      {isMobileLyricsOpen && selectedSong && (
+        <div className={`mobile-safe-screen fixed inset-0 z-[70] flex flex-col lg:hidden ${viewerDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'}`}>
+          <div className={`sticky top-0 z-10 border-b px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] ${
+            viewerDarkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'
+          }`}>
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setIsMobileLyricsOpen(false)}
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700/20 bg-white/10"
+                aria-label="Back to song index"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div className="min-w-0 flex-1">
+                <h2 className="line-clamp-2 text-base font-black tamil-text">{getDisplayTitle(selectedSong)}</h2>
+                <p className="mt-1 text-xs font-semibold opacity-70">
+                  {selectedSong.category} • {selectedSong.language} • Page {selectedSong.sourcePageNumber ?? selectedSong.pageNumber ?? '-'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileLyricsOpen(false)}
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700/20 bg-white/10"
+                aria-label="Close lyrics viewer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <button type="button" onClick={() => handleCopyLyrics(selectedSong)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
+                <Copy className="h-4 w-4" /> Copy
+              </button>
+              <button type="button" onClick={() => void handleShareSong(selectedSong)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
+                <Share2 className="h-4 w-4" /> Share
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleFavoriteSong(selectedSong.id)}
+                className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold"
+              >
+                <Star className={'h-4 w-4 ' + (favoriteSongs[selectedSong.id] ? 'fill-amber-300 text-amber-300' : '')} /> Favorite
+              </button>
+              <button type="button" onClick={() => setViewerFontSize(Math.max(12, viewerFontSize - 1))} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
+                <Minus className="h-4 w-4" /> A
+              </button>
+              <button type="button" onClick={() => setViewerFontSize(Math.min(30, viewerFontSize + 1))} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
+                <Plus className="h-4 w-4" /> A
+              </button>
+              <button type="button" onClick={() => setViewerDarkMode(!viewerDarkMode)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
+                {viewerDarkMode ? <Sun className="h-4 w-4 text-amber-300" /> : <Moon className="h-4 w-4" />} Mode
+              </button>
+              <button type="button" onClick={() => setIsPlayingScroll(!isPlayingScroll)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl bg-emerald-700 px-3 text-xs font-bold text-white">
+                {isPlayingScroll ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />} Scroll
+              </button>
+            </div>
+          </div>
+
+          <div
+            ref={lyricsContainerRef}
+            className="mobile-scroll-contain min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
+            style={{ fontSize: `${Math.max(viewerFontSize, 16)}px` }}
+          >
+            {isPdfSong ? (
+              <PdfSongPage song={selectedSong} isPresentationMode={false} />
+            ) : selectedSong.lyrics ? (
+              <pre className="tamil-text whitespace-pre-wrap text-center leading-loose">{selectedSong.lyrics}</pre>
+            ) : (
+              <div className="rounded-2xl border border-slate-700/30 p-6 text-center">
+                <BookOpen className="mx-auto h-10 w-10 text-emerald-500" />
+                <h3 className="mt-3 text-base font-black">Lyrics extraction pending</h3>
+                <p className="mt-2 text-sm opacity-70">Open the source PDF page to read this song exactly as imported.</p>
+                {selectedSong.sourcePdfUrl && (
+                  <div className="mt-4 flex flex-col gap-2">
+                    <a href={`${selectedSong.sourcePdfUrl}#page=${selectedSong.sourcePageNumber}`} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white">
+                      Open source page
+                    </a>
+                    <a href={selectedSong.sourcePdfUrl} download className="rounded-xl border border-slate-700/30 px-4 py-3 text-sm font-bold">
+                      Download songbook
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3" id="song-split-panel">
-        <div className="space-y-3 overflow-y-auto pr-1 lg:h-[620px]" id="songs-sidebar-list">
-          {displaySongs.length === 0 ? (
+        <div className="song-index-scroll space-y-3 overflow-y-auto pr-1 lg:h-[620px]" id="songs-sidebar-list">
+          <div className="sticky top-0 z-10 rounded-2xl border border-slate-100 bg-white/95 p-4 shadow-sm backdrop-blur">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Song Index</p>
+            <h3 className="mt-1 text-lg font-black text-slate-950">Jebathotta Jeyageethangal</h3>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {indexedSongs.length} songs • alphabetical • hyperlink navigation
+            </p>
+            {(recentSongs.length > 0 || favoriteSongItems.length > 0) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {favoriteSongItems.slice(0, 4).map((song) => (
+                  <button key={`fav-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
+                    ★ {getDisplayTitle(song)}
+                  </button>
+                ))}
+                {recentSongs.slice(0, 4).map((song) => (
+                  <button key={`recent-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">
+                    {getDisplayTitle(song)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {indexedSongs.length === 0 ? (
             <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-slate-400">
               <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-55" />
               <p className="text-xs">No imported song pages match this search.</p>
             </div>
           ) : (
-            displaySongs.map((song) => {
+            indexedSongs.map((song) => {
               const isSelected = selectedSong.id === song.id;
               const isSaved = !!offlineSaved[song.id];
               return (
-                <div
+                <a
                   key={song.id}
-                  onClick={() => handleSelectSong(song)}
-                  className={`flex h-32 cursor-pointer flex-col justify-between rounded-xl border p-4 transition ${
+                  id={`song-index-${song.id}`}
+                  href={`#song-${encodeURIComponent(song.id)}`}
+                  onClick={(event) => { event.preventDefault(); handleSelectSong(song); }}
+                  className={`song-index-link flex min-h-[86px] flex-col justify-between rounded-xl border p-4 transition ${
                     isSelected
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-900 shadow-xs'
                       : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'
@@ -511,14 +687,22 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                     <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">
                       {song.category}
                     </span>
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(event) => { event.stopPropagation(); handleToggleOffline(song.id); }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleToggleOffline(song.id);
+                        }
+                      }}
                       className="cursor-pointer text-xs text-slate-400 hover:text-emerald-700"
                       title={isSaved ? 'Saved Offline' : 'Save Offline'}
                     >
                       {isSaved ? <Wifi className="h-4 w-4 text-emerald-600" /> : <WifiOff className="h-4 w-4 text-slate-300" />}
-                    </button>
+                    </span>
                   </div>
 
                   <div>
@@ -531,13 +715,13 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                   <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 font-mono text-[9px] font-medium text-slate-400">
                     <span>{song.language}</span>
                   </div>
-                </div>
+                </a>
               );
             })
           )}
         </div>
 
-        <div className={`flex flex-col justify-between rounded-3xl border shadow-lg transition duration-300 lg:col-span-2 ${
+        <div className={`hidden flex-col justify-between rounded-3xl border shadow-lg transition duration-300 lg:col-span-2 lg:flex ${
           viewerDarkMode
             ? 'border-slate-850 bg-slate-950 text-slate-100'
             : 'border-slate-200/80 bg-white text-slate-900'
@@ -631,7 +815,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
           >
             {viewerMode === 'index' ? (
               <SongIndex
-                songs={displaySongs}
+                songs={indexedSongs}
                 selectedSongId={selectedSong.id}
                 searchQuery={searchQuery}
                 onSelectSong={handleSelectSong}

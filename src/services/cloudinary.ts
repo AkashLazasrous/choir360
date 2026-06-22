@@ -26,6 +26,57 @@ export function buildCloudinaryImageUrl(publicId: string, transformation: string
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transformation}/${publicId}`;
 }
 
+// ---------------------------------------------------------------------------
+// CLIENT-SIDE UPLOAD VALIDATION
+// Rejects bad files immediately instead of after a signature round-trip and
+// a multi-MB upload to Cloudinary. The server-side signature endpoint trusts
+// the folder name but does not otherwise constrain file size/type/dimensions,
+// so this is the only real gate today — keep it in sync with any future
+// server-side checks rather than relying on it alone.
+// ---------------------------------------------------------------------------
+const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+const MAX_IMAGE_DIMENSION_PX = 6000;
+
+function formatBytes(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+async function readImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('The selected file could not be read as a valid image.'));
+    };
+    img.src = url;
+  });
+}
+
+export async function validateMediaFile(file: File): Promise<void> {
+  if (!file || file.size === 0) {
+    throw new Error('The selected file is empty.');
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(`File is too large (${formatBytes(file.size)}). Maximum allowed size is ${formatBytes(MAX_FILE_SIZE_BYTES)}.`);
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    throw new Error(`Unsupported file type "${file.type || 'unknown'}". Allowed types: JPEG, PNG, WebP, HEIC.`);
+  }
+
+  const { width, height } = await readImageDimensions(file);
+  if (width > MAX_IMAGE_DIMENSION_PX || height > MAX_IMAGE_DIMENSION_PX) {
+    throw new Error(`Image dimensions (${width}x${height}) exceed the maximum of ${MAX_IMAGE_DIMENSION_PX}px per side.`);
+  }
+}
+
 export async function uploadMediaToCloudinary(
   file: File,
   context: CloudinaryUploadContext,
@@ -33,6 +84,8 @@ export async function uploadMediaToCloudinary(
   if (!cloudName) {
     throw new Error('Cloudinary is not configured. Add VITE_CLOUDINARY_CLOUD_NAME before uploading media.');
   }
+
+  await validateMediaFile(file);
 
   const signatureResponse = await apiFetch('/api/cloudinary/signature', {
     method: 'POST',

@@ -1,0 +1,10 @@
+.song-index-link {
+  min-height: 44px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.song-index-link:focus-visible {
+  outline: 3px solid rgba(245, 194, 76, 0.55);
+  outline-offset: 2px;
+}

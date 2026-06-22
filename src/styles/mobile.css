@@ -1,0 +1,32 @@
+@supports (height: 100dvh) {
+  .mobile-safe-screen {
+    min-height: 100dvh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .mobile-safe-screen {
+    min-height: 100svh;
+  }
+}
+
+.mobile-scroll-contain {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reading-tabs-scroll {
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.reading-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.song-index-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

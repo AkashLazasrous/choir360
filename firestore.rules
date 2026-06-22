@@ -124,11 +124,38 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // PRIVATE MEMBER DATA (DOB, mobile, whatsapp, email, address, emergency
+    // contact). Split out of /members so a broad tenant-wide read of the
+    // members collection (needed for choir rosters, voice-part lists, etc.)
+    // never exposes PII. Only the member themself or an admin can read it.
+    // =========================================================================
+    match /privateMembers/{memberId} {
+      allow read: if signedIn()
+        && existingInTenant()
+        && (adminRole() || ownsMemberRecord(memberId));
+
+      allow create: if signedIn()
+        && sameTenant()
+        && hasRequiredEnvelope()
+        && (adminRole() || ownsMemberRecord(memberId));
+
+      allow update: if hasRequiredEnvelope()
+        && immutableFieldsUnchanged()
+        && sameTenant()
+        && (adminRole() || ownsMemberRecord(memberId));
+
+      allow delete: if false;
+    }
+
+    // =========================================================================
     // MASS MANAGEMENT (admin-write, member-read)
     // =========================================================================
     match /masses/{docId} {
       allow read: if memberRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -162,13 +189,19 @@ service cloud.firestore {
     // =========================================================================
     match /payments/{docId} {
       allow read: if adminRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
     match /paymentShares/{docId} {
       allow read: if memberRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -177,7 +210,10 @@ service cloud.firestore {
     // =========================================================================
     match /attendance/{docId} {
       allow read: if memberRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -186,7 +222,10 @@ service cloud.firestore {
     // =========================================================================
     match /songs/{docId} {
       allow read: if signedIn() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -195,7 +234,10 @@ service cloud.firestore {
     // =========================================================================
     match /announcements/{docId} {
       allow read: if signedIn() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -204,7 +246,10 @@ service cloud.firestore {
     // =========================================================================
     match /notifications/{docId} {
       allow read: if memberRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -213,13 +258,19 @@ service cloud.firestore {
     // =========================================================================
     match /choirs/{docId} {
       allow read: if memberRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
     match /calendars/{docId} {
       allow read: if signedIn() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
@@ -255,13 +306,19 @@ service cloud.firestore {
 
     match /approvalWorkflows/{docId} {
       allow read: if adminRole() && existingInTenant() && notDeleted();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
     match /appSettings/{docId} {
       allow read: if adminRole() && existingInTenant();
-      allow create, update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
+      // create and update are split: immutableFieldsUnchanged() reads resource.data,
+      // which does not exist yet on create — combining them here always denied creates.
+      allow create: if adminRole() && sameTenant() && hasRequiredEnvelope();
+      allow update: if adminRole() && sameTenant() && hasRequiredEnvelope() && immutableFieldsUnchanged();
       allow delete: if false;
     }
 
