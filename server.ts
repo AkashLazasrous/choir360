@@ -486,6 +486,170 @@ async function syncTodayDailyReadings(reason: "startup" | "scheduled") {
   }
 }
 
+// -----------------------------------------------------------------------------
+// CATHOLIC HUB SYNC — pulls the public Blogger Atom/JSON feed from
+// catholictamil.com (a volunteer-run, donation-funded Catholic Tamil archive;
+// robots.txt allows crawling /, disallows only /search and /share-widget).
+// We sync feed METADATA (title, summary snippet, link, dates) for the most
+// recent posts rather than full article bodies — the blog has 6,800+ historical
+// posts and fetching every individual page would be both slow and disrespectful
+// of their hosting costs. Full reading happens via sourceUrl back on their site.
+// -----------------------------------------------------------------------------
+interface CatholicHubContentRecord {
+  id: string;
+  title: string;
+  titleTamil: string;
+  description: string;
+  category: string;
+  sourceUrl: string;
+  imageUrl: string;
+  publishedAt: string;
+  fetchedAt: string;
+  language: "ta";
+  contentType: "article";
+  tags: string[];
+  status: string;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+  tenantId: string;
+  parishId: string;
+  choirId: string;
+}
+
+interface ContentSyncStatusRecord {
+  sourceUrl: string;
+  lastSyncedAt: string;
+  lastSuccessAt?: string;
+  lastFailureAt?: string;
+  status: "idle" | "syncing" | "success" | "failed";
+  errorMessage?: string;
+  totalItemsSynced: number;
+  syncDurationMs: number;
+}
+
+const CATHOLIC_TAMIL_FEED_URL = "https://www.catholictamil.com/feeds/posts/default";
+
+// Free, rule-based keyword categorization — no paid AI required.
+const CATEGORY_KEYWORDS: { category: string; keywords: string[] }[] = [
+  { category: "Daily Readings", keywords: ["வாசகங்கள்", "திருப்பலி வாசகம்"] },
+  { category: "Saints", keywords: ["அர்ச்.", "புனிதர்", "அர்ச்சியசிஷ்ட"] },
+  { category: "Prayers", keywords: ["செபம்", "செபங்கள்", "ஜெபம்", "ஜெபமாலை", "செபமாலை"] },
+  { category: "Devotional Month", keywords: ["வணக்கமாதம்"] },
+  { category: "Family & Marriage", keywords: ["குடும்பம்", "திருமணம்"] },
+  { category: "Eucharist", keywords: ["நற்கருணை", "திவ்விய பலி"] },
+  { category: "Marian Devotion", keywords: ["மாதா", "மரியா"] },
+];
+
+function categorizeCatholicHubTitle(title: string): { category: string; tags: string[] } {
+  const matches = CATEGORY_KEYWORDS.filter(({ keywords }) => keywords.some((kw) => title.includes(kw)));
+  if (matches.length === 0) return { category: "Article", tags: [] };
+  return { category: matches[0].category, tags: matches.map((m) => m.category) };
+}
+
+function stripHtmlSummary(html: string) {
+  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 280);
+}
+
+async function fetchCatholicTamilFeedPage(startIndex: number, maxResults: number) {
+  const url = `${CATHOLIC_TAMIL_FEED_URL}?alt=json&start-index=${startIndex}&max-results=${maxResults}`;
+  const response = await fetch(url, {
+    headers: { "User-Agent": "Choir360/1.0 (+catholic-hub-sync; respects robots.txt)" },
+  });
+  if (!response.ok) {
+    throw new Error(`catholictamil.com feed returned HTTP ${response.status}.`);
+  }
+  const data = await response.json();
+  return (data?.feed?.entry || []) as any[];
+}
+
+async function syncCatholicHubContent(userId = "system-sync") {
+  const startedAt = Date.now();
+  if (!admin.apps.length) {
+    throw new Error("Firebase Admin is not configured — cannot persist Catholic Hub sync results.");
+  }
+
+  const PAGES = 3;
+  const PAGE_SIZE = 20;
+  const now = new Date().toISOString();
+  const records: CatholicHubContentRecord[] = [];
+
+  for (let page = 0; page < PAGES; page++) {
+    const entries = await fetchCatholicTamilFeedPage(page * PAGE_SIZE + 1, PAGE_SIZE);
+    for (const entry of entries) {
+      const title: string = entry?.title?.$t || "";
+      const summaryRaw: string = entry?.summary?.$t || "";
+      const altLink = (entry?.link || []).find((l: any) => l.rel === "alternate");
+      const sourceUrl: string = altLink?.href || "";
+      const postId: string = String(entry?.id?.$t || "").split("post-").pop() || `${Date.now()}-${records.length}`;
+      const publishedAt: string = entry?.published?.$t || now;
+      const { category, tags } = categorizeCatholicHubTitle(title);
+
+      if (!title || !sourceUrl) continue;
+
+      records.push({
+        id: `ct-${postId}`,
+        title,
+        titleTamil: title,
+        description: stripHtmlSummary(summaryRaw),
+        category,
+        sourceUrl,
+        imageUrl: "",
+        publishedAt,
+        fetchedAt: now,
+        language: "ta",
+        contentType: "article",
+        tags,
+        status: "active",
+        isFeatured: false,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: userId,
+        updatedBy: userId,
+        ...DEFAULT_TENANT_CONTEXT,
+      });
+    }
+  }
+
+  const batch = admin.firestore().batch();
+  const collection = admin.firestore().collection("catholicHubContent");
+  for (const record of records) {
+    const ref = collection.doc(record.id);
+    const existing = await ref.get();
+    batch.set(ref, {
+      ...record,
+      createdAt: existing.exists ? existing.data()?.createdAt || record.createdAt : record.createdAt,
+      createdBy: existing.exists ? existing.data()?.createdBy || record.createdBy : record.createdBy,
+      isFeatured: existing.exists ? Boolean(existing.data()?.isFeatured) : record.isFeatured,
+      status: existing.exists ? (existing.data()?.status || record.status) : record.status,
+    }, { merge: true });
+  }
+  await batch.commit();
+
+  const statusRecord: ContentSyncStatusRecord = {
+    sourceUrl: CATHOLIC_TAMIL_FEED_URL,
+    lastSyncedAt: now,
+    lastSuccessAt: now,
+    status: "success",
+    totalItemsSynced: records.length,
+    syncDurationMs: Date.now() - startedAt,
+  };
+  await admin.firestore().collection("contentSyncStatus").doc("catholicTamil").set(statusRecord, { merge: true });
+
+  return { itemsSynced: records.length, durationMs: statusRecord.syncDurationMs };
+}
+
+async function syncCatholicHubOnStartup() {
+  try {
+    const result = await syncCatholicHubContent("system-startup");
+    console.log(`[Catholic Hub] startup sync completed — ${result.itemsSynced} items in ${result.durationMs}ms`);
+  } catch (error: any) {
+    console.warn("[Catholic Hub] startup sync failed:", error?.message || error);
+  }
+}
+
 // Lazy-initialization utility for GoogleGenAI
 let aiInstance: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
@@ -570,6 +734,49 @@ app.post("/api/bible/daily-readings/sync", requireFirebaseAuth, requireAdminRole
       }, (req as any).user?.uid || "admin-sync");
     }
     return res.status(502).json({ error: error.message || "Daily readings sync failed." });
+  }
+});
+
+app.get("/api/catholic-hub/content", async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.json({ content: [], syncStatus: null });
+    }
+
+    const snapshot = await admin.firestore()
+      .collection("catholicHubContent")
+      .where("status", "==", "active")
+      .orderBy("publishedAt", "desc")
+      .limit(60)
+      .get();
+
+    const content = snapshot.docs.map((doc) => doc.data());
+    const statusDoc = await admin.firestore().collection("contentSyncStatus").doc("catholicTamil").get();
+
+    return res.json({
+      content,
+      syncStatus: statusDoc.exists ? statusDoc.data() : null,
+    });
+  } catch (error: any) {
+    return res.status(502).json({ error: error.message || "Catholic Hub content could not be loaded." });
+  }
+});
+
+app.post("/api/catholic-hub/sync", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    const result = await syncCatholicHubContent((req as any).user?.uid || "admin-sync");
+    return res.json({ message: "Catholic Hub sync completed.", ...result });
+  } catch (error: any) {
+    if (admin.apps.length) {
+      await admin.firestore().collection("contentSyncStatus").doc("catholicTamil").set({
+        sourceUrl: CATHOLIC_TAMIL_FEED_URL,
+        lastSyncedAt: new Date().toISOString(),
+        lastFailureAt: new Date().toISOString(),
+        status: "failed",
+        errorMessage: error.message || "Sync failed.",
+      }, { merge: true }).catch(() => undefined);
+    }
+    return res.status(502).json({ error: error.message || "Catholic Hub sync failed." });
   }
 });
 
@@ -1124,6 +1331,7 @@ function startServer() {
     console.log(`[Choir360 X] Server running on port ${PORT}`);
     console.log(`[Choir360 X] Firebase Admin: ${admin.apps.length > 0 ? 'Initialized' : 'Not configured (demo mode)'}`);
     console.log(`[Choir360 X] Gemini AI: ${getGeminiClient() ? 'Ready — gemini-2.0-flash' : 'Not configured (simulated fallback)'}`);
+    void syncCatholicHubOnStartup();
   });
 }
 

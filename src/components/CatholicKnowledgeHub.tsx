@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { BookOpen, Star, Calendar, Heart, CrossIcon, ChevronRight, Sun, Moon, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BookOpen, Star, Calendar, Heart, Search, Newspaper, RefreshCw, ExternalLink, ShieldCheck, Lock } from 'lucide-react';
+import { apiFetch } from '../services/apiClient';
+import { useFirebaseAuth, hasMinimumRole } from '../hooks/useFirebaseAuth';
 
 // ─── Static Saints Database (June focus) ────────────────────────────────────
 const SAINTS_DATABASE = [
@@ -152,7 +154,29 @@ const MOCK_GOSPEL = {
   tamilReflection: 'இன்றைய நற்செய்தியில் இயேசு நம்மை சவாலாக அழைக்கிறார்: நம்மை வெறுப்பவர்களையும் நேசிக்க வேண்டும். இது மனித இயல்புக்கு எதிரானது, ஆனால் தெய்வீக அன்பின் குணம் இதுவே.',
 };
 
-type HubTab = 'gospel' | 'saints' | 'prayers' | 'calendar';
+// ─── Catholic Hub live content (synced from catholictamil.com) ─────────────
+interface CatholicHubContentItem {
+  id: string;
+  title: string;
+  titleTamil: string;
+  description: string;
+  category: string;
+  sourceUrl: string;
+  publishedAt: string;
+  tags: string[];
+  isFeatured: boolean;
+}
+
+interface CatholicHubSyncStatus {
+  lastSyncedAt?: string;
+  lastSuccessAt?: string;
+  lastFailureAt?: string;
+  status?: string;
+  errorMessage?: string;
+  totalItemsSynced?: number;
+}
+
+type HubTab = 'gospel' | 'saints' | 'prayers' | 'calendar' | 'updates';
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export const CatholicKnowledgeHub: React.FC = () => {
@@ -160,6 +184,64 @@ export const CatholicKnowledgeHub: React.FC = () => {
   const [prayerIdx, setPrayerIdx] = useState(0);
   const [showTamil, setShowTamil] = useState(true);
   const [saintSearch, setSaintSearch] = useState('');
+
+  const { effectiveRole } = useFirebaseAuth();
+  const isAdmin = hasMinimumRole(effectiveRole, 'choir_admin');
+
+  const [updatesItems, setUpdatesItems] = useState<CatholicHubContentItem[]>([]);
+  const [updatesSyncStatus, setUpdatesSyncStatus] = useState<CatholicHubSyncStatus | null>(null);
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(false);
+  const [updatesError, setUpdatesError] = useState('');
+  const [updatesSearch, setUpdatesSearch] = useState('');
+  const [updatesCategory, setUpdatesCategory] = useState('All');
+  const [isSyncingUpdates, setIsSyncingUpdates] = useState(false);
+
+  const loadUpdates = async () => {
+    setIsLoadingUpdates(true);
+    setUpdatesError('');
+    try {
+      const response = await apiFetch('/api/catholic-hub/content');
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Could not load Catholic Hub content.');
+      setUpdatesItems(payload.content || []);
+      setUpdatesSyncStatus(payload.syncStatus || null);
+    } catch (error) {
+      setUpdatesError(error instanceof Error ? error.message : 'Could not load Catholic Hub content.');
+    } finally {
+      setIsLoadingUpdates(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'updates' && updatesItems.length === 0 && !isLoadingUpdates) {
+      void loadUpdates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  const triggerSyncNow = async () => {
+    setIsSyncingUpdates(true);
+    try {
+      const response = await apiFetch('/api/catholic-hub/sync', { method: 'POST' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Sync failed.');
+      await loadUpdates();
+    } catch (error) {
+      setUpdatesError(error instanceof Error ? error.message : 'Sync failed.');
+    } finally {
+      setIsSyncingUpdates(false);
+    }
+  };
+
+  const updatesCategories = ['All', ...Array.from(new Set(updatesItems.map((item) => item.category)))];
+  const filteredUpdates = updatesItems.filter((item) => {
+    if (updatesCategory !== 'All' && item.category !== updatesCategory) return false;
+    if (updatesSearch.trim()) {
+      const q = updatesSearch.toLowerCase();
+      return item.title.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   const filteredSaints = SAINTS_DATABASE.filter(
     (s) =>
@@ -170,6 +252,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
 
   const tabs: { id: HubTab; label: string; icon: React.ElementType }[] = [
     { id: 'gospel',   label: 'Daily Gospel',   icon: BookOpen  },
+    { id: 'updates',  label: 'Latest Updates', icon: Newspaper },
     { id: 'saints',   label: 'Saints',         icon: Star      },
     { id: 'prayers',  label: 'Prayers',        icon: Heart     },
     { id: 'calendar', label: 'Liturgical Year',icon: Calendar  },
@@ -188,7 +271,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight">Catholic Knowledge Hub</h1>
-              <p className="text-xs text-amber-200">Daily Gospel · Saints · Tamil Prayers · Liturgical Year</p>
+              <p className="text-xs text-amber-200">Daily Gospel · Latest Updates · Saints · Tamil Prayers · Liturgical Year</p>
             </div>
           </div>
         </div>
@@ -251,6 +334,138 @@ export const CatholicKnowledgeHub: React.FC = () => {
                 {showTamil ? MOCK_GOSPEL.tamilReflection : MOCK_GOSPEL.reflection}
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Latest Updates Tab — live sync from catholictamil.com */}
+        {tab === 'updates' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">Source: catholictamil.com</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {updatesSyncStatus?.lastSuccessAt
+                      ? `Last synced ${new Date(updatesSyncStatus.lastSuccessAt).toLocaleString()}`
+                      : 'Not yet synced'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadUpdates()}
+                    disabled={isLoadingUpdates}
+                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isLoadingUpdates ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => void triggerSyncNow()}
+                      disabled={isSyncingUpdates}
+                      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-amber-800 px-3 text-xs font-bold text-white disabled:opacity-40"
+                    >
+                      <ShieldCheck className={`h-3.5 w-3.5 ${isSyncingUpdates ? 'animate-pulse' : ''}`} />
+                      Sync now
+                    </button>
+                  )}
+                </div>
+              </div>
+              {!isAdmin && (
+                <p className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
+                  <Lock className="h-3 w-3" /> Manual sync control is visible to choir admins and above.
+                </p>
+              )}
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={updatesSearch}
+                onChange={(e) => setUpdatesSearch(e.target.value)}
+                placeholder="Search latest updates..."
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-amber-500 min-h-[44px]"
+              />
+            </div>
+
+            {updatesCategories.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {updatesCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setUpdatesCategory(cat)}
+                    className={`flex-shrink-0 rounded-full px-3 py-2 text-xs font-bold transition-all ${
+                      updatesCategory === cat
+                        ? 'bg-amber-800 text-white'
+                        : 'border border-slate-200 bg-white text-slate-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isLoadingUpdates ? (
+              <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-slate-100 bg-white">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Loading latest updates...
+                </div>
+              </div>
+            ) : updatesError ? (
+              <div className="rounded-2xl border border-rose-200 bg-white p-8 text-center">
+                <Newspaper className="mx-auto h-10 w-10 text-rose-600" />
+                <h3 className="mt-3 text-sm font-black text-slate-900">Updates are unavailable</h3>
+                <p className="mt-1 text-xs text-slate-500">{updatesError}</p>
+                <button
+                  type="button"
+                  onClick={() => void loadUpdates()}
+                  className="mt-4 inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-amber-800 px-4 text-xs font-bold text-white"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Retry
+                </button>
+              </div>
+            ) : filteredUpdates.length === 0 ? (
+              <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center">
+                <Newspaper className="mx-auto h-10 w-10 text-slate-300" />
+                <h3 className="mt-3 text-sm font-black text-slate-900">No records found</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  {updatesItems.length === 0
+                    ? 'Content will appear here after the next sync.'
+                    : 'No updates match your search or category filter.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {filteredUpdates.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex flex-col rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow-md"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        {item.category}
+                      </span>
+                      <ExternalLink className="h-3.5 w-3.5 text-slate-300 group-hover:text-amber-700" />
+                    </div>
+                    <h3 className="line-clamp-2 text-sm font-black text-slate-900">{item.titleTamil}</h3>
+                    {item.description && (
+                      <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-slate-500">{item.description}</p>
+                    )}
+                    <p className="mt-auto pt-2 text-[10px] font-semibold text-slate-400">
+                      {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : ''} · catholictamil.com
+                    </p>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

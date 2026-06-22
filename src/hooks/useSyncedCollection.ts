@@ -29,6 +29,7 @@ export function useSyncedCollection<T extends { id: string }>(
     if (!isFirebaseConfigured || !syncEnabled) {
       setRecords(fallbackRecords);
       setIsLive(false);
+      setSyncError(null); // Clear any stale error from a previous signed-in session.
       return;
     }
     const unsubscribe = listenToTenantCollection<T>(

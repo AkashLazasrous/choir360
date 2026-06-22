@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart3, Bell, CalendarDays, ChevronRight, Church, Command,
-  Crown, HeartHandshake, LayoutDashboard, Menu, Music2, Search, Settings,
+  BarChart3, Bell, CalendarDays, Church, Command,
+  Crown, HeartHandshake, LayoutDashboard, Menu, Music2, Search,
   Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText,
 } from 'lucide-react';
 import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Role } from './types';
@@ -377,23 +377,6 @@ export default function App() {
                 );
               })}
           </nav>
-
-          <div className="mt-6 border-t border-slate-100 pt-5">
-            <button className="mt-1 flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-              <Settings className="h-4 w-4 text-slate-400" /> Settings
-            </button>
-          </div>
-
-          <div className="mt-auto rounded-2xl bg-slate-950 p-4 text-white">
-            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-300">Sunday readiness</p>
-            <div className="mt-3 flex items-end justify-between">
-              <p className="text-2xl font-bold">82%</p>
-              <ChevronRight className="h-4 w-4 text-slate-500" />
-            </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-[82%] rounded-full bg-amber-300" />
-            </div>
-          </div>
         </aside>
 
         {/* MAIN CONTENT */}

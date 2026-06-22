@@ -304,6 +304,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // =========================================================================
+    // CATHOLIC HUB CONTENT (public read of active items, server/admin write)
+    // Synced metadata (title, summary, link) from catholictamil.com's public
+    // Atom feed — see server.ts syncCatholicHubContent(). Full article bodies
+    // are never stored; sourceUrl always links back to the original site.
+    // =========================================================================
+    match /catholicHubContent/{contentId} {
+      allow read: if resource.data.status == 'active' || adminRole();
+
+      allow create, update: if adminRole() && hasRequiredEnvelope();
+
+      allow delete: if false;
+    }
+
+    // Sync metadata is an operational/admin concern only — not shown to
+    // regular users, and never written by clients (server-only via Admin SDK).
+    match /contentSyncStatus/{docId} {
+      allow read: if adminRole();
+      allow create, update, delete: if false;
+    }
+
     match /approvalWorkflows/{docId} {
       allow read: if adminRole() && existingInTenant() && notDeleted();
       // create and update are split: immutableFieldsUnchanged() reads resource.data,
