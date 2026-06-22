@@ -322,16 +322,13 @@ function getReadingDocId(date: string, language: BibleLanguage) {
 }
 
 function stripCatholicHtmlToText(html: string) {
-  return html
+  return decodeHtmlEntities(html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|h[1-6]|li|tr|table)>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " "))
     .replace(/\r/g, "\n")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
@@ -634,10 +631,33 @@ function decodeHtmlEntities(value: string) {
     zwj: "\u200D",
     zwnj: "\u200C",
   };
-  return value
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
-    .replace(/&([a-z]+);/gi, (_, name) => named[String(name).toLowerCase()] ?? `&${name};`);
+  let decoded = value;
+  for (let i = 0; i < 4; i++) {
+    const next = decoded
+      .replace(/&#(\d+);?/g, (_, code) => String.fromCodePoint(Number(code)))
+      .replace(/&#x([0-9a-f]+);?/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+      .replace(/&([a-z]+);/gi, (_, name) => named[String(name).toLowerCase()] ?? `&${name};`);
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+}
+
+function decodeCatholicHubSongRecord(record: any) {
+  const title = decodeHtmlEntities(String(record.title || ""));
+  const categoryTamil = decodeHtmlEntities(String(record.categoryTamil || ""));
+  const lyrics = decodeHtmlEntities(String(record.lyrics || ""));
+  const tags = Array.isArray(record.tags) ? record.tags.map((tag: unknown) => decodeHtmlEntities(String(tag))) : [];
+
+  return {
+    ...record,
+    title,
+    titleNormalized: normalizeTamilSearchText(title),
+    categoryTamil,
+    lyrics,
+    lyricsNormalized: normalizeTamilSearchText(lyrics),
+    tags,
+  };
 }
 
 function stripHtmlToText(html: string) {
@@ -1071,7 +1091,7 @@ app.get("/api/catholic-hub/songs", async (req, res) => {
     }
 
     const songs = snapshot.docs
-      .map((doc) => doc.data())
+      .map((doc) => decodeCatholicHubSongRecord(doc.data()))
       .sort((a: any, b: any) => {
         const categorySort = String(a.category || "").localeCompare(String(b.category || ""));
         if (categorySort !== 0) return categorySort;

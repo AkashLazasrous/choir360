@@ -232,6 +232,53 @@ function normalizeHubSearch(value: string) {
     .trim();
 }
 
+function decodeHubHtmlEntities(value: string) {
+  const named: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+    nbsp: ' ',
+    zwj: '\u200D',
+    zwnj: '\u200C',
+  };
+  let decoded = value || '';
+  for (let i = 0; i < 4; i += 1) {
+    const next = decoded
+      .replace(/&#(\d+);?/g, (_, code) => String.fromCodePoint(Number(code)))
+      .replace(/&#x([0-9a-f]+);?/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+      .replace(/&([a-z]+);/gi, (_, name) => named[String(name).toLowerCase()] ?? `&${name};`);
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+}
+
+function sanitizeHubSong(song: CatholicHubSong): CatholicHubSong {
+  const title = decodeHubHtmlEntities(song.title || '');
+  const categoryTamil = decodeHubHtmlEntities(song.categoryTamil || '');
+  const lyrics = decodeHubHtmlEntities(song.lyrics || '');
+  const tags = Array.isArray(song.tags) ? song.tags.map((tag) => decodeHubHtmlEntities(String(tag))) : [];
+
+  return {
+    ...song,
+    title,
+    categoryTamil,
+    lyrics,
+    tags,
+    titleNormalized: normalizeHubSearch(title),
+    lyricsNormalized: normalizeHubSearch(lyrics),
+  };
+}
+
+function sanitizeHubStatus(status: CatholicHubSongSyncStatus): CatholicHubSongSyncStatus {
+  return {
+    ...status,
+    categoryTamil: decodeHubHtmlEntities(status.categoryTamil || ''),
+  };
+}
+
 function expandHubSearchQuery(query: string) {
   const normalized = normalizeHubSearch(query);
   const hints = Object.entries(tamilPhoneticHints)
@@ -268,7 +315,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
       const response = await apiFetch(`/api/catholic-hub/songs?category=${encodeURIComponent(songCategory)}`);
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || 'Songs are not available yet. Please sync content or try again.');
-      const loadedSongs = payload.songs || [];
+      const loadedSongs = (payload.songs || []).map(sanitizeHubSong);
       if (loadedSongs.length === 0 && !autoSyncAttempted) {
         setAutoSyncAttempted(true);
         const syncResponse = await apiFetch('/api/catholic-hub/songs/sync', {
@@ -279,18 +326,19 @@ export const CatholicKnowledgeHub: React.FC = () => {
           const retryResponse = await apiFetch(`/api/catholic-hub/songs?category=${encodeURIComponent(songCategory)}`);
           const retryPayload = await retryResponse.json();
           if (retryResponse.ok) {
-            setSongs(retryPayload.songs || []);
-            setSongSyncStatus(retryPayload.syncStatus || []);
-            const nextSong = (retryPayload.songs || [])[0];
+            const retrySongs = (retryPayload.songs || []).map(sanitizeHubSong);
+            setSongs(retrySongs);
+            setSongSyncStatus((retryPayload.syncStatus || []).map(sanitizeHubStatus));
+            const nextSong = retrySongs[0];
             setSelectedSongId((current) => current || nextSong?.id || '');
             return;
           }
         }
       }
       setSongs(loadedSongs);
-      setSongSyncStatus(payload.syncStatus || []);
+      setSongSyncStatus((payload.syncStatus || []).map(sanitizeHubStatus));
       const hashSongId = window.location.hash.replace(/^#song-/, '');
-      const nextSong = (payload.songs || []).find((item: CatholicHubSong) => item.id === hashSongId) || (payload.songs || [])[0];
+      const nextSong = loadedSongs.find((item: CatholicHubSong) => item.id === hashSongId) || loadedSongs[0];
       setSelectedSongId((current) => current || nextSong?.id || '');
     } catch {
       setSongsError('Songs are not available yet. Please sync content or try again.');
