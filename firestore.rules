@@ -318,9 +318,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /catholicHubSongs/{songId} {
+      allow read: if resource.data.status == 'active' || adminRole();
+
+      allow create, update: if adminRole() && hasRequiredEnvelope()
+        && request.resource.data.keys().hasAll([
+          'id', 'title', 'titleNormalized', 'category', 'categoryTamil',
+          'lyrics', 'lyricsNormalized', 'language', 'sourceUrl',
+          'sourcePage', 'tags', 'order', 'status', 'lastSyncedAt'
+        ]);
+
+      allow delete: if false;
+    }
+
     // Sync metadata is an operational/admin concern only — not shown to
     // regular users, and never written by clients (server-only via Admin SDK).
     match /contentSyncStatus/{docId} {
+      allow read: if adminRole();
+      allow create, update, delete: if false;
+    }
+
+    match /catholicHubSongSyncStatus/{docId} {
       allow read: if adminRole();
       allow create, update, delete: if false;
     }
