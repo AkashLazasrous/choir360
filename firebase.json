@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "choir360x",
     "public": "dist",
     "ignore": [
       "firebase.json",
