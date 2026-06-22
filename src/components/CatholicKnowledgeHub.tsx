@@ -490,8 +490,22 @@ export const CatholicKnowledgeHub: React.FC = () => {
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Loading songs...
                       </div>
                     ) : filteredSongs.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-xs text-slate-500">
-                        {songs.length === 0 ? 'Songs are not available yet. Please sync content or try again.' : 'No songs match your search.'}
+                      <div className="space-y-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+                        <p className="px-2 py-1 text-center font-bold text-slate-700">
+                          {songs.length === 0 ? 'Song sync is pending. Open the source categories below.' : 'No songs match your search.'}
+                        </p>
+                        {songs.length === 0 && HUB_SONG_CATEGORIES.map((category) => (
+                          <a
+                            key={category.categoryId}
+                            href={category.sourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex min-h-[44px] items-center justify-between rounded-lg bg-white px-3 py-2 font-bold text-amber-800 shadow-sm"
+                          >
+                            {category.categoryTamil}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ))}
                       </div>
                     ) : (
                       filteredSongs.map((song) => (
@@ -551,8 +565,25 @@ export const CatholicKnowledgeHub: React.FC = () => {
                     </div>
                   </article>
                 ) : (
-                  <div className="flex h-full min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">
-                    Select a song from the index.
+                  <div className="flex h-full min-h-[420px] flex-col items-center justify-center p-8 text-center text-sm text-slate-500">
+                    <Music2 className="h-10 w-10 text-amber-700" />
+                    <h3 className="mt-3 text-base font-black text-slate-900">Catholic Tamil Songs</h3>
+                    <p className="mt-1 max-w-md">
+                      The backend song sync is pending. You can open the original song categories now.
+                    </p>
+                    <div className="mt-5 grid w-full max-w-xl gap-2 sm:grid-cols-3">
+                      {HUB_SONG_CATEGORIES.map((category) => (
+                        <a
+                          key={category.categoryId}
+                          href={category.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs font-black text-amber-900"
+                        >
+                          {category.categoryTamil}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>
