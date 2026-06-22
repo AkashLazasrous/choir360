@@ -1056,7 +1056,20 @@ app.get("/api/catholic-hub/songs", async (req, res) => {
       query = query.where("category", "==", category);
     }
 
-    const snapshot = await query.limit(900).get();
+    let snapshot = await query.limit(900).get();
+
+    // First public read after deployment should not leave users staring at an
+    // empty library. If the backend has Firebase Admin access but no synced
+    // records yet, populate Firestore once from the configured public sources.
+    if (snapshot.empty) {
+      try {
+        await syncCatholicHubSongs(category === "all" ? "all" : category as CatholicHubSongCategoryId, "system-lazy-sync");
+        snapshot = await query.limit(900).get();
+      } catch (error: any) {
+        console.warn("[Catholic Hub Songs] lazy sync failed:", error?.message || error);
+      }
+    }
+
     const songs = snapshot.docs
       .map((doc) => doc.data())
       .sort((a: any, b: any) => {

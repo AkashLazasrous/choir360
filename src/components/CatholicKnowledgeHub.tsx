@@ -228,6 +228,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
   const [selectedSongId, setSelectedSongId] = useState('');
   const [isSyncingSongs, setIsSyncingSongs] = useState(false);
   const [mobileSongOpen, setMobileSongOpen] = useState(false);
+  const [autoSyncAttempted, setAutoSyncAttempted] = useState(false);
 
   const loadSongs = async () => {
     setIsLoadingSongs(true);
@@ -236,7 +237,26 @@ export const CatholicKnowledgeHub: React.FC = () => {
       const response = await apiFetch(`/api/catholic-hub/songs?category=${encodeURIComponent(songCategory)}`);
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || 'Songs are not available yet. Please sync content or try again.');
-      setSongs(payload.songs || []);
+      const loadedSongs = payload.songs || [];
+      if (loadedSongs.length === 0 && !autoSyncAttempted) {
+        setAutoSyncAttempted(true);
+        const syncResponse = await apiFetch('/api/catholic-hub/songs/sync', {
+          method: 'POST',
+          body: JSON.stringify({ categoryId: songCategory }),
+        });
+        if (syncResponse.ok) {
+          const retryResponse = await apiFetch(`/api/catholic-hub/songs?category=${encodeURIComponent(songCategory)}`);
+          const retryPayload = await retryResponse.json();
+          if (retryResponse.ok) {
+            setSongs(retryPayload.songs || []);
+            setSongSyncStatus(retryPayload.syncStatus || []);
+            const nextSong = (retryPayload.songs || [])[0];
+            setSelectedSongId((current) => current || nextSong?.id || '');
+            return;
+          }
+        }
+      }
+      setSongs(loadedSongs);
       setSongSyncStatus(payload.syncStatus || []);
       const hashSongId = window.location.hash.replace(/^#song-/, '');
       const nextSong = (payload.songs || []).find((item: CatholicHubSong) => item.id === hashSongId) || (payload.songs || [])[0];
