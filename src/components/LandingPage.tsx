@@ -1,4 +1,5 @@
 import React from 'react';
+import { RadioPlayer } from './RadioPlayer';
 import { Announcement, ChoirEvent, Language, Mass, Member, Payment } from '../types';
 import {
   ArrowUpRight,
@@ -101,6 +102,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <p className="text-[10px] text-emerald-100/60">2 awaiting response</p>
               </div>
             </div>
+            <RadioPlayer />
           </div>
         </div>
       </section>

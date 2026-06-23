@@ -1188,6 +1188,27 @@ app.post("/api/catholic-hub/sync", requireFirebaseAuth, requireAdminRole, async 
   }
 });
 
+// ─── Catholic Tamil Radio — RadioKing stream proxy ────────────────────────────
+app.get("/api/radio/stream-url", async (_req, res) => {
+  try {
+    const response = await fetch(
+      "https://api.radioking.io/widget/radio/catholic-tamil/track/current",
+      { headers: { "User-Agent": "Choir360/1.0 (+catholic-tamil-radio-player)" } }
+    );
+    if (!response.ok) throw new Error(`RadioKing API returned ${response.status}`);
+    const data = await response.json() as Record<string, unknown>;
+    return res.json({
+      streamUrl: (data.radio_url as string) || null,
+      artist: data.artist || "",
+      title: data.title || "Catholic Tamil Radio",
+      cover: data.cover || null,
+    });
+  } catch (error: any) {
+    console.warn("[Radio] RadioKing API error:", error?.message);
+    return res.status(502).json({ error: "Radio stream unavailable.", streamUrl: null });
+  }
+});
+
 app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, res) => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
