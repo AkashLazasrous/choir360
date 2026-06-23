@@ -757,6 +757,11 @@ function extractCatholicSongLyrics(songHtml: string, fallbackTitle: string) {
     /^முகப்பு$/,
     /^நமது தளங்கள்/,
     /^♫ பாடல்கள்/,
+    // site watermark: "♪ பாடலைக் கேட்க / பதிவிரக்கம் செய்ய..."
+    /♪\s*பாடலைக்/,
+    /பதிவிரக்கம் செய்ய/,
+    /^♪\s*♪/,
+    /கேட்க\s*\/\s*பதிவிரக்கம்/,
   ];
   const lyrics = lines
     .filter((line) => line !== title)
@@ -1595,15 +1600,64 @@ function startReadingsSchedule() {
 /**
  * Catholic Hub content (catholictamil.com Atom feed) — synced once per day at
  * IST 03:00 (off-peak). Also runs once at startup (non-blocking).
+ *
+ * Songs from radio.catholictamil.com — synced ONCE PER MONTH.
+ * After a successful full sync the timestamp is stored in Firestore
+ * (contentSyncStatus/songs-monthly). On each daily check we read that
+ * document; if it is less than 30 days old we skip. This means:
+ *   • Songs are never re-scraped more than once a month
+ *   • The stored data persists indefinitely — no data loss between deploys
+ *   • A manual "Sync all" from the admin UI bypasses the gate
  */
-function startCatholicHubSchedule() {
-  // Startup sync (non-blocking, already fires via syncCatholicHubOnStartup below)
-  scheduleDailyAt(3, "catholic-hub-0300", () => {
-    void syncCatholicHubContent("system-scheduled").then((r) =>
-      console.log(`[Catholic Hub] scheduled sync done — ${r.itemsSynced} items in ${r.durationMs}ms`)
-    ).catch((e: any) =>
-      console.warn("[Catholic Hub] scheduled sync failed:", e?.message)
+async function runMonthlySongSyncIfNeeded(userId = "system-monthly") {
+  if (!admin.apps.length) return;
+  const db = admin.firestore();
+  const statusRef = db.collection("contentSyncStatus").doc("songs-monthly");
+  try {
+    const snap = await statusRef.get();
+    if (snap.exists) {
+      const lastSuccess: string | undefined = snap.data()?.lastSuccessAt;
+      if (lastSuccess) {
+        const age = Date.now() - new Date(lastSuccess).getTime();
+        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+        if (age < THIRTY_DAYS) {
+          const daysAgo = Math.floor(age / (24 * 60 * 60 * 1000));
+          console.log(`[Songs Monthly] last sync was ${daysAgo}d ago — skipping (next in ${30 - daysAgo}d).`);
+          return;
+        }
+      }
+    }
+  } catch (e: any) {
+    console.warn("[Songs Monthly] could not read sync status:", e?.message);
+  }
+
+  console.log("[Songs Monthly] starting full song sync for all 35 categories...");
+  try {
+    const result = await syncCatholicHubSongs("all", userId);
+    const totalSynced = result.totalSongsSynced;
+    await statusRef.set(
+      { lastSuccessAt: new Date().toISOString(), totalSongsSynced: totalSynced, syncedBy: userId },
+      { merge: true }
     );
+    console.log(`[Songs Monthly] sync complete — ${totalSynced} songs across ${result.categories.length} categories.`);
+  } catch (e: any) {
+    console.warn("[Songs Monthly] sync failed:", e?.message);
+  }
+}
+
+function startCatholicHubSchedule() {
+  // Daily content (news/articles) sync at IST 03:00
+  scheduleDailyAt(3, "catholic-hub-content-0300", () => {
+    void syncCatholicHubContent("system-scheduled").then((r) =>
+      console.log(`[Catholic Hub] content sync done — ${r.itemsSynced} items in ${r.durationMs}ms`)
+    ).catch((e: any) =>
+      console.warn("[Catholic Hub] content sync failed:", e?.message)
+    );
+  });
+
+  // Monthly song sync check — runs daily at IST 04:00 but skips if < 30 days since last success
+  scheduleDailyAt(4, "songs-monthly-check-0400", () => {
+    void runMonthlySongSyncIfNeeded("system-monthly");
   });
 }
 
