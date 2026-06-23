@@ -3,7 +3,7 @@ import { Mass, Payment, Member, Language } from '../types';
 import {
   BookOpen, Calculator, Lock, Unlock, Bell,
   ArrowUpRight, Download, HelpCircle, IndianRupee,
-  CheckCircle2, Clock, AlertCircle,
+  CheckCircle2, Clock, AlertCircle, Music2, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { formatINR } from '../utils/currency';
@@ -144,16 +144,30 @@ export const MassManagement: React.FC<MassManagementProps> = ({
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-3">
-        <div>
-          <h2 className="font-bold text-xl text-slate-800">Parish Masses & Accounts Desk</h2>
-          <p className="text-xs text-slate-500">Log liturgical rites and manage choral split calculations.</p>
+      {/* ── Brand hero header ─────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden rounded-3xl bg-[#18392f] px-8 py-7 text-white shadow-xl mb-2">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-emerald-700/30 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full bg-amber-400/15 blur-2xl" />
+          <svg viewBox="0 0 24 24" fill="currentColor" className="absolute right-8 top-4 h-20 w-20 text-amber-300/15">
+            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+          </svg>
         </div>
-        <div className="flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 font-bold text-xs text-emerald-800">
-          <Calculator className="w-3.5 h-3.5" /> Singer Weight: 1 · Instrumentalist Weight: 2
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1">
+              <BookOpen className="h-3.5 w-3.5 text-amber-300" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-200">Liturgy & Accounts</span>
+            </div>
+            <h2 className="font-serif text-3xl font-bold">Masses & Accounts Desk</h2>
+            <p className="mt-1 text-sm text-emerald-100/70">Log rites · manage payments · calculate choral shares</p>
+          </div>
+          <div className="shrink-0 rounded-2xl border border-white/10 bg-white/8 px-5 py-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/60">Share Weights</p>
+            <p className="mt-1 text-sm font-bold text-amber-300">Singer ×1 · Musician ×2</p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {notifMsg && (
         <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 text-xs font-semibold flex items-center gap-2">
@@ -167,9 +181,15 @@ export const MassManagement: React.FC<MassManagementProps> = ({
 
         {/* ── Mass Form ── */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5 pb-2 border-b border-slate-100">
-            <BookOpen className="w-4 h-4 text-emerald-600" /> Setup Upcoming Liturgies
-          </h3>
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18392f]">
+              <BookOpen className="w-4 h-4 text-amber-300" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Log Liturgy</h3>
+              <p className="text-[10px] text-slate-400">Setup upcoming rites & payments</p>
+            </div>
+          </div>
 
           {massSuccess && (
             <p className="text-xs p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded font-medium">{massSuccess}</p>
@@ -308,14 +328,32 @@ export const MassManagement: React.FC<MassManagementProps> = ({
 
         {/* ── Special Mass Payments Table ── */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5 pb-2 border-b border-slate-100">
-            <IndianRupee className="w-4 h-4 text-emerald-600" /> Special Mass Payments Database
-          </h3>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 border border-amber-200">
+                <IndianRupee className="w-4 h-4 text-amber-700" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Special Mass Payments</h3>
+                <p className="text-[10px] text-slate-400">{payments.length} payment record{payments.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            {payments.length > 0 && (
+              <div className="flex gap-2 text-[10px] font-bold">
+                <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
+                  {payments.filter(p=>p.status==='Received').length} cleared
+                </span>
+                <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
+                  {payments.filter(p=>p.status==='Pending').length} pending
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* All logged masses summary */}
           {masses.length > 0 && (
             <div className="mb-2">
-              <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">All Logged Masses ({masses.length})</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1"><Music2 className="h-3 w-3" /> All Logged Masses ({masses.length})</p>
               <div className="flex flex-wrap gap-2">
                 {masses.map((m) => (
                   <span key={m.id} className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${
@@ -516,9 +554,12 @@ export const MassManagement: React.FC<MassManagementProps> = ({
       {/* Logged masses list */}
       {masses.length > 0 && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-bold text-slate-900 text-sm pb-3 border-b border-slate-100 mb-4">
-            All Logged Liturgies
-          </h3>
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#18392f]">
+              <BookOpen className="h-3.5 w-3.5 text-amber-300" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm">All Logged Liturgies</h3>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
