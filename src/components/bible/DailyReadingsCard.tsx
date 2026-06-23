@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookOpen, ExternalLink, Layers, Loader2, Menu, RefreshCw, RotateCcw, ScrollText, X } from 'lucide-react';
+import { BookOpen, ExternalLink, Loader2, RefreshCw, RotateCcw, ScrollText } from 'lucide-react';
 import { DailyReading, DailyReadingSection } from '../../types';
 import { FALLBACK_DAILY_READING } from '../../data/dailyReadingsFallback';
 import { ReadingDatePicker } from './ReadingDatePicker';
 import { ReadingSourceStatus } from './ReadingSourceStatus';
 import { apiFetch } from '../../services/apiClient';
+import { DailyReadingTabs } from '../../features/readings/components/DailyReadingTabs';
+import { MobileReadingTabs, ReadingTabItem } from '../../features/readings/components/MobileReadingTabs';
 
 const SOURCE_URL = 'https://www.arulvakku.com/calendar.php';
 
@@ -112,7 +114,6 @@ export const DailyReadingsCard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
-  const [isReadingsDrawerOpen, setIsReadingsDrawerOpen] = useState(false);
 
   const loadReading = useCallback(async (date: string, forceRefresh = false) => {
     setIsLoading(true);
@@ -178,58 +179,15 @@ export const DailyReadingsCard: React.FC = () => {
   // Always show every tab — including "all" — so the reading menu matches the
   // source site exactly. Tabs with no content for the date render a disabled
   // "no content" state instead of disappearing.
-  const availableTabs = TAB_DEFINITIONS;
+  const availableTabs: ReadingTabItem<TabKey>[] = TAB_DEFINITIONS.map((tab) => ({
+    key: tab.key,
+    label: tab.label,
+    disabled: tab.key !== 'all' && !sectionHasContent(reading?.[tab.key]),
+  }));
 
   const selectReadingTab = (key: TabKey) => {
     setActiveTab(key);
-    setIsReadingsDrawerOpen(false);
   };
-
-  const ReadingsNavigation = (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 p-3 lg:hidden">
-        <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">
-          <Layers className="h-3.5 w-3.5" />
-          வாசகங்கள்
-        </p>
-        <button
-          type="button"
-          onClick={() => setIsReadingsDrawerOpen(false)}
-          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
-          aria-label="Close readings menu"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <p className="hidden items-center gap-1.5 px-1 pb-2 pt-3 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700 lg:flex">
-        <Layers className="h-3.5 w-3.5" />
-        வாசகங்கள்
-      </p>
-      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2 lg:p-1" role="tablist" aria-label="Reading sections">
-        {availableTabs.map((tab) => {
-          const tabHasContent = tab.key === 'all' || sectionHasContent(reading?.[tab.key]);
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              onClick={() => selectReadingTab(tab.key)}
-              className={`min-h-[44px] rounded-lg px-3 py-2 text-left text-[13px] font-bold transition ${
-                activeTab === tab.key
-                  ? 'bg-[#18392f] text-white'
-                  : tabHasContent
-                    ? 'text-slate-700 hover:bg-slate-50'
-                    : 'text-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </nav>
-    </div>
-  );
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -279,26 +237,13 @@ export const DailyReadingsCard: React.FC = () => {
             <RotateCcw className="h-4 w-4" />
             Today
           </button>
-          {hasContent && (
-            <button
-              type="button"
-              onClick={() => setIsReadingsDrawerOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 lg:hidden"
-            >
-              <Menu className="h-4 w-4" />
-              Readings
-            </button>
-          )}
         </div>
-      </div>
-
-      {hasContent && isReadingsDrawerOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/40 lg:hidden" onClick={() => setIsReadingsDrawerOpen(false)}>
-          <div className="h-full w-[86vw] max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {ReadingsNavigation}
+        {hasContent && (
+          <div className="mt-3 lg:hidden">
+            <MobileReadingTabs tabs={availableTabs} activeTab={activeTab} onSelect={selectReadingTab} />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="bg-slate-50 p-4 sm:p-5">
         {isLoading && !reading ? (
@@ -389,9 +334,7 @@ export const DailyReadingsCard: React.FC = () => {
             {/* Desktop right-side reading menu, matching arulvakku.com's "வாசகங்கள்" rail */}
             {hasContent && (
               <aside className="hidden lg:order-2 lg:block">
-                <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3">
-                  {ReadingsNavigation}
-                </div>
+                <DailyReadingTabs tabs={availableTabs} activeTab={activeTab} onSelect={selectReadingTab} />
               </aside>
             )}
           </div>

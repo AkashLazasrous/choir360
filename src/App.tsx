@@ -479,6 +479,7 @@ export default function App() {
           { id: 'landing' as Tab,          Icon: LayoutDashboard, label: 'Home' },
           { id: 'bible' as Tab,             Icon: BookText,        label: 'Bible' },
           { id: 'song_library' as Tab,      Icon: Music2,          label: 'Songs' },
+          { id: 'catholic_hub' as Tab,      Icon: BookOpen,        label: 'Catholic' },
           { id: 'liturgical_planner' as Tab,Icon: Sparkles,        label: 'Plan' },
           { id: 'registration' as Tab,      Icon: UsersRound,      label: 'People' },
         ])
