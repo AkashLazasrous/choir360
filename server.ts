@@ -788,9 +788,14 @@ function extractCatholicSongLyrics(songHtml: string, fallbackTitle: string) {
   return { title, lyrics };
 }
 
-function makeCatholicHubSongId(categoryId: string, title: string, order: number) {
-  const normalized = normalizeTamilSearchText(title);
-  const digest = crypto.createHash("sha1").update(`${categoryId}:${normalized}:${order}`).digest("hex").slice(0, 10);
+/**
+ * Stable document ID derived from the song's source URL.
+ * Previously used title+order which produced different IDs for the same song
+ * if the title changed encoding (HTML entities vs decoded Unicode) — causing
+ * duplicate Firestore documents. URL-based IDs are stable across re-syncs.
+ */
+function makeCatholicHubSongId(categoryId: string, sourceUrl: string): string {
+  const digest = crypto.createHash("sha1").update(sourceUrl).digest("hex").slice(0, 10);
   return `${categoryId}-${digest}`;
 }
 
@@ -961,11 +966,51 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
         .where("category", "==", category.categoryId)
         .get();
 
-      // Map: sourceUrl → existing Firestore document data
+      // Map: sourceUrl → primary Firestore document data (one per URL).
+      // Old docs may use `sourcePage` instead of `sourceUrl` — we fall back to it.
+      // If multiple docs share the same URL (stale duplicates from old syncs that
+      // used a title-based document ID), we keep the canonical one (URL-based ID)
+      // and immediately archive the rest so they never reach the frontend.
       const existingBySourceUrl = new Map<string, FirebaseFirestore.DocumentData>();
+      const staleDuplicateIds: string[] = [];
+
       for (const doc of existingSnap.docs) {
         const data = doc.data();
-        if (data.sourceUrl) existingBySourceUrl.set(data.sourceUrl, data);
+        const url: string = data.sourceUrl || data.sourcePage || "";
+        if (!url) continue;
+
+        if (existingBySourceUrl.has(url)) {
+          // Duplicate detected — prefer whichever doc has the canonical URL-based ID.
+          const prev = existingBySourceUrl.get(url)!;
+          const canonical = makeCatholicHubSongId(category.categoryId, url);
+          if (data.id === canonical) {
+            // This doc is canonical; the previous one is stale
+            staleDuplicateIds.push(prev.id as string);
+            existingBySourceUrl.set(url, data);
+          } else {
+            // Previous doc wins (either it's canonical or we keep first-seen)
+            staleDuplicateIds.push(doc.id);
+          }
+        } else {
+          existingBySourceUrl.set(url, data);
+        }
+      }
+
+      // Archive stale duplicates before the diff runs
+      if (staleDuplicateIds.length > 0) {
+        const dupBatch = firestore.batch();
+        for (const id of staleDuplicateIds) {
+          dupBatch.update(firestore.collection("catholicHubSongs").doc(id), {
+            status: "archived",
+            isArchived: true,
+            updatedAt: now,
+            updatedBy: userId,
+          });
+        }
+        await dupBatch.commit();
+        console.log(
+          `[Catholic Hub Songs] ${category.categoryId}: archived ${staleDuplicateIds.length} stale duplicate(s)`
+        );
       }
 
       // ── 3. Fetch individual song pages & build diff ────────────────────────
@@ -986,11 +1031,25 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
           const existing = existingBySourceUrl.get(link.sourceUrl);
 
           if (existing) {
+            // Always re-decode stored fields — old syncs may have written raw
+            // HTML entities (&#NNNN;) to Firestore before decoding was added.
+            const cleanTitle = decodeHtmlEntities(String(existing.title || title));
+            const cleanLyrics = decodeHtmlEntities(String(existing.lyrics || lyrics));
+            const cleanCategoryTamil = decodeHtmlEntities(
+              String(existing.categoryTamil || category.categoryTamil)
+            );
+
             if (existing.contentHash === contentHash) {
-              // Content unchanged — just update lastSourceSeenAt (cheap touch)
+              // Content unchanged — but still re-decode legacy HTML entities
               totalUnchanged++;
               toWrite.push({
                 ...(existing as CatholicHubSongRecord),
+                title: cleanTitle,
+                titleNormalized: normalizeTamilSearchText(cleanTitle),
+                lyrics: cleanLyrics,
+                lyricsNormalized: normalizeTamilSearchText(cleanLyrics),
+                categoryTamil: cleanCategoryTamil,
+                sourceUrl: link.sourceUrl, // ensure sourceUrl is always set
                 lastSourceSeenAt: now,
                 lastSyncedAt: now,
                 updatedAt: now,
@@ -999,7 +1058,7 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
                 status: "active",
               });
             } else {
-              // Content changed — update title/lyrics/hash
+              // Content changed — update with freshly fetched decoded values
               totalUpdated++;
               toWrite.push({
                 ...(existing as CatholicHubSongRecord),
@@ -1007,8 +1066,10 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
                 titleNormalized: normalizeTamilSearchText(title),
                 lyrics,
                 lyricsNormalized: normalizeTamilSearchText(lyrics),
+                categoryTamil: cleanCategoryTamil,
                 contentHash,
                 order: index + 1,
+                sourceUrl: link.sourceUrl,
                 lastSourceSeenAt: now,
                 lastSyncedAt: now,
                 updatedAt: now,
@@ -1018,10 +1079,10 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
               });
             }
           } else {
-            // New song — create record
+            // New song — create record with stable URL-based ID
             totalCreated++;
             toWrite.push({
-              id: makeCatholicHubSongId(category.categoryId, title, index + 1),
+              id: makeCatholicHubSongId(category.categoryId, link.sourceUrl),
               title,
               titleNormalized: normalizeTamilSearchText(title),
               category: category.categoryId,

@@ -101,7 +101,7 @@ export function useCatholicHubSongs(): UseCatholicHubSongsResult {
         ),
       );
 
-      const loaded = songsSnap.docs.map((d) => {
+      const rawLoaded = songsSnap.docs.map((d) => {
         const data = d.data() as CatholicHubSong;
         return {
           ...data,
@@ -109,6 +109,19 @@ export function useCatholicHubSongs(): UseCatholicHubSongsResult {
           sourcePageUrl: data.sourcePageUrl ?? data.sourcePage,
         };
       });
+
+      // Client-side dedup: if the backend sync hasn't yet cleaned up stale
+      // duplicates (old title-based IDs alongside new URL-based IDs), keep only
+      // one entry per sourceUrl — the one with the more recent lastSyncedAt.
+      const seenUrls = new Map<string, CatholicHubSong>();
+      for (const song of rawLoaded) {
+        const key = song.sourceUrl || song.sourcePage || song.id;
+        const prev = seenUrls.get(key);
+        if (!prev || (song.lastSyncedAt ?? '') > (prev.lastSyncedAt ?? '')) {
+          seenUrls.set(key, song);
+        }
+      }
+      const loaded = Array.from(seenUrls.values());
 
       // Sort: by category then by order within category
       loaded.sort((a, b) => {
