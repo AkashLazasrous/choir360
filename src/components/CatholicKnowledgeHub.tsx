@@ -544,25 +544,50 @@ export const CatholicKnowledgeHub: React.FC = () => {
                       </div>
                     ) : filteredSongs.length === 0 ? (
                       <div className="space-y-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
-                        <p className="px-2 py-1 text-center font-bold text-slate-700">
-                          {songs.length === 0
-                            ? isAdmin
-                              ? 'No songs synced yet. Click "Sync all" to populate the library.'
-                              : 'Songs not yet available. Check back later.'
-                            : 'No songs match your search.'}
-                        </p>
-                        {songs.length === 0 && HUB_SONG_CATEGORIES.map((category) => (
-                          <a
-                            key={category.categoryId}
-                            href={category.sourceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex min-h-[44px] items-center justify-between rounded-lg bg-white px-3 py-2 font-bold text-amber-800 shadow-sm"
-                          >
-                            {category.categoryTamil}
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        ))}
+                        {/* Category not synced yet — show targeted sync action for admins */}
+                        {songCategory !== 'all' && songs.length > 0 ? (
+                          // Songs exist globally but none for this category → not synced
+                          <div className="space-y-2 px-1 py-2 text-center">
+                            <p className="font-bold text-slate-700">
+                              {isAdmin
+                                ? `"${HUB_SONG_CATEGORIES.find(c => c.categoryId === songCategory)?.categoryTamil || songCategory}" hasn't been synced yet.`
+                                : 'Songs for this category are not yet available.'}
+                            </p>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => void triggerSongSync(songCategory)}
+                                disabled={isSyncingSongs}
+                                className="mx-auto flex min-h-[36px] items-center gap-1.5 rounded-xl bg-amber-800 px-4 text-xs font-bold text-white disabled:opacity-40"
+                              >
+                                <RefreshCw className={`h-3.5 w-3.5 ${isSyncingSongs ? 'animate-spin' : ''}`} />
+                                {isSyncingSongs ? 'Syncing…' : 'Sync this category'}
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <p className="px-2 py-1 text-center font-bold text-slate-700">
+                              {songs.length === 0
+                                ? isAdmin
+                                  ? 'No songs synced yet. Click "Sync all" to populate the library.'
+                                  : 'Songs not yet available. Check back later.'
+                                : 'No songs match your search.'}
+                            </p>
+                            {songs.length === 0 && HUB_SONG_CATEGORIES.map((category) => (
+                              <a
+                                key={category.categoryId}
+                                href={category.sourceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex min-h-[44px] items-center justify-between rounded-lg bg-white px-3 py-2 font-bold text-amber-800 shadow-sm"
+                              >
+                                {category.categoryTamil}
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            ))}
+                          </>
+                        )}
                       </div>
                     ) : (
                       groupedSongs.map(({ label, songs: groupSongs }) => (

@@ -135,7 +135,10 @@ export default function App() {
   // demoRole only applies when Firebase is NOT configured (pure demo mode).
   const effectiveRole: Role = authState.isConfigured ? authState.effectiveRole : demoRole;
   const guard = useRoleGuard(effectiveRole);
-  const syncEnabled = Boolean(authState.user);
+  // Anonymous users (signed in only for Cloudinary uploads) must NOT trigger
+  // Firestore listeners — they have no tenant JWT claims, so every collection
+  // read returns "Missing or insufficient permissions".
+  const syncEnabled = Boolean(authState.user && !authState.user.isAnonymous);
 
   const { records: members, isLive: membersLive, syncError: membersSyncError, actions: memberSync } =
     useMembersWithPrivateData(MOCK_MEMBERS, syncEnabled);
@@ -358,10 +361,18 @@ export default function App() {
             syncStatus={
               <>
                 Sync:{' '}
-                <span className={membersLive ? 'text-emerald-700' : 'text-amber-700'}>
-                  {membersLive ? 'Firebase live' : syncEnabled ? 'Connecting...' : 'Sign in required'}
+                <span className={membersLive ? 'text-emerald-700' : syncEnabled ? 'text-amber-700' : 'text-slate-400'}>
+                  {membersLive
+                    ? 'Firebase live'
+                    : syncEnabled
+                    ? 'Connecting…'
+                    : authState.user?.isAnonymous
+                    ? 'Guest mode'
+                    : 'Sign in required'}
                 </span>
-                {membersSyncError && <span className="block truncate text-rose-600">{membersSyncError}</span>}
+                {membersSyncError && !membersSyncError.includes('insufficient permissions') && (
+                  <span className="block truncate text-rose-600">{membersSyncError}</span>
+                )}
               </>
             }
           />

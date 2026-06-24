@@ -232,7 +232,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
     };
 
     onAddMember(newMember);
-    setSuccessMsg(`Success! ${firstName}'s registration is submitted as PENDING. Admins can approve it in the "Approval Desk" active tab.`);
+    setSuccessMsg(`Success! ${firstName}'s registration is submitted as PENDING. Admins can approve it in the "Approval Desk" tab.`);
     
     // Clear form
     setFirstName('');
@@ -282,7 +282,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
             id="tab-approval-desk"
           >
             <Lock className="w-3.5 h-3.5" />
-            {dict.registrationAudit} {isAdmin ? '(Admin Active)' : '(Simulated Audit)'}
+            {dict.registrationAudit}{isAdmin ? ' (Admin Active)' : ''}
           </button>
         </div>
       </div>
