@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, KeyRound, LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { CheckCircle, KeyRound, LogIn, LogOut, RefreshCw, ShieldCheck, UserPlus } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Role } from '../types';
 import { apiFetch } from '../services/apiClient';
@@ -19,7 +19,8 @@ interface AuthPanelProps {
 const AdminActivationPanel: React.FC<{
   onRefreshToken: () => Promise<void>;
   onDone: () => void;
-}> = ({ onRefreshToken, onDone }) => {
+  isResync?: boolean;
+}> = ({ onRefreshToken, onDone, isResync = false }) => {
   const [secret, setSecret] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -38,7 +39,7 @@ const AdminActivationPanel: React.FC<{
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Activation failed.');
       setStatus('success');
-      setMessage(data.message || 'Admin access activated!');
+      setMessage(data.message || 'Role claims updated!');
       await onRefreshToken();
       setTimeout(onDone, 1800);
     } catch (err) {
@@ -49,7 +50,7 @@ const AdminActivationPanel: React.FC<{
 
   if (status === 'success') {
     return (
-      <div className="mt-3 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-3 text-xs font-semibold text-emerald-800">
+      <div className="mt-2 flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-3 text-xs font-semibold text-emerald-800">
         <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
         {message}
       </div>
@@ -57,13 +58,17 @@ const AdminActivationPanel: React.FC<{
   }
 
   return (
-    <form onSubmit={handleActivate} className="mt-3 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+    <form onSubmit={handleActivate} className="mt-2 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
       <div className="flex items-center gap-1.5">
         <KeyRound className="h-3.5 w-3.5 text-amber-700" />
-        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Activate Admin Access</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+          {isResync ? 'Re-sync Role Claims' : 'Activate Admin Access'}
+        </p>
       </div>
       <p className="text-[10px] text-amber-700 leading-relaxed">
-        Your account has no admin role yet. Enter the activation secret to get choir_admin access for this parish.
+        {isResync
+          ? 'Your role claims may be misconfigured. Enter the activation secret to re-sync choir_admin access with the correct tenant context.'
+          : 'Your account has no admin role yet. Enter the activation secret to get choir_admin access for this parish.'}
       </p>
       <input
         type="password"
@@ -82,7 +87,7 @@ const AdminActivationPanel: React.FC<{
         disabled={status === 'loading'}
         className="flex w-full min-h-[40px] items-center justify-center gap-2 rounded-xl bg-amber-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
       >
-        {status === 'loading' ? 'Activating...' : 'Activate Admin Access'}
+        {status === 'loading' ? 'Updating...' : isResync ? 'Re-sync Claims' : 'Activate Admin Access'}
       </button>
     </form>
   );
@@ -148,7 +153,9 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
   }
 
   if (user && !user.isAnonymous) {
-    const needsActivation = effectiveRole === 'choir_member';
+    const hasNoRoleClaim = effectiveRole === 'choir_member';
+    const hasRoleClaim = !hasNoRoleClaim;
+
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
         <div className="flex items-center gap-3">
@@ -162,7 +169,9 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             </p>
           </div>
         </div>
-        {needsActivation && !showActivation && (
+
+        {/* No role claim at all — show prominent activation */}
+        {hasNoRoleClaim && !showActivation && (
           <button
             type="button"
             onClick={() => setShowActivation(true)}
@@ -172,12 +181,27 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             Activate Admin Access
           </button>
         )}
-        {needsActivation && showActivation && (
+
+        {/* Has a role claim but may have wrong tenant — show subtle re-sync */}
+        {hasRoleClaim && !showActivation && (
+          <button
+            type="button"
+            onClick={() => setShowActivation(true)}
+            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] font-medium text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Having trouble saving? Re-sync role claims
+          </button>
+        )}
+
+        {showActivation && (
           <AdminActivationPanel
             onRefreshToken={onRefreshToken}
             onDone={() => setShowActivation(false)}
+            isResync={hasRoleClaim}
           />
         )}
+
         <button
           onClick={() => void onLogout()}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 min-h-[44px] text-xs font-bold text-slate-700"

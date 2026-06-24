@@ -111,7 +111,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
       const isPermission = massResult.error?.toLowerCase().includes('permission') || massResult.error?.toLowerCase().includes('insufficient');
       setMassSaveError(
         isPermission
-          ? 'Save failed: your account does not have admin access. Use "Activate Admin Access" in the sign-in panel to set up your role.'
+          ? 'Save failed: Firestore permission denied. In the sign-in panel, click "Having trouble saving? Re-sync role claims" to fix your account.'
           : `Save failed: ${massResult.error}`
       );
       return;
@@ -148,7 +148,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
         const isPermission = paymentResult.error?.toLowerCase().includes('permission') || paymentResult.error?.toLowerCase().includes('insufficient');
         setMassSaveError(
           isPermission
-            ? 'Mass logged but payment save failed: activate admin access first.'
+            ? 'Mass logged but payment save failed: Firestore permission denied. Re-sync role claims in the sign-in panel.'
             : `Payment save failed: ${paymentResult.error}`
         );
         // Still clear form — mass was saved
