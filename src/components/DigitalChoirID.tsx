@@ -175,7 +175,7 @@ const VOICE_COLOR: Record<string, string> = {
 
 export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
   member,
-  choirId = 'st-thomas-cathedral-choir',
+  choirId = 'global-choir',
   onCheckIn,
 }) => {
   const canvasRef              = useRef<HTMLCanvasElement>(null);

@@ -574,18 +574,33 @@ export const CatholicKnowledgeHub: React.FC = () => {
                                   : 'Songs not yet available. Check back later.'
                                 : 'No songs match your search.'}
                             </p>
-                            {songs.length === 0 && HUB_SONG_CATEGORIES.map((category) => (
-                              <a
-                                key={category.categoryId}
-                                href={category.sourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex min-h-[44px] items-center justify-between rounded-lg bg-white px-3 py-2 font-bold text-amber-800 shadow-sm"
-                              >
-                                {category.categoryTamil}
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </a>
-                            ))}
+                            {songs.length === 0 && (
+                              <div className="space-y-2">
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() => void triggerSongSync('all')}
+                                    disabled={isSyncingSongs}
+                                    className="mx-auto flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-amber-800 px-4 text-xs font-bold text-white disabled:opacity-40"
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingSongs ? 'animate-spin' : ''}`} />
+                                    {isSyncingSongs ? 'Syncing songs…' : 'Sync All Songs Now'}
+                                  </button>
+                                )}
+                                {HUB_SONG_CATEGORIES.map((category) => (
+                                  <a
+                                    key={category.categoryId}
+                                    href={category.sourceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex min-h-[44px] items-center justify-between rounded-lg bg-white px-3 py-2 font-bold text-amber-800 shadow-sm"
+                                  >
+                                    {category.categoryTamil}
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -602,7 +617,10 @@ export const CatholicKnowledgeHub: React.FC = () => {
                               onClick={() => selectSong(song, window.matchMedia('(max-width: 767px)').matches)}
                               className={`w-full rounded-xl p-3 text-left transition ${selectedSong?.id === song.id ? 'bg-amber-50 ring-1 ring-amber-200' : 'hover:bg-slate-50'}`}
                             >
-                              <p className="line-clamp-2 text-sm font-black text-slate-900">{song.title}</p>
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="line-clamp-2 text-sm font-black text-slate-900">{song.title}</p>
+                                <span className="mt-0.5 flex-shrink-0 text-[10px] font-bold text-amber-700 md:hidden">Read →</span>
+                              </div>
                               <p className="mt-1 text-[11px] font-semibold text-slate-400">#{song.order}</p>
                             </button>
                           ))}

@@ -27,19 +27,26 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import type { RenderTask } from 'pdfjs-dist/types/src/display/api';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
-import { apiFetch } from '../services/apiClient';
 import { buildTamilSearchText, expandSearchQuery } from '../utils/tamilSearch';
 import { getSongIdFromLocation, getSongSearchFromLocation, setSongHash, setSongSearchParam } from '../features/songs/utils/songDeepLink';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+// pdfjs is lazy-loaded only when a PDF song page is actually requested
+// This keeps the initial JS bundle ~470KB smaller
+let pdfjsLibCache: typeof import('pdfjs-dist') | null = null;
+async function getPdfjsLib() {
+  if (pdfjsLibCache) return pdfjsLibCache;
+  const lib = await import('pdfjs-dist');
+  const workerMod = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+  lib.GlobalWorkerOptions.workerSrc = (workerMod as unknown as { default: string }).default;
+  pdfjsLibCache = lib;
+  return lib;
+}
 
 interface SongLibraryWidgetProps {
   currentLang: Language;
-  songs: Song[];
+  /** External songs override — if omitted the widget lazy-loads the bundled library */
+  songs?: Song[];
 }
 
 interface PdfSongPageProps {
@@ -81,7 +88,7 @@ const getDisplayTitle = (song: Song) =>
 const PdfSongPage: React.FC<PdfSongPageProps> = ({ song, isPresentationMode }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const renderTaskRef = useRef<RenderTask | null>(null);
+  const renderTaskRef = useRef<{ cancel(): void } | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState('');
 
@@ -103,6 +110,7 @@ const PdfSongPage: React.FC<PdfSongPageProps> = ({ song, isPresentationMode }) =
       }
 
       try {
+        const pdfjsLib = await getPdfjsLib();
         const loadingTask = pdfjsLib.getDocument({ url: song.sourcePdfUrl });
         const document = await loadingTask.promise;
         const page = await document.getPage(song.sourcePageNumber);
@@ -268,9 +276,20 @@ const SongIndex: React.FC<SongIndexProps> = ({ songs, selectedSongId, searchQuer
 
 export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
   currentLang,
-  songs
+  songs: songsProp
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
+  const [selfLoadedSongs, setSelfLoadedSongs] = useState<Song[]>([]);
+
+  // Lazy-load bundled song data when no external songs are provided
+  useEffect(() => {
+    if (songsProp && songsProp.length > 0) return;
+    import('../data/jebathotta-jeyageethangal').then((mod) => {
+      setSelfLoadedSongs(mod.JEBATHOTTA_JEYAGEETHANGAL_SONGS);
+    }).catch(() => { /* ignore */ });
+  }, [songsProp]);
+
+  const songs = (songsProp && songsProp.length > 0) ? songsProp : selfLoadedSongs;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<'All' | 'Tamil' | 'English'>('All');
@@ -367,31 +386,16 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
     }
 
     setIsAiSearching(true);
-    setAiExplainText('Searching the imported PDF songbook...');
-
+    setAiExplainText('Searching songbook...');
+    // Free local search — no paid API needed
     try {
-      const response = await apiFetch('/api/gemini/smart-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, songsList: songs })
-      });
-
-      if (!response.ok) throw new Error('API call failed');
-
-      const data = await response.json();
-      if (data.matchedSongIds && data.matchedSongIds.length > 0) {
-        setFilteredSongIds(data.matchedSongIds);
-        setAiExplainText(`Smart search: ${data.explanation} (${data.searchMethod})`);
-      } else {
-        setFilteredSongIds([]);
-        setAiExplainText('No PDF songbook match found.');
-      }
-    } catch {
       const matchedIds = songs
         .filter((song) => songMatchesQuery(song, searchQuery))
         .map((song) => song.id);
       setFilteredSongIds(matchedIds);
-      setAiExplainText(`Local PDF search found ${matchedIds.length} song page(s).`);
+      setAiExplainText(matchedIds.length > 0
+        ? `Found ${matchedIds.length} song page(s) matching "${searchQuery}"`
+        : `No match for "${searchQuery}" — try Tamil or English keywords`);
     } finally {
       setIsAiSearching(false);
     }

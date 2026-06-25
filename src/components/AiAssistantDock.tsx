@@ -124,7 +124,7 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
           </div>
           <div>
             <h3 className="font-sans font-bold text-slate-800 text-sm">{dict.aiAssistant}</h3>
-            <p className="text-[10px] text-slate-400">Powered by server-side Gemini 3.5 Flash</p>
+            <p className="text-[10px] text-slate-400">Choir360 AI · Liturgical Knowledge Base</p>
           </div>
         </div>
         <button
@@ -163,7 +163,7 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
         {isLoading && (
           <div className="flex gap-3 max-w-[80%] mr-auto items-center text-slate-400 animate-pulse pl-2">
             <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
-            <span className="text-[10px] font-medium font-sans">Gemini is writing liturgical recommendations...</span>
+            <span className="text-[10px] font-medium font-sans">Generating liturgical recommendations...</span>
           </div>
         )}
       </div>

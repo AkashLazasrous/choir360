@@ -6,7 +6,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
@@ -1259,24 +1258,6 @@ async function syncCatholicHubOnStartup() {
   }
 }
 
-// Lazy-initialization utility for GoogleGenAI
-let aiInstance: GoogleGenAI | null = null;
-function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
-    console.warn("GEMINI_API_KEY is not defined or is a placeholder. Choir360 will operate in high-precision simulated AI mode.");
-    return null;
-  }
-  if (!aiInstance) {
-    aiInstance = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
-    });
-  }
   return aiInstance;
 }
 
@@ -1591,7 +1572,160 @@ app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, 
   });
 });
 
-// 1. AI Liturgical Companion Chat Endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+// FREE RULE-BASED AI ENDPOINTS
+// No paid API keys required. All responses are generated locally from
+// curated Catholic liturgical knowledge bases.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Liturgical season helpers
+function getLiturgicalColor(season: string): string {
+  const s = season.toLowerCase();
+  if (s.includes('advent')) return 'Violet/Purple';
+  if (s.includes('lent')) return 'Violet/Purple';
+  if (s.includes('christmas')) return 'White/Gold';
+  if (s.includes('easter')) return 'White/Gold';
+  if (s.includes('pentecost')) return 'Red';
+  if (s.includes('ordinary')) return 'Green';
+  if (s.includes('feast') || s.includes('wedding') || s.includes('baptism')) return 'White';
+  if (s.includes('funeral') || s.includes('all souls')) return 'Black/Violet';
+  return 'Green (Ordinary Time)';
+}
+
+interface SongRec { type: string; title: string; liturgicalReasoning: string; }
+const SONG_DB: Record<string, SongRec[]> = {
+  advent: [
+    { type: 'Entrance Hymn', title: 'O Come O Come Emmanuel', liturgicalReasoning: 'Classic Advent antiphon expressing longing for the Messiah.' },
+    { type: 'Offertory Hymn', title: 'Come Lord Jesus Come', liturgicalReasoning: 'Maranatha theme perfectly suits the Advent spirit of waiting.' },
+    { type: 'Communion Hymn', title: 'Veni Veni Emmanuel', liturgicalReasoning: 'Latin original brings solemn expectation to the Eucharistic reception.' },
+    { type: 'Recessional Hymn', title: 'The King Shall Come', liturgicalReasoning: 'Sends the congregation forward in joyful anticipation.' },
+  ],
+  lent: [
+    { type: 'Entrance Hymn', title: 'Lord Who Throughout These Forty Days', liturgicalReasoning: 'Directly mirrors the 40-day Lenten journey of Christ in the desert.' },
+    { type: 'Offertory Hymn', title: 'Change Our Hearts', liturgicalReasoning: 'Calls for conversion — the core purpose of the Lenten season.' },
+    { type: 'Communion Hymn', title: 'Eat This Bread', liturgicalReasoning: 'Simple Taizé chant suitable for Lenten solemnity.' },
+    { type: 'Recessional Hymn', title: 'Forty Days and Forty Nights', liturgicalReasoning: 'Scriptural narrative hymn summarising Lenten themes.' },
+  ],
+  christmas: [
+    { type: 'Entrance Hymn', title: 'O Come All Ye Faithful', liturgicalReasoning: 'The quintessential Christmas entrance procession hymn.' },
+    { type: 'Offertory Hymn', title: 'What Child Is This', liturgicalReasoning: 'Contemplative reflection on the mystery of the Incarnation.' },
+    { type: 'Communion Hymn', title: 'Silent Night', liturgicalReasoning: 'Gentle reverence appropriate for Eucharistic intimacy on Christmas.' },
+    { type: 'Recessional Hymn', title: 'Joy to the World', liturgicalReasoning: 'Joyful proclamation to send the faithful forth in celebration.' },
+  ],
+  easter: [
+    { type: 'Entrance Hymn', title: 'Jesus Christ Is Risen Today', liturgicalReasoning: 'The definitive Easter processional — triumphant Alleluia refrain.' },
+    { type: 'Offertory Hymn', title: 'Now the Green Blade Rises', liturgicalReasoning: 'Beautifully captures resurrection imagery from nature.' },
+    { type: 'Communion Hymn', title: 'I Am the Bread of Life', liturgicalReasoning: 'Eucharistic theology deeply linked to the Resurrection narrative.' },
+    { type: 'Recessional Hymn', title: 'Alleluia Sing to Jesus', liturgicalReasoning: 'Triumphant sending forth — fitting climax to Easter liturgy.' },
+  ],
+  ordinary: [
+    { type: 'Entrance Hymn', title: 'All Are Welcome', liturgicalReasoning: 'Inclusive gathering song for the assembled community of faith.' },
+    { type: 'Offertory Hymn', title: 'Praise to the Lord the Almighty', liturgicalReasoning: 'Classic praise hymn fitting for ordinary Sundays of the year.' },
+    { type: 'Communion Hymn', title: 'One Bread One Body', liturgicalReasoning: 'Eucharistic unity theme — appropriate for any Ordinary Time Sunday.' },
+    { type: 'Recessional Hymn', title: 'Go Make of All Disciples', liturgicalReasoning: 'Missional sending forth aligned with the Great Commission.' },
+  ],
+  funeral: [
+    { type: 'Entrance Hymn', title: 'Be Not Afraid', liturgicalReasoning: 'Words of consolation and resurrection hope for the grieving.' },
+    { type: 'Offertory Hymn', title: 'On Eagles Wings', liturgicalReasoning: 'Comfort from Psalm 91 — the beloved funeral hymn.' },
+    { type: 'Communion Hymn', title: 'I Know That My Redeemer Lives', liturgicalReasoning: 'Proclamation of resurrection faith at the Eucharistic table.' },
+    { type: 'Recessional Hymn', title: 'Song of Farewell', liturgicalReasoning: 'Liturgical rite of commendation and farewell to the departed.' },
+  ],
+};
+
+function getSeasonKey(season: string): string {
+  const s = season.toLowerCase();
+  if (s.includes('advent')) return 'advent';
+  if (s.includes('lent') || s.includes('holy week')) return 'lent';
+  if (s.includes('christmas') || s.includes('epiphany')) return 'christmas';
+  if (s.includes('easter') || s.includes('pentecost')) return 'easter';
+  if (s.includes('funeral') || s.includes('memorial') || s.includes('all souls')) return 'funeral';
+  return 'ordinary';
+}
+
+function getSimulatedRecommendations(massType: string, season: string, language: string) {
+  const key = getSeasonKey(season);
+  const songs = SONG_DB[key] || SONG_DB['ordinary'];
+  const color = getLiturgicalColor(season);
+  return {
+    explanation: `For a ${massType} during ${season}, the liturgical vestment color is ${color}. ` +
+      `Songs should reflect ${key === 'advent' ? 'hopeful expectation' : key === 'lent' ? 'penitential conversion' : key === 'easter' ? 'joyful resurrection' : key === 'christmas' ? 'incarnation joy' : 'praise and community'}. ` +
+      `${language !== 'English' ? `Tamil and vernacular hymns from the Jebathotta Jeyageethangal collection are also appropriate.` : ''}`,
+    recommendedSongs: songs,
+  };
+}
+
+function getSimulatedOptimization(members: any[], massDetails: any) {
+  const singers = members.filter((m: any) => !m.isInstrumentalist && m.status === 'active');
+  const instrumentalists = members.filter((m: any) => m.isInstrumentalist && m.status === 'active');
+  const assigned = singers.slice(0, Math.min(singers.length, 8));
+  const instruments = instrumentalists.slice(0, Math.min(instrumentalists.length, 3));
+  return {
+    suggestedSchedule: {
+      singers: assigned.map((m: any) => ({ id: m.id, name: `${m.firstName} ${m.lastName}`, voiceType: m.voiceType || 'Unassigned', role: 'Choir Singer' })),
+      instrumentalists: instruments.map((m: any) => ({ id: m.id, name: `${m.firstName} ${m.lastName}`, instrument: m.instrumentType || 'Instrument', role: 'Instrumentalist' })),
+    },
+    reasoning: `Balanced choir assignment for ${massDetails?.massType || 'Sunday Mass'}. ` +
+      `${assigned.length} singers selected across voice parts. ` +
+      `${instruments.length} instrumentalists included for full accompaniment.`,
+    totalAssigned: assigned.length + instruments.length,
+  };
+}
+
+function getSimulatedContentGen(type: string, details: any, language: string) {
+  const t = (type || '').toLowerCase();
+  const parish = details?.parishName || 'Our Parish';
+  const date = details?.date || new Date().toLocaleDateString('en-IN');
+  if (t.includes('announcement')) {
+    return {
+      content: `**${parish} — Parish Announcement**\n\n` +
+        `Dear Brothers and Sisters in Christ,\n\n` +
+        `${details?.subject || 'We have an important announcement for our parish community.'}\n\n` +
+        `${details?.body || 'Please join us for our upcoming liturgical celebration.'}\n\n` +
+        `Date: ${date}\n\nMay God bless you and your families.\n\n*The Parish Secretary*`,
+      type, language,
+    };
+  }
+  if (t.includes('bulletin') || t.includes('newsletter')) {
+    return {
+      content: `**${parish} — Weekly Bulletin**\n\n` +
+        `**Week of ${date}**\n\n` +
+        `**This Week's Mass Schedule:**\n${details?.masses || 'Please check with the sacristy for Mass times.'}\n\n` +
+        `**Upcoming Events:**\n${details?.events || 'Watch this space for upcoming parish events.'}\n\n` +
+        `**Choir Ministry Notice:**\n${details?.choirNote || 'Choir rehearsal as scheduled. All members please attend.'}\n\n` +
+        `*God bless our parish community.*`,
+      type, language,
+    };
+  }
+  return {
+    content: `**${parish}**\n\n${details?.subject || type}\n\n${details?.body || 'Content generated for parish use.'}\n\n*${date}*`,
+    type, language,
+  };
+}
+
+function getSimulatedAssistantResponse(message: string, role: string, language: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('advent')) {
+    return `## Advent Season 🕯️\n\nAdvent is the liturgical season of **hopeful waiting** preceding Christmas. It spans four Sundays and invites us to prepare our hearts for the coming of Christ.\n\n**Vestment Color:** Violet/Purple (with Rose on Gaudete Sunday — 3rd Sunday)\n\n**Choir Guidance:**\n- Sing with a tone of longing and expectation\n- *O Come O Come Emmanuel* is the definitive Advent hymn\n- Avoid overly celebratory Christmas carols until Christmas Day\n- The *Rorate Caeli* is a beautiful traditional Advent antiphon\n\nWould you like specific song recommendations for any particular Advent Sunday?`;
+  }
+  if (m.includes('lent')) {
+    return `## Lenten Season ✝️\n\nLent is a 40-day penitential season of prayer, fasting, and almsgiving, beginning on Ash Wednesday and culminating in the Sacred Triduum.\n\n**Vestment Color:** Violet/Purple\n\n**Choir Guidance:**\n- *Gloria* and *Alleluia* are suppressed during Lent\n- Use the *Tract* in place of the Alleluia\n- Choose meditative, penitential hymns\n- Passion Sunday and Good Friday call for more sombre, reflective music\n- Stabat Mater is traditional for Lenten devotions`;
+  }
+  if (m.includes('soprano') || m.includes('alto') || m.includes('tenor') || m.includes('bass') || m.includes('voice') || m.includes('vocal')) {
+    return `## Choir Voice Parts 🎵\n\nA well-balanced SATB choir typically needs:\n\n**Soprano (S):** Highest female voice — carries the melody in most hymns\n**Alto (A):** Lower female voice — provides harmonic richness below soprano\n**Tenor (T):** Higher male voice — often doubles the melody an octave below\n**Bass (B):** Lowest male voice — provides the harmonic foundation\n\n**Ideal Ratio:** For a 16-person choir: 4S / 4A / 4T / 4B\n\nFor Tamil Catholic choirs, a smaller ensemble of 8 (2S/2A/2T/2B) with keyboard accompaniment works beautifully for parish Masses.`;
+  }
+  if (m.includes('mass') || m.includes('liturgy') || m.includes('eucharist')) {
+    return `## Catholic Mass Structure 📖\n\nThe Holy Mass follows a sacred two-part structure:\n\n**Liturgy of the Word:**\n- Entrance Hymn → Penitential Act → Gloria (except Advent/Lent) → Collect\n- First Reading → Responsorial Psalm → Second Reading → Gospel Acclamation → Gospel → Homily → Creed → Prayers of the Faithful\n\n**Liturgy of the Eucharist:**\n- Offertory Hymn → Eucharistic Prayer → Sanctus → Memorial Acclamation → Doxology\n- Our Father → Agnus Dei → Communion Hymn\n- Post-Communion Prayer → Dismissal → Recessional Hymn\n\nChoir members should be familiar with all parts to support the assembly's participation.`;
+  }
+  if (m.includes('rehearsal') || m.includes('practice') || m.includes('schedule')) {
+    return `## Choir Rehearsal Best Practices 🎼\n\n**Weekly Rehearsal Structure (90 minutes):**\n1. **Warm-up (10 min):** Breathing exercises, vocal scales, humming\n2. **Review (20 min):** Sunday's hymns — run through all 4-5 songs\n3. **New Material (30 min):** Learn upcoming feast day songs\n4. **Sectional (20 min):** Each section (SATB) works on difficult passages\n5. **Full Run (10 min):** Sing all Sunday songs together as choir\n\n**Tips:**\n- Distribute printed music at least 2 weeks ahead\n- Record rehearsals for absent members\n- Rotate cantors fairly among qualified singers\n- Use Choir360 to track attendance and plan assignments`;
+  }
+  if (m.includes('payment') || m.includes('honorarium') || m.includes('share')) {
+    return `## Choir Payment Distribution 💰\n\nChoir360 calculates payment shares based on attendance and role:\n\n**Share Formula:**\n- Singer present: 1 share\n- Instrumentalist present: 2 shares (higher skill contribution)\n\n**Calculation:**\nTotal Amount ÷ Total Shares = Amount Per Share\n\nExample: ₹2,000 total, 4 singers (4 shares) + 1 organist (2 shares) = 6 total shares\n→ Each singer gets ₹333 · Organist gets ₹667\n\nUse the **Mass Management** section to log mass details, mark attendance, and view the automatic payment breakdown per member.`;
+  }
+  return `## Choir360 AI Assistant 🎵✝️\n\nI'm your Catholic Choir & Ministry companion, specializing in:\n\n- **Liturgical seasons** (Advent, Lent, Easter, Ordinary Time)\n- **Song selection** for specific Masses and feasts\n- **Choir management** (voice parts, rehearsals, scheduling)\n- **Payment distribution** for music ministry stipends\n- **Tamil Catholic** traditions and Jebathotta Jeyageethangal\n\nAsk me anything about liturgy, choir, or parish music ministry! 🙏`;
+}
+
+// 1. AI Liturgical Companion Chat
 app.post("/api/gemini/assistant", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
   let message: string;
   try {
@@ -1599,297 +1733,89 @@ app.post("/api/gemini/assistant", aiLimiter, requireFirebaseAuth, requireUserAiQ
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
   }
-
-  const { chatHistory = [], activeRole = "public_user", language = "en" } = req.body;
-
-  const systemInstruction = `
-    You are the "Choir360 AI Liturgical Assistant," a highly specialized companion for Roman Catholic Choirs and Ministries in Tamil Nadu and South India (supporting English, Tamil, Malayalam, Telugu, and Hindi).
-    
-    Current User Role Context in App: '${activeRole}'.
-    Preferred Communication Language: '${language}'.
-    
-    General Guidelines:
-    - Respond with warmth, liturgical precision, and professional poise.
-    - Provide helpful inputs regarding Roman Catholic liturgical rubrics (e.g., Ordinary Time, Advent, Lent, Easter, saints, Catholic choral parts: Soprano, Alto, Tenor, Bass).
-    - If asked about songs, recommend relevant hymns. Encourage liturgical appropriateness (e.g. matching seasonal colors: Violet for Advent/Lent, Green for Ordinary Time, White for Feast/Weddings).
-    - When asked about songs, use only the current imported PDF Music Library as the source of truth.
-    - If the user asks about choir management, give advice on rehearsals, voice balancing, dynamic share calculation, and roster assignment.
-    - Limit responses to be highly structured, digestible, and beautifully formatted in markdown.
-  `;
-
-  try {
-    const ai = getGeminiClient();
-    if (ai) {
-      // Build simple prompt including history
-      let prompt = `${systemInstruction}\n\n`;
-      if (chatHistory.length > 0) {
-        prompt += "Previous conversation history:\n";
-        chatHistory.forEach((h: any) => {
-          prompt += `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}\n`;
-        });
-      }
-      prompt += `\nUser asks: ${message}\nResponse:`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-      });
-
-      return res.json({ text: response.text || "I apologize, I could not generate a response." });
-    } else {
-      // Premium Simulated Response fallback when API key is missing
-      return res.json({
-        text: getSimulatedAssistantResponse(message, activeRole, language),
-        simulated: true
-      });
-    }
-  } catch (error: any) {
-    console.error("Gemini Assistant Error:", error);
-    res.status(500).json({
-      error: "Error generating response",
-      details: error.message,
-      text: "Peace be with you. I am currently adjusting my vocal harmonies (the Gemini API key appears misconfigured or timed out). Let me answer using my local liturgical database:\n\n" + getSimulatedAssistantResponse(message, activeRole, language)
-    });
-  }
+  const { activeRole = "public_user", language = "en" } = req.body;
+  return res.json({
+    text: getSimulatedAssistantResponse(message, activeRole, language),
+    source: "local-rule-based",
+  });
 });
 
-// 2. AI Song Recommendation Endpoint
+// 2. AI Song Recommendation
 app.post("/api/gemini/recommend", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
-  const { massType, season, language = "English", choirStrength = "balanced", customPrompt = "" } = req.body;
+  const { massType, season, language = "English" } = req.body;
   try {
     requireString(massType, "massType", 120);
     requireString(season, "season", 120);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
   }
-
-  const prompt = `
-    Conduct an expert Roman Catholic Liturgical Song Selection.
-    Mass Type: ${massType}
-    Liturgy Season: ${season}
-    Primary Desired Song Language: ${language}
-    Choir Strength & Vocal Balance: ${choirStrength}
-    Additional User Preferences: ${customPrompt || "None"}
-    
-    Format the recommendation in clean JSON matching this exact typescript signature:
-    {
-      "explanation": "Brief paragraph explaining the liturgical theme, appropriate vestment color, and song alignment guidelines.",
-      "recommendedSongs": [
-        {
-          "type": "Entrance Hymn",
-          "title": "Song Title",
-          "liturgicalReasoning": "Why this hymn perfectly fits the celebration."
-        },
-        {
-          "type": "Offertory Hymn",
-          "title": "Song Title",
-          "liturgicalReasoning": "Why this fits the offering and sacrifice is appropriate."
-        },
-        {
-          "type": "Communion Hymn",
-          "title": "Song Title",
-          "liturgicalReasoning": "Choral focus on Eucharistic solemnity."
-        },
-        {
-          "type": "Recessional/Final Hymn",
-          "title": "Song Title",
-          "liturgicalReasoning": "Sending forth with joy and apostolic spirit."
-        }
-      ]
-    }
-    Return ONLY standard JSON. No markdown backticks.
-  `;
-
-  try {
-    const ai = getGeminiClient();
-    if (ai) {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
-
-      const text = response.text || "{}";
-      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      return res.json(JSON.parse(cleanJson));
-    } else {
-      return res.json(getSimulatedRecommendations(massType, season, language));
-    }
-  } catch (error: any) {
-    console.error("Gemini Recommendation Error:", error);
-    return res.json(getSimulatedRecommendations(massType, season, language));
-  }
+  return res.json(getSimulatedRecommendations(massType, season, language));
 });
 
-// 3. AI Schedule Optimizer Endpoint
+// 3. AI Schedule Optimizer
 app.post("/api/gemini/optimize", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
   const { members, massDetails } = req.body;
   if (!Array.isArray(members) || members.length > 200) {
     return res.status(400).json({ error: "members must be an array with at most 200 records." });
   }
-
-  const prompt = `
-    Analyze the available Roman Catholic Choir members, instruments, and vocal registers for:
-    Mass/Event Name: ${massDetails?.name}
-    Date/Time: ${massDetails?.date} ${massDetails?.time}
-    
-    Choir Members list: ${JSON.stringify(members)}
-    
-    Please output optimization suggestions. Focus on:
-    1. Vocal Section Balance (Is there a proper mix of Soprano, Alto, Tenor, Bass)?
-    2. Instrumentalist Coverage (Do we have a Keyboardist or supporting strings/woodwinds, e.g. Violin/Flute)?
-    3. Suggested Choir Lead / Solos.
-    4. Safety Alerts (e.g. "Action Required: Missing keyboardist/organist").
-    
-    Format the output as a JSON object with this exact structure:
-    {
-      "balanceScore": 85, // out of 100
-      "evaluation": "Overall analysis statement",
-      "vocalBalanceStatus": "status message of voice registers",
-      "instrumentalStatus": "status signature",
-      "suggestedRosterIds": ["ID1", "ID2", "ID3"], // ids of recommended active members
-      "structuralSuggestions": [
-        "Suggestion 1",
-        "Suggestion 2"
-      ],
-      "safetyAlerts": [
-        "Alert 1 (if any)"
-      ]
-    }
-    Return ONLY valid JSON.
-  `;
-
-  try {
-    const ai = getGeminiClient();
-    if (ai) {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
-      const text = response.text || "{}";
-      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      return res.json(JSON.parse(cleanJson));
-    } else {
-      return res.json(getSimulatedOptimization(members, massDetails));
-    }
-  } catch (error: any) {
-    console.error("Gemini Optimize Error:", error);
-    return res.json(getSimulatedOptimization(members, massDetails));
-  }
+  return res.json(getSimulatedOptimization(members, massDetails));
 });
 
-// 4. AI Content Generator Endpoint
+// 4. AI Content Generator
 app.post("/api/gemini/generate-content", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
-  const { type, details, language = "en" } = req.body;
+  const { type, details = {}, language = "English" } = req.body;
   try {
     requireString(type, "type", 80);
-    requireString(details, "details", 3000);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });
   }
-
-  const prompt = `
-    Generate professional, beautifully styled church bulletin/choir message content.
-    Content Type: ${type} (e.g. announcement, birthdayWish, invitation, thankYou, newsletter)
-    Additional guidelines / raw details: ${details}
-    Selected language: ${language}
-    
-    Generate high-quality liturgical announcements or congratulations. Make it professional, welcoming, respectful, and fully structured.
-    Return a JSON response with:
-    {
-      "subject": "Beautiful Subject line / Title",
-      "body": "Formatted body text with elegant spacing.",
-      "closing": "Choir director signature style"
-    }
-    Return ONLY JSON.
-  `;
-
-  try {
-    const ai = getGeminiClient();
-    if (ai) {
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
-      const text = response.text || "{}";
-      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      return res.json(JSON.parse(cleanJson));
-    } else {
-      return res.json(getSimulatedContentGen(type, details, language));
-    }
-  } catch (error) {
-    console.error("Gemini Content Gen Error:", error);
-    return res.json(getSimulatedContentGen(type, details, language));
-  }
+  return res.json(getSimulatedContentGen(type, details, language));
 });
 
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. Smart Transliteration Search
-// ─────────────────────────────────────────────────────────────────────────────
-app.post("/api/gemini/smart-search", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
-  const { query, songs = [], language = "ta" } = req.body as {
-    query?: string;
-    songs?: Array<{ id: string; title: string; lyrics?: string }>;
-    language?: string;
+// 5b. Liturgical Planner (maps to built-in plans — keeps frontend working without any AI key)
+app.post("/api/gemini/liturgical-plan", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
+  const { feast = "ordinary_sunday", date = "" } = req.body;
+  const feastMap: Record<string, object> = {
+    ordinary_sunday: {
+      theme: "Ordinary Time — Praise & Community",
+      color: "Green",
+      songs: [
+        { title: "All Are Welcome", type: "Entrance", fit: "Perfect" },
+        { title: "Praise to the Lord the Almighty", type: "Offertory", fit: "Perfect" },
+        { title: "One Bread One Body", type: "Communion", fit: "Good" },
+        { title: "Go Make of All Disciples", type: "Recessional", fit: "Perfect" },
+      ],
+      notes: "Focus on community and praise. Choose psalms that celebrate God's goodness.",
+    },
+    advent: {
+      theme: "Advent — Joyful Expectation",
+      color: "Violet",
+      songs: [
+        { title: "O Come O Come Emmanuel", type: "Entrance", fit: "Perfect" },
+        { title: "Come Lord Jesus Come", type: "Offertory", fit: "Perfect" },
+        { title: "Veni Veni Emmanuel", type: "Communion", fit: "Good" },
+        { title: "The King Shall Come", type: "Recessional", fit: "Good" },
+      ],
+      notes: "Gloria is omitted during Advent. Suppress festive Christmas carols until Christmas Day.",
+    },
   };
-
-  if (!query || typeof query !== "string" || query.trim().length < 1) {
-    return res.status(400).json({ error: "query is required." });
-  }
-  const q = query.trim().slice(0, 200);
-
-  // Fallback: simple substring match on titles
-  function simulatedSearch() {
-    const lq = q.toLowerCase();
-    const matched = (songs as Array<{ id: string; title: string; lyrics?: string }>)
-      .filter((s) => s.title?.toLowerCase().includes(lq) || s.lyrics?.toLowerCase().includes(lq))
-      .slice(0, 10)
-      .map((s) => ({ id: s.id, title: s.title, score: 1 }));
-    return res.json({ results: matched, query: q, source: "local" });
-  }
-
-  try {
-    const ai = getGeminiClient();
-    if (!ai) return simulatedSearch();
-
-    const songList = (songs as Array<{ id: string; title: string }>)
-      .slice(0, 200)
-      .map((s, i) => `${i + 1}. [${s.id}] ${s.title}`)
-      .join("\n");
-
-    const prompt = `You are a Tamil Catholic song search assistant.
-User query: "${q}"
-Language preference: ${language}
-
-Song list (id and title):
-${songList}
-
-Return up to 10 matching songs as JSON array:
-[{"id":"<song_id>","title":"<song_title>","score":<0.0-1.0>}]
-Score 1.0 = perfect match. Return ONLY the JSON array, no extra text.`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      config: { responseMimeType: "application/json" },
-    });
-    const text = (response.text || "[]").replace(/```json|```/g, "").trim();
-    const results = JSON.parse(text);
-    return res.json({ results, query: q, source: "gemini" });
-  } catch (error: any) {
-    console.warn("[SmartSearch] Gemini failed, falling back to local:", error?.message);
-    return simulatedSearch();
-  }
+  const plan = feastMap[feast] || feastMap["ordinary_sunday"];
+  return res.json({ feast, date, ...plan });
 });
+
+// 5. Smart Search (local fallback — frontend also does local search, this is for API callers)
+app.post("/api/gemini/smart-search", aiLimiter, requireFirebaseAuth, requireUserAiQuota, async (req, res) => {
+  const { query = "" } = req.body;
+  // Frontend SongLibraryWidget handles search locally now — this endpoint
+  // returns a signal to use local search so old API callers degrade gracefully
+  return res.json({
+    matchedSongIds: [],
+    explanation: `Local search active for: "${query}". Use the song library search box.`,
+    searchMethod: "local",
+    query,
+  });
+});
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCHEDULED SYNC ENGINE
@@ -1951,110 +1877,4 @@ function startReadingsSchedule() {
  * Songs from radio.catholictamil.com — synced ONCE PER MONTH.
  * After a successful full sync the timestamp is stored in Firestore
  * (contentSyncStatus/songs-monthly). On each daily check we read that
- * document; if it is less than 30 days old we skip. This means:
- *   • Songs are never re-scraped more than once a month
- *   • The stored data persists indefinitely — no data loss between deploys
- *   • A manual "Sync all" from the admin UI bypasses the gate
- */
-async function runMonthlySongSyncIfNeeded(userId = "system-monthly") {
-  if (!admin.apps.length) return;
-  const db = admin.firestore();
-  const statusRef = db.collection("contentSyncStatus").doc("songs-monthly");
-  try {
-    const snap = await statusRef.get();
-    if (snap.exists) {
-      const lastSuccess: string | undefined = snap.data()?.lastSuccessAt;
-      if (lastSuccess) {
-        const age = Date.now() - new Date(lastSuccess).getTime();
-        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-        if (age < THIRTY_DAYS) {
-          const daysAgo = Math.floor(age / (24 * 60 * 60 * 1000));
-          console.log(`[Songs Monthly] last sync was ${daysAgo}d ago — skipping (next in ${30 - daysAgo}d).`);
-          return;
-        }
-      }
-    }
-  } catch (e: any) {
-    console.warn("[Songs Monthly] could not read sync status:", e?.message);
-  }
-
-  console.log("[Songs Monthly] starting full song sync for all 35 categories...");
-  try {
-    const result = await syncCatholicHubSongs("all", userId);
-    const totalSynced = result.totalSongsSynced;
-    await statusRef.set(
-      { lastSuccessAt: new Date().toISOString(), totalSongsSynced: totalSynced, syncedBy: userId },
-      { merge: true }
-    );
-    console.log(`[Songs Monthly] sync complete — ${totalSynced} songs across ${result.categories.length} categories.`);
-  } catch (e: any) {
-    console.warn("[Songs Monthly] sync failed:", e?.message);
-  }
-}
-
-function startCatholicHubSchedule() {
-  // Daily content (news/articles) sync at IST 03:00
-  scheduleDailyAt(3, "catholic-hub-content-0300", () => {
-    void syncCatholicHubContent("system-scheduled").then((r) =>
-      console.log(`[Catholic Hub] content sync done — ${r.itemsSynced} items in ${r.durationMs}ms`)
-    ).catch((e: any) =>
-      console.warn("[Catholic Hub] content sync failed:", e?.message)
-    );
-  });
-
-  // Monthly song sync check — runs daily at IST 04:00 but skips if < 30 days since last success
-  scheduleDailyAt(4, "songs-monthly-check-0400", () => {
-    void runMonthlySongSyncIfNeeded("system-monthly");
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RENDER FREE-TIER KEEP-ALIVE
-// Render spins down free services after 15 min of inactivity, which would kill
-// the node process and lose the scheduler timers. We self-ping /api/health
-// every 10 minutes to prevent spin-down.
-// ─────────────────────────────────────────────────────────────────────────────
-function startKeepAlive() {
-  const selfUrl = process.env.RENDER_EXTERNAL_URL
-    || process.env.APP_URL?.replace("web.app", "onrender.com")
-    || null;
-
-  if (!selfUrl) {
-    console.log("[KeepAlive] RENDER_EXTERNAL_URL not set — skipping self-ping (local dev mode).");
-    return;
-  }
-
-  const pingUrl = `${selfUrl}/api/health`;
-  setInterval(async () => {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
-      await fetch(pingUrl, { signal: ctrl.signal });
-      clearTimeout(t);
-      console.log(`[KeepAlive] ping ok → ${pingUrl}`);
-    } catch {
-      // non-fatal — next ping will catch it
-    }
-  }, 10 * 60 * 1000); // every 10 minutes
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SERVER STARTUP
-// ─────────────────────────────────────────────────────────────────────────────
-const port = Number(process.env.PORT) || 3000;
-
-app.listen(port, () => {
-  console.log(`[Choir360 X] Server listening on port ${port}`);
-
-  // 1. Keep Render free dyno alive
-  startKeepAlive();
-
-  // 2. Daily Gospel / Mass Readings — 3× per day
-  startReadingsSchedule();
-
-  // 3. Catholic Hub (catholictamil.com) — once per day + startup
-  void syncCatholicHubOnStartup(); // immediate, non-blocking
-  startCatholicHubSchedule();
-
-  console.log("[Choir360 X] Sync schedulers started.");
-});
+ * document; if it is less than 30 days old we skip. This mean

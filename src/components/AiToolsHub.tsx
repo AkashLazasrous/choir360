@@ -152,7 +152,7 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({
             <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse" />
             AI Liturgical Engineering Portal
           </h2>
-          <p className="text-xs text-slate-500">Expert assistance powered by high-precision server-side Gemini 3.5 Models</p>
+          <p className="text-xs text-slate-500">Choir360 AI · Free liturgical knowledge engine · No paid API required</p>
         </div>
 
         <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">

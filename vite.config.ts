@@ -12,10 +12,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       proxy: {
         '/api': {
@@ -28,16 +25,28 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            // Core React runtime -- loaded immediately
             if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
               return 'vendor-react';
             }
+            // Firebase -- loaded immediately (auth required on startup)
             if (id.includes('node_modules/firebase')) {
               return 'vendor-firebase';
             }
+            // Icons
             if (id.includes('node_modules/lucide-react')) {
               return 'vendor-icons';
             }
-            if (id.includes('src/data/mockData')) {
+            // pdfjs ~470KB -- isolated so it only loads when a PDF song is opened
+            if (id.includes('node_modules/pdfjs-dist')) {
+              return 'vendor-pdfjs';
+            }
+            // Song data 1.4MB -- lazy-loaded by SongLibraryWidget on demand
+            if (id.includes('src/data/jebathotta-jeyageethangal')) {
+              return 'song-data';
+            }
+            // Other mock/demo data
+            if (id.includes('src/data/mockData') || id.includes('src/data/saints')) {
               return 'demo-data';
             }
           },

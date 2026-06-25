@@ -2,10 +2,13 @@ import { RecordStatus, TenantScopedRecord } from '../types';
 
 const nowIso = () => new Date().toISOString();
 
+// Fallback IDs use 'global' so data is accessible to any parish without env vars set.
+// Set VITE_DEFAULT_TENANT_ID / VITE_DEFAULT_PARISH_ID / VITE_DEFAULT_CHOIR_ID in .env
+// to scope records to a specific parish from day one.
 export const DEFAULT_TENANT_CONTEXT = {
   tenantId: import.meta.env.VITE_DEFAULT_TENANT_ID || 'global',
-  parishId: import.meta.env.VITE_DEFAULT_PARISH_ID || 'st-thomas-cathedral',
-  choirId: import.meta.env.VITE_DEFAULT_CHOIR_ID || 'st-thomas-cathedral-choir',
+  parishId: import.meta.env.VITE_DEFAULT_PARISH_ID || 'global',
+  choirId: import.meta.env.VITE_DEFAULT_CHOIR_ID || 'global-choir',
 };
 
 export function createRecordMetadata(

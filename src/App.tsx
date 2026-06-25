@@ -9,7 +9,6 @@ import { RoleSelector } from './components/RoleSelector';
 import { AuthPanel } from './components/AuthPanel';
 import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS } from './data/mockData';
-import { JEBATHOTTA_JEYAGEETHANGAL_SONGS } from './data/jebathotta-jeyageethangal';
 import { useSyncedCollection } from './hooks/useSyncedCollection';
 import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
@@ -19,7 +18,9 @@ import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
 
-const ALL_SONGS = JEBATHOTTA_JEYAGEETHANGAL_SONGS;
+// Song data is lazy-loaded inside SongLibraryWidget to keep the main bundle small.
+// We use an empty array here for global search (searches within song library navigate to the tab).
+const ALL_SONGS: { id: string; displayTitle?: string; title?: string; pageNumber?: number; sourcePageNumber?: number; category?: string; lyrics?: string; composer?: string }[] = [];
 
 type Tab =
   | 'landing'
@@ -357,7 +358,7 @@ export default function App() {
         {/* SIDEBAR */}
         <aside className={(mobileNavOpen ? 'fixed inset-x-0 top-16 z-40 flex' : 'hidden') + ' min-h-[calc(100dvh-4rem)] w-64 flex-col border-r border-slate-200/80 bg-white p-4 lg:sticky lg:top-16 lg:flex'}>
           <ParishSidebarCard
-            songCount={ALL_SONGS.length}
+            songCount={0}
             syncStatus={
               <>
                 Sync:{' '}
@@ -494,7 +495,7 @@ export default function App() {
                 ) : <NoMemberProfile />
               ) : <AccessDenied requiredRole="choir_member" />
             )}
-            {activeTab === 'song_library' && <SongLibraryWidget currentLang={currentLang} songs={ALL_SONGS} />}
+            {activeTab === 'song_library' && <SongLibraryWidget currentLang={currentLang} />}
             {activeTab === 'bible' && <BibleViewer />}
             {activeTab === 'ai_hub' && (
               guard.canAccess('choir_member') ? (
