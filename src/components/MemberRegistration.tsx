@@ -232,7 +232,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
     };
 
     onAddMember(newMember);
-    setSuccessMsg(`Success! ${firstName}'s registration is submitted as PENDING. Admins can approve it in the "Approval Desk" tab.`);
+    setSuccessMsg(`Success! ${firstName}'s registration is submitted as PENDING. Admins will review it soon.`);
     
     // Clear form
     setFirstName('');
@@ -242,8 +242,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
     setEmail('');
     setAddress('');
     setSkills('');
-    setPhotoFile(null);
-    setUploadStatus('');
+    setCloudinaryRecord(null);
     setEmergencyName('');
     setEmergencyRelation('');
     setEmergencyPhone('');
@@ -274,16 +273,18 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
             Registration Form (Public)
           </button>
           
-          <button
-            onClick={() => setActiveTab('admin_dashboard')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition duration-200 cursor-pointer flex items-center gap-1 ${
-              activeTab === 'admin_dashboard' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
-            id="tab-approval-desk"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            {dict.registrationAudit}{isAdmin ? ' (Admin Active)' : ''}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('admin_dashboard')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition duration-200 cursor-pointer flex items-center gap-1 ${
+                activeTab === 'admin_dashboard' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+              id="tab-approval-desk"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              {dict.registrationAudit}
+            </button>
+          )}
         </div>
       </div>
 
@@ -622,21 +623,20 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
               </div>
             </div>
 
-            {/* Test alert block */}
-            <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-2xl space-y-2">
-              <h5 className="text-xs font-bold text-slate-700">How to test this process:</h5>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                1. Supply details and click <strong>Submit for Approval</strong> above.<br/>
-                2. Click the <strong>Approval Desk</strong> tab at the top right.<br/>
-                3. Switch your viewpoint role to <strong>Super Admin</strong> or <strong>Choir Admin</strong> to instantly approve, request a correction, or delete registrations!
-              </p>
-            </div>
+            {isAdmin && (
+              <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-2xl space-y-2">
+                <h5 className="text-xs font-bold text-slate-700">Admin review access</h5>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Use the <strong>Approval Desk</strong> tab to approve, request a correction, reject, or update choir registrations.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* VIEW 2: ADMINISTRATOR APPROVAL DESK */}
-      {activeTab === 'admin_dashboard' && (
+      {isAdmin && activeTab === 'admin_dashboard' && (
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5" id="admin-dashboard-view">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex items-center gap-3">

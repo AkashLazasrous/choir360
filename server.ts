@@ -1267,14 +1267,22 @@ app.get("/api/bible/daily-readings", async (req, res) => {
   const date = normalizeReadingDate(req.query.date);
   const language = normalizeReadingLanguage(req.query.language);
   const refresh = req.query.refresh === "1" || req.query.refresh === "true";
+  const isToday = date === getDateInIndia();
 
   try {
     const cached = await readStoredDailyReading(date, language);
-    if (cached && !refresh) {
+    if (cached && (!refresh || !isToday)) {
       if (cached.publicDisplay === false) {
         return res.status(404).json({ error: "Daily readings are not publicly displayed for this date." });
       }
       return res.json({ reading: { ...cached, syncStatus: "cached" } });
+    }
+
+    if (!isToday) {
+      return res.status(404).json({
+        error: "No stored readings are available for this date yet.",
+        sourceUrl: ARULVAKKU_CALENDAR_URL,
+      });
     }
 
     const synced = await fetchArulvakkuReading(date, language, cached?.publicDisplay ?? true);
@@ -1848,15 +1856,12 @@ function scheduleDailyAt(istHour: number, label: string, fn: () => void) {
 }
 
 /**
- * Daily Gospel / Mass Readings — synced 3× per day at IST 05:30, 12:00, 18:00.
+ * Daily Gospel / Mass Readings synced twice per day at IST 05:30 and 12:00.
  * arulvakku.com publishes readings for the next day around midnight IST, so the
- * 05:30 run captures them before morning prayer; 12:00 and 18:00 act as retries
- * in case the morning fetch fails (Render free-tier cold start, network blip, etc.)
+ * 05:30 run captures them before morning prayer; 12:00 acts as a retry in case
+ * the morning fetch fails (Render free-tier cold start, network blip, etc.)
  */
 function startReadingsSchedule() {
-  // Immediate startup sync
-  void syncTodayDailyReadings("startup");
-
   // 05:30 IST — before morning prayer / Mass
   scheduleDailyAt(5, "readings-0530", () => {
     // fine-grain: fire at :30 past the hour
@@ -1864,8 +1869,6 @@ function startReadingsSchedule() {
   });
   // 12:00 IST — midday retry
   scheduleDailyAt(12, "readings-1200", () => void syncTodayDailyReadings("scheduled"));
-  // 18:00 IST — evening retry
-  scheduleDailyAt(18, "readings-1800", () => void syncTodayDailyReadings("scheduled"));
 }
 
 /**

@@ -118,14 +118,16 @@ export const DailyReadingsCard: React.FC = () => {
   const loadReading = useCallback(async (date: string, forceRefresh = false) => {
     setIsLoading(true);
     setError('');
+    const isToday = date === todayInIndia();
+    const shouldRefresh = forceRefresh && isToday;
 
     const cached = readCachedReading(date, 'ta');
-    if (cached && !forceRefresh) {
+    if (cached && !shouldRefresh) {
       setReading({ ...cached, syncStatus: cached.syncStatus === 'synced' ? 'cached' : cached.syncStatus });
     }
 
     try {
-      const response = await apiFetch(`/api/bible/daily-readings?date=${encodeURIComponent(date)}&language=ta${forceRefresh ? '&refresh=1' : ''}`);
+      const response = await apiFetch(`/api/bible/daily-readings?date=${encodeURIComponent(date)}&language=ta${shouldRefresh ? '&refresh=1' : ''}`);
       const payload = await readJsonResponse(response);
       if (!response.ok) {
         throw new Error(payload?.error || 'Daily readings could not be loaded.');
@@ -133,7 +135,7 @@ export const DailyReadingsCard: React.FC = () => {
       setReading(payload.reading);
       writeCachedReading(payload.reading);
     } catch (loadError) {
-      const fallback = cached || readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date);
+      const fallback = cached || (isToday ? readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date) : null);
       if (fallback) {
         setReading({
           ...fallback,
@@ -165,6 +167,8 @@ export const DailyReadingsCard: React.FC = () => {
       timeZone: 'Asia/Kolkata',
     }).format(new Date(`${selectedDate}T00:00:00+05:30`));
   }, [selectedDate]);
+
+  const isSelectedDateToday = selectedDate === todayInIndia();
 
   const sectionHasContent = (section?: DailyReadingSection) => Boolean(section?.text || section?.reference);
 
@@ -222,7 +226,8 @@ export const DailyReadingsCard: React.FC = () => {
           <button
             type="button"
             onClick={() => void loadReading(selectedDate, true)}
-            disabled={isLoading}
+            disabled={isLoading || !isSelectedDateToday}
+            title={isSelectedDateToday ? 'Refresh today from source' : 'Select today to sync from source'}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#18392f] px-4 text-xs font-bold text-white disabled:opacity-40"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-300" /> : <RefreshCw className="h-4 w-4 text-amber-300" />}

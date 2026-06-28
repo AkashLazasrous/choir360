@@ -3,7 +3,6 @@ import { BookOpen, Star, Calendar, Heart, Search, Music2, RefreshCw, ExternalLin
 import { apiFetch } from '../services/apiClient';
 import { useFirebaseAuth, hasMinimumRole } from '../hooks/useFirebaseAuth';
 import { DailyReadingsCard } from './bible/DailyReadingsCard';
-import { DailyReadingsSyncPanel } from './bible/DailyReadingsSyncPanel';
 import {
   useCatholicHubSongs,
   type CatholicHubSong,
@@ -438,9 +437,8 @@ export const CatholicKnowledgeHub: React.FC = () => {
             the Bible section too; now lives here only, so the date always
             matches today everywhere instead of drifting out of sync). */}
         {tab === 'gospel' && (
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid gap-4">
             <DailyReadingsCard />
-            <DailyReadingsSyncPanel currentRole={effectiveRole} />
           </div>
         )}
 
