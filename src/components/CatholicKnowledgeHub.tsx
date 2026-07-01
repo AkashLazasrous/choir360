@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Star, Calendar, Heart, Search, Music2, RefreshCw, ShieldCheck, ArrowLeft, Copy, Share2, X } from 'lucide-react';
+import { BookOpen, Star, Calendar, Heart, Search, Music2, RefreshCw, ArrowLeft, Copy, Share2, X } from 'lucide-react';
 import { apiFetch } from '../services/apiClient';
-import { useFirebaseAuth, hasMinimumRole } from '../hooks/useFirebaseAuth';
 import { DailyReadingsCard } from './bible/DailyReadingsCard';
 import {
   useCatholicHubSongs,
@@ -282,9 +281,6 @@ export const CatholicKnowledgeHub: React.FC = () => {
   const [showTamil, setShowTamil] = useState(true);
   const [saintSearch, setSaintSearch] = useState('');
 
-  const { effectiveRole } = useFirebaseAuth();
-  const isAdmin = hasMinimumRole(effectiveRole, 'choir_admin');
-
   // ── Songs — loaded once from Firestore; never triggers a source scrape ──────
   const {
     songs,
@@ -297,7 +293,6 @@ export const CatholicKnowledgeHub: React.FC = () => {
   const [songSearch, setSongSearch] = useState('');
   const [songCategory, setSongCategory] = useState('all');
   const [selectedSongId, setSelectedSongId] = useState('');
-  const [isSyncingSongs, setIsSyncingSongs] = useState(false);
   const [ensuringSongCategory, setEnsuringSongCategory] = useState('');
   const [songSyncMessage, setSongSyncMessage] = useState('');
   const [mobileSongOpen, setMobileSongOpen] = useState(false);
@@ -310,24 +305,6 @@ export const CatholicKnowledgeHub: React.FC = () => {
       if (next) setSelectedSongId(next.id);
     }
   }, [tab, songs, selectedSongId]);
-
-  const triggerSongSync = async (categoryId = 'all') => {
-    setIsSyncingSongs(true);
-    try {
-      const response = await apiFetch('/api/catholic-hub/songs/sync', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || 'Sync failed.');
-      // Re-read Firestore after backend sync completes
-      await loadSongs();
-    } catch (error) {
-      console.error('[Catholic Hub] manual sync error:', error);
-    } finally {
-      setIsSyncingSongs(false);
-    }
-  };
 
   const ensureSongCategory = async (categoryId: string) => {
     if (categoryId === 'all') {
@@ -490,7 +467,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
                       ? `Last synced ${new Date(selectedStatus.lastSuccessAt).toLocaleString()} · ${songs.length} songs`
                       : songs.length > 0
                       ? `${songs.length} songs loaded from cache`
-                      : 'No songs synced yet. Admin can run initial sync.'}
+                      : 'No songs synced yet. Select a category to fetch songs.'}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -503,27 +480,6 @@ export const CatholicKnowledgeHub: React.FC = () => {
                     <RefreshCw className={`h-3.5 w-3.5 ${isLoadingSongs ? 'animate-spin' : ''}`} />
                     Refresh
                   </button>
-                  {isAdmin && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => void triggerSongSync(songCategory)}
-                        disabled={isSyncingSongs}
-                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-amber-800 px-3 text-xs font-bold text-white disabled:opacity-40"
-                      >
-                        <ShieldCheck className={`h-3.5 w-3.5 ${isSyncingSongs ? 'animate-pulse' : ''}`} />
-                        Sync selected
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void triggerSongSync('all')}
-                        disabled={isSyncingSongs}
-                        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-amber-200 px-3 text-xs font-bold text-amber-800 disabled:opacity-40"
-                      >
-                        Sync all
-                      </button>
-                    </>
-                  )}
                 </div>
               </div>
               <p className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
@@ -604,17 +560,6 @@ export const CatholicKnowledgeHub: React.FC = () => {
                             </p>
                             {songs.length === 0 && (
                               <div className="space-y-2">
-                                {isAdmin && (
-                                  <button
-                                    type="button"
-                                    onClick={() => void triggerSongSync('all')}
-                                    disabled={isSyncingSongs}
-                                    className="mx-auto flex w-full min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-amber-800 px-4 text-xs font-bold text-white disabled:opacity-40"
-                                  >
-                                    <RefreshCw className={`h-3.5 w-3.5 ${isSyncingSongs ? 'animate-spin' : ''}`} />
-                                    {isSyncingSongs ? 'Syncing songs…' : 'Sync All Songs Now'}
-                                  </button>
-                                )}
                                 {HUB_SONG_CATEGORIES.map((category) => (
                                   <button
                                     key={category.categoryId}

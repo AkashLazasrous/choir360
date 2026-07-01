@@ -1,40 +1,28 @@
 /**
- * useCatholicHubSongs
- *
- * Reads Catholic Tamil songs directly from Firestore.
- * Never triggers a source-page scrape on its own — that is the backend's
- * responsibility (monthly scheduled sync or admin manual sync).
- *
- * Consumers call `refresh()` to re-read the Firestore cache; they call the
- * admin API (`/api/catholic-hub/songs/sync`) to actually scrape new content.
+ * Reads Catholic Tamil songs from the backend cache API.
+ * This hook never scrapes source pages by itself. Category buttons call
+ * /api/catholic-hub/songs/ensure, and refresh() only reloads cached data.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
+import { apiFetch } from '../../../services/apiClient';
 import { db } from '../../../services/firebase';
-
-// ── Public types ─────────────────────────────────────────────────────────────
 
 export interface CatholicHubSong {
   id: string;
   title: string;
   titleNormalized?: string;
-  /** categoryId string, e.g. 'varugai' */
   category: string;
   categoryTamil: string;
   lyrics: string;
   lyricsNormalized?: string;
-  /** Individual song page URL on radio.catholictamil.com */
   sourceUrl: string;
-  /** Category listing page URL */
   sourcePageUrl?: string;
-  /** Legacy field — same as sourcePageUrl */
   sourcePage?: string;
   order: number;
   tags: string[];
-  /** SHA-256 (first 16 chars) of title + lyrics — used for change detection */
   contentHash?: string;
   isArchived?: boolean;
-  /** ISO timestamp of when the song was last seen on the source page */
   lastSourceSeenAt?: string;
   lastSyncedAt?: string;
 }
@@ -48,29 +36,75 @@ export interface CatholicHubSongSyncStatus {
   lastSuccessAt?: string;
   lastFailureAt?: string;
   errorMessage?: string;
-  /** New detailed counts */
   totalFetched?: number;
   totalCreated?: number;
   totalUpdated?: number;
   totalUnchanged?: number;
   totalArchived?: number;
-  /** Legacy field kept for backward compat */
   totalSongsSynced?: number;
   syncDurationMs?: number;
   nextScheduledSyncAt?: string;
 }
-
-// ── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface UseCatholicHubSongsResult {
   songs: CatholicHubSong[];
   syncStatuses: CatholicHubSongSyncStatus[];
   loading: boolean;
   error: string;
-  /** ISO timestamp of last Firestore read */
   lastLoadedAt: string;
-  /** Re-read songs and sync statuses from Firestore */
   refresh: () => Promise<void>;
+}
+
+function dedupeAndSortSongs(rawSongs: CatholicHubSong[]) {
+  const seenUrls = new Map<string, CatholicHubSong>();
+  for (const song of rawSongs) {
+    const normalizedSong = {
+      ...song,
+      sourcePageUrl: song.sourcePageUrl ?? song.sourcePage,
+    };
+    const key = normalizedSong.sourceUrl || normalizedSong.sourcePage || normalizedSong.id;
+    const prev = seenUrls.get(key);
+    if (!prev || (normalizedSong.lastSyncedAt ?? '') > (prev.lastSyncedAt ?? '')) {
+      seenUrls.set(key, normalizedSong);
+    }
+  }
+
+  const loaded = Array.from(seenUrls.values());
+  loaded.sort((a, b) => {
+    const cat = (a.category ?? '').localeCompare(b.category ?? '');
+    return cat !== 0 ? cat : (a.order ?? 0) - (b.order ?? 0);
+  });
+  return loaded;
+}
+
+async function loadSongsFromApi() {
+  const response = await apiFetch('/api/catholic-hub/songs');
+  if (!response.ok) throw new Error('Backend song cache is unavailable.');
+  const payload = await response.json();
+  return {
+    songs: dedupeAndSortSongs(Array.isArray(payload?.songs) ? payload.songs : []),
+    syncStatuses: Array.isArray(payload?.syncStatus) ? payload.syncStatus as CatholicHubSongSyncStatus[] : [],
+  };
+}
+
+async function loadSongsFromFirestore() {
+  if (!db) {
+    return { songs: [] as CatholicHubSong[], syncStatuses: [] as CatholicHubSongSyncStatus[] };
+  }
+
+  const songsSnap = await getDocs(
+    query(
+      collection(db, 'catholicHubSongs'),
+      where('status', '==', 'active'),
+      limit(1500),
+    ),
+  );
+  const statusSnap = await getDocs(collection(db, 'catholicHubSongSyncStatus'));
+
+  return {
+    songs: dedupeAndSortSongs(songsSnap.docs.map((d) => d.data() as CatholicHubSong)),
+    syncStatuses: statusSnap.docs.map((d) => d.data() as CatholicHubSongSyncStatus),
+  };
 }
 
 export function useCatholicHubSongs(): UseCatholicHubSongsResult {
@@ -81,68 +115,28 @@ export function useCatholicHubSongs(): UseCatholicHubSongsResult {
   const [lastLoadedAt, setLastLoadedAt] = useState('');
 
   const refresh = useCallback(async () => {
-    if (!db) {
-      // Firebase not configured — not an error, just no data
-      setError('');
-      setSongs([]);
-      return;
-    }
-
     setLoading(true);
     setError('');
 
     try {
-      // Load all active (non-archived) songs — category filtering is client-side
-      const songsSnap = await getDocs(
-        query(
-          collection(db, 'catholicHubSongs'),
-          where('status', '==', 'active'),
-          limit(1500),
-        ),
-      );
-
-      const rawLoaded = songsSnap.docs.map((d) => {
-        const data = d.data() as CatholicHubSong;
-        return {
-          ...data,
-          // Normalise legacy sourcePage → sourcePageUrl
-          sourcePageUrl: data.sourcePageUrl ?? data.sourcePage,
-        };
-      });
-
-      // Client-side dedup: if the backend sync hasn't yet cleaned up stale
-      // duplicates (old title-based IDs alongside new URL-based IDs), keep only
-      // one entry per sourceUrl — the one with the more recent lastSyncedAt.
-      const seenUrls = new Map<string, CatholicHubSong>();
-      for (const song of rawLoaded) {
-        const key = song.sourceUrl || song.sourcePage || song.id;
-        const prev = seenUrls.get(key);
-        if (!prev || (song.lastSyncedAt ?? '') > (prev.lastSyncedAt ?? '')) {
-          seenUrls.set(key, song);
-        }
-      }
-      const loaded = Array.from(seenUrls.values());
-
-      // Sort: by category then by order within category
-      loaded.sort((a, b) => {
-        const cat = (a.category ?? '').localeCompare(b.category ?? '');
-        return cat !== 0 ? cat : (a.order ?? 0) - (b.order ?? 0);
-      });
-
-      setSongs(loaded);
+      const loaded = await loadSongsFromApi();
+      setSongs(loaded.songs);
+      setSyncStatuses(loaded.syncStatuses);
       setLastLoadedAt(new Date().toISOString());
-
-      // Load sync statuses (small collection, always read in full)
-      const statusSnap = await getDocs(collection(db, 'catholicHubSongSyncStatus'));
-      setSyncStatuses(statusSnap.docs.map((d) => d.data() as CatholicHubSongSyncStatus));
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load songs from cache.';
-      // Surface only non-permission errors to the user
-      if (msg.includes('Missing or insufficient permissions')) {
-        // Silently ignore — happens before first sync when collection doesn't exist
-        setSongs([]);
-      } else {
-        setError('Songs could not be loaded. Please try refreshing.');
+    } catch (apiError) {
+      try {
+        const loaded = await loadSongsFromFirestore();
+        setSongs(loaded.songs);
+        setSyncStatuses(loaded.syncStatuses);
+        setLastLoadedAt(new Date().toISOString());
+      } catch (fallbackError) {
+        const msg = fallbackError instanceof Error ? fallbackError.message : String(apiError);
+        if (msg.includes('Missing or insufficient permissions')) {
+          setSongs([]);
+          setSyncStatuses([]);
+        } else {
+          setError('Songs could not be loaded. Please try refreshing.');
+        }
       }
     } finally {
       setLoading(false);
