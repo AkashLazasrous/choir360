@@ -179,7 +179,7 @@ const UPCOMING_FEASTS_2026 = [
 
 // ─── Catholic Hub live content (synced from catholictamil.com) ─────────────
 const HUB_SONG_CATEGORIES = [
-  { categoryId: 'varugai',        categoryTamil: 'வருகைப் பாடல்கள்',               sourceUrl: 'https://www.radio.catholictamil.com/p/blog-page_7.html' },
+  { categoryId: 'varugai',        categoryTamil: 'வருகைப் பாடல்கள்',               sourceUrl: 'https://www.bibleintamil.com/iraialai/starting-songtext.htm' },
   { categoryId: 'thiruppadal',    categoryTamil: 'திருப்பாடல்கள்',                  sourceUrl: 'https://www.radio.catholictamil.com/p/blog-page_63.html' },
   { categoryId: 'thiyanam',       categoryTamil: 'தியானப் பாடல்கள்',                sourceUrl: 'https://www.radio.catholictamil.com/p/blog-page_16.html' },
   { categoryId: 'kanikkai',       categoryTamil: 'காணிக்கைப் பாடல்கள்',             sourceUrl: 'https://www.radio.catholictamil.com/p/blog-page_50.html' },

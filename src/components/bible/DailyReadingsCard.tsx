@@ -119,7 +119,7 @@ export const DailyReadingsCard: React.FC = () => {
     setIsLoading(true);
     setError('');
     const isToday = date === todayInIndia();
-    const shouldRefresh = forceRefresh && isToday;
+    const shouldRefresh = forceRefresh;
 
     const cached = readCachedReading(date, 'ta');
     if (cached && !shouldRefresh) {
@@ -226,8 +226,8 @@ export const DailyReadingsCard: React.FC = () => {
           <button
             type="button"
             onClick={() => void loadReading(selectedDate, true)}
-            disabled={isLoading || !isSelectedDateToday}
-            title={isSelectedDateToday ? 'Refresh today from source' : 'Select today to sync from source'}
+            disabled={isLoading}
+            title={isSelectedDateToday ? 'Refresh today from source' : 'Refresh selected date from source'}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#18392f] px-4 text-xs font-bold text-white disabled:opacity-40"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-amber-300" /> : <RefreshCw className="h-4 w-4 text-amber-300" />}

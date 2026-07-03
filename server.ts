@@ -496,7 +496,8 @@ async function fetchArulvakkuReading(date: string, language: BibleLanguage, publ
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
-  const response = await fetch(ARULVAKKU_CALENDAR_URL, {
+  const sourceUrl = `${ARULVAKKU_CALENDAR_URL}?dt=${encodeURIComponent(date)}`;
+  const response = await fetch(sourceUrl, {
     signal: controller.signal,
     headers: {
       "User-Agent": "Choir360/1.0 (+daily-readings-sync)",
@@ -509,7 +510,10 @@ async function fetchArulvakkuReading(date: string, language: BibleLanguage, publ
   }
 
   const html = await response.text();
-  return parseArulvakkuReadings(html, date, language, publicDisplay);
+  return {
+    ...parseArulvakkuReadings(html, date, language, publicDisplay),
+    sourceUrl,
+  };
 }
 
 async function readStoredDailyReading(date: string, language: BibleLanguage) {
@@ -602,7 +606,7 @@ interface ContentSyncStatusRecord {
 
 const CATHOLIC_TAMIL_FEED_URL = "https://www.catholictamil.com/feeds/posts/default";
 const CATHOLIC_HUB_SONG_CATEGORIES = [
-  { categoryId: "varugai",        category: "varugai",        categoryTamil: "வருகைப் பாடல்கள்",               sourceUrl: "https://www.radio.catholictamil.com/p/blog-page_7.html" },
+  { categoryId: "varugai",        category: "varugai",        categoryTamil: "வருகைப் பாடல்கள்",               sourceUrl: "https://www.bibleintamil.com/iraialai/starting-songtext.htm" },
   { categoryId: "thiruppadal",    category: "thiruppadal",    categoryTamil: "திருப்பாடல்கள்",                  sourceUrl: "https://www.radio.catholictamil.com/p/blog-page_63.html" },
   { categoryId: "thiyanam",       category: "thiyanam",       categoryTamil: "தியானப் பாடல்கள்",                sourceUrl: "https://www.radio.catholictamil.com/p/blog-page_16.html" },
   { categoryId: "kanikkai",       category: "kanikkai",       categoryTamil: "காணிக்கைப் பாடல்கள்",             sourceUrl: "https://www.radio.catholictamil.com/p/blog-page_50.html" },
@@ -785,12 +789,26 @@ function stripHtmlToText(html: string) {
     .trim();
 }
 
-function absoluteCatholicTamilUrl(href: string) {
+function absoluteSongSourceUrl(href: string, baseUrl: string) {
   try {
-    return new URL(decodeHtmlEntities(href), "https://www.radio.catholictamil.com").toString();
+    return new URL(decodeHtmlEntities(href), baseUrl).toString();
   } catch {
     return "";
   }
+}
+
+function isBibleInTamilSource(url: string) {
+  try {
+    return new URL(url).hostname.includes("bibleintamil.com");
+  } catch {
+    return false;
+  }
+}
+
+function getBibleInTamilSongMainHtml(html: string) {
+  const dataCellMatch = html.match(/<td\b[^>]*class=["'][^"']*datatext[^"']*["'][^>]*>([\s\S]*?)<\/td>/i);
+  if (dataCellMatch?.[1]) return dataCellMatch[1];
+  return html;
 }
 
 function getBloggerMainHtml(html: string) {
@@ -814,18 +832,51 @@ async function fetchCatholicTamilHtml(url: string) {
   return response.text();
 }
 
+async function resolveCatholicSongIndexHtml(categoryHtml: string, sourceUrl: string) {
+  if (!isBibleInTamilSource(sourceUrl)) return categoryHtml;
+
+  const frameSources = Array.from(categoryHtml.matchAll(/<frame\b[^>]*src=["']([^"']+)["']/gi))
+    .map((match) => absoluteSongSourceUrl(match[1], sourceUrl));
+
+  for (const frameUrl of frameSources) {
+    const frameHtml = await fetchCatholicTamilHtml(frameUrl);
+    const menuScript = frameHtml.match(/<script\b[^>]*src=["']([^"']*menu-[^"']+\.js)["'][^>]*>/i);
+    if (menuScript?.[1]) {
+      return fetchCatholicTamilHtml(absoluteSongSourceUrl(menuScript[1], frameUrl));
+    }
+    if (/<a\b[^>]*href=["'][^"']*s\d+\.htm/i.test(frameHtml)) {
+      return frameHtml;
+    }
+  }
+
+  return categoryHtml;
+}
+
 function extractCatholicSongLinks(categoryPageHtml: string, sourceUrl: string) {
   const mainHtml = getBloggerMainHtml(categoryPageHtml);
   const links: Array<{ title: string; sourceUrl: string }> = [];
   const seen = new Set<string>();
+  const sourceHost = (() => {
+    try {
+      return new URL(sourceUrl).hostname;
+    } catch {
+      return "";
+    }
+  })();
   const anchorPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
   let match: RegExpExecArray | null;
 
   while ((match = anchorPattern.exec(mainHtml))) {
-    const href = absoluteCatholicTamilUrl(match[1]);
-    const title = stripCatholicHtmlToText(match[2]).replace(/^✠\s*/, "").trim();
-    const isSameHost = href.startsWith("https://www.radio.catholictamil.com/");
-    const isSongPage = /\/20\d{2}\/\d{2}\//.test(href) || href.includes(".html");
+    const href = absoluteSongSourceUrl(match[1], sourceUrl);
+    const title = stripCatholicHtmlToText(match[2]).replace(/^✠\s*/, "").replace(/^\d{1,4}\.\s*/, "").trim();
+    const isSameHost = (() => {
+      try {
+        return sourceHost ? new URL(href).hostname === sourceHost : false;
+      } catch {
+        return false;
+      }
+    })();
+    const isSongPage = /\/20\d{2}\/\d{2}\//.test(href) || /\.(?:html?|xhtml)(?:$|[?#])/i.test(href);
     if (!title || title.length < 2 || !isSameHost || href === sourceUrl || !isSongPage || seen.has(href)) continue;
     seen.add(href);
     links.push({ title, sourceUrl: href });
@@ -834,8 +885,8 @@ function extractCatholicSongLinks(categoryPageHtml: string, sourceUrl: string) {
   return links;
 }
 
-function extractCatholicSongLyrics(songHtml: string, fallbackTitle: string) {
-  const mainHtml = getBloggerMainHtml(songHtml);
+function extractCatholicSongLyrics(songHtml: string, fallbackTitle: string, sourceUrl = "") {
+  const mainHtml = isBibleInTamilSource(sourceUrl) ? getBibleInTamilSongMainHtml(songHtml) : getBloggerMainHtml(songHtml);
   const text = stripCatholicHtmlToText(mainHtml);
   const lines = text
     .split(/\n+/)
@@ -996,7 +1047,7 @@ async function countActiveCatholicHubSongs(categoryId: string) {
   return snapshot.size;
 }
 
-async function shouldSyncCatholicHubSongCategory(categoryId: string) {
+async function shouldSyncCatholicHubSongCategory(categoryId: string, sourceUrl?: string) {
   if (!admin.apps.length) {
     return { shouldSync: false, reason: "Firebase Admin is not configured.", activeSongCount: 0 };
   }
@@ -1007,6 +1058,10 @@ async function shouldSyncCatholicHubSongCategory(categoryId: string) {
 
   if (activeSongCount === 0) {
     return { shouldSync: true, reason: "Category has no cached songs.", activeSongCount };
+  }
+
+  if (sourceUrl && status?.sourceUrl && status.sourceUrl !== sourceUrl) {
+    return { shouldSync: true, reason: "Category source changed.", activeSongCount };
   }
 
   if (status?.status === "syncing" && status.lastSyncedAt) {
@@ -1074,7 +1129,8 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
     try {
       // ── 1. Fetch source page ───────────────────────────────────────────────
       const categoryHtml = await fetchCatholicTamilHtml(category.sourceUrl);
-      const links = extractCatholicSongLinks(categoryHtml, category.sourceUrl);
+      const songIndexHtml = await resolveCatholicSongIndexHtml(categoryHtml, category.sourceUrl);
+      const links = extractCatholicSongLinks(songIndexHtml, category.sourceUrl);
 
       // ── 2. Fetch all existing songs for this category from Firestore ───────
       const existingSnap = await firestore
@@ -1140,7 +1196,7 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
         seenSourceUrls.add(link.sourceUrl);
         try {
           const songHtml = await fetchCatholicTamilHtml(link.sourceUrl);
-          const extracted = extractCatholicSongLyrics(songHtml, link.title);
+          const extracted = extractCatholicSongLyrics(songHtml, link.title, link.sourceUrl);
           const title = extracted.title || link.title;
           const lyrics = extracted.lyrics || "";
           const contentHash = computeContentHash(title, lyrics);
@@ -1345,26 +1401,13 @@ app.get("/api/bible/daily-readings", async (req, res) => {
   const date = normalizeReadingDate(req.query.date);
   const language = normalizeReadingLanguage(req.query.language);
   const refresh = req.query.refresh === "1" || req.query.refresh === "true";
-  const today = getDateInIndia();
-  const isPastDate = date < today;
-
   try {
     const cached = await readStoredDailyReading(date, language);
-    if (cached && (!refresh || isPastDate)) {
+    if (cached && !refresh) {
       if (cached.publicDisplay === false) {
         return res.status(404).json({ error: "Daily readings are not publicly displayed for this date." });
       }
       return res.json({ reading: { ...cached, syncStatus: "cached" } });
-    }
-
-    if (isPastDate) {
-      return res.json({
-        reading: createPendingDailyReading(
-          date,
-          language,
-          "No stored readings are available for this date yet."
-        ),
-      });
     }
 
     const synced = await fetchArulvakkuReading(date, language, cached?.publicDisplay ?? true);
@@ -1497,7 +1540,7 @@ app.post("/api/catholic-hub/songs/ensure", async (req, res) => {
     }
 
     const [category] = resolveCatholicHubSongCategories(requestedCategory);
-    const decision = await shouldSyncCatholicHubSongCategory(category.categoryId);
+    const decision = await shouldSyncCatholicHubSongCategory(category.categoryId, category.sourceUrl);
 
     if (!decision.shouldSync) {
       return res.json({
