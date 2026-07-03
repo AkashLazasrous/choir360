@@ -122,7 +122,8 @@ export const DailyReadingsCard: React.FC = () => {
     const shouldRefresh = forceRefresh;
 
     const cached = readCachedReading(date, 'ta');
-    if (cached && !shouldRefresh) {
+    const cachedUsesSelectedDate = cached?.sourceUrl?.includes(`dt=${date}`);
+    if (cached && !shouldRefresh && cached.syncStatus !== 'pending' && cachedUsesSelectedDate) {
       setReading({ ...cached, syncStatus: cached.syncStatus === 'synced' ? 'cached' : cached.syncStatus });
     }
 
@@ -135,7 +136,7 @@ export const DailyReadingsCard: React.FC = () => {
       setReading(payload.reading);
       writeCachedReading(payload.reading);
     } catch (loadError) {
-      const fallback = cached || (isToday ? readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date) : null);
+      const fallback = cachedUsesSelectedDate ? cached : (isToday ? readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date) : null);
       if (fallback) {
         setReading({
           ...fallback,

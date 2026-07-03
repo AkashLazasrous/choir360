@@ -832,20 +832,24 @@ async function fetchCatholicTamilHtml(url: string) {
   return response.text();
 }
 
-async function resolveCatholicSongIndexHtml(categoryHtml: string, sourceUrl: string) {
+async function resolveCatholicSongIndexHtml(categoryHtml: string, sourceUrl: string, depth = 0): Promise<string> {
   if (!isBibleInTamilSource(sourceUrl)) return categoryHtml;
+  if (/<a\b[^>]*href=["'][^"']*s\d+\.htm/i.test(categoryHtml)) return categoryHtml;
+  if (depth >= 4) return categoryHtml;
+
+  const menuScript = categoryHtml.match(/<script\b[^>]*src=["']([^"']*menu-[^"']+\.js)["'][^>]*>/i);
+  if (menuScript?.[1]) {
+    return fetchCatholicTamilHtml(absoluteSongSourceUrl(menuScript[1], sourceUrl));
+  }
 
   const frameSources = Array.from(categoryHtml.matchAll(/<frame\b[^>]*src=["']([^"']+)["']/gi))
     .map((match) => absoluteSongSourceUrl(match[1], sourceUrl));
 
   for (const frameUrl of frameSources) {
     const frameHtml = await fetchCatholicTamilHtml(frameUrl);
-    const menuScript = frameHtml.match(/<script\b[^>]*src=["']([^"']*menu-[^"']+\.js)["'][^>]*>/i);
-    if (menuScript?.[1]) {
-      return fetchCatholicTamilHtml(absoluteSongSourceUrl(menuScript[1], frameUrl));
-    }
-    if (/<a\b[^>]*href=["'][^"']*s\d+\.htm/i.test(frameHtml)) {
-      return frameHtml;
+    const resolved = await resolveCatholicSongIndexHtml(frameHtml, frameUrl, depth + 1);
+    if (/<a\b[^>]*href=["'][^"']*s\d+\.htm/i.test(resolved)) {
+      return resolved;
     }
   }
 
@@ -1131,6 +1135,9 @@ async function syncCatholicHubSongs(categoryId?: CatholicHubSongCategoryId | "al
       const categoryHtml = await fetchCatholicTamilHtml(category.sourceUrl);
       const songIndexHtml = await resolveCatholicSongIndexHtml(categoryHtml, category.sourceUrl);
       const links = extractCatholicSongLinks(songIndexHtml, category.sourceUrl);
+      if (links.length === 0) {
+        throw new Error(`No song links found for ${category.categoryTamil}.`);
+      }
 
       // ── 2. Fetch all existing songs for this category from Firestore ───────
       const existingSnap = await firestore
@@ -1403,7 +1410,8 @@ app.get("/api/bible/daily-readings", async (req, res) => {
   const refresh = req.query.refresh === "1" || req.query.refresh === "true";
   try {
     const cached = await readStoredDailyReading(date, language);
-    if (cached && !refresh) {
+    const cachedUsesSelectedDate = cached?.sourceUrl?.includes(`dt=${date}`);
+    if (cached && !refresh && cached.syncStatus !== "pending" && cachedUsesSelectedDate) {
       if (cached.publicDisplay === false) {
         return res.status(404).json({ error: "Daily readings are not publicly displayed for this date." });
       }
