@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Role } from '../types';
 
@@ -29,6 +29,8 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [localError, setLocalError] = useState('');
@@ -61,6 +63,8 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
     setMode(mode === 'signin' ? 'create' : 'signin');
     setPassword('');
     setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setLocalError('');
   };
 
@@ -143,27 +147,49 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
         className="mb-2 w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
         required
       />
-      <input
-        type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        placeholder="Password"
-        autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-        minLength={mode === 'create' ? 8 : undefined}
-        className="mb-2 w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
-        required
-      />
-      {mode === 'create' && (
+      <div className="relative mb-2">
         <input
-          type="password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          placeholder="Confirm password"
-          autoComplete="new-password"
-          minLength={8}
-          className="mb-2 w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+          type={showPassword ? 'text' : 'password'}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Password"
+          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          minLength={mode === 'create' ? 8 : undefined}
+          className="w-full rounded-xl border border-slate-200 px-3 py-3 pr-11 min-h-[44px] text-xs outline-none focus:border-emerald-500"
           required
         />
+        <button
+          type="button"
+          onClick={() => setShowPassword((value) => !value)}
+          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          title={showPassword ? 'Hide password' : 'Show password'}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+      {mode === 'create' && (
+        <div className="relative mb-2">
+          <input
+            type={showConfirmPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="Confirm password"
+            autoComplete="new-password"
+            minLength={8}
+            className="w-full rounded-xl border border-slate-200 px-3 py-3 pr-11 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+            title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+          >
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       )}
       {(localError || authError) && (
         <p className="mb-2 text-[10px] font-semibold text-rose-600">{localError || authError}</p>
