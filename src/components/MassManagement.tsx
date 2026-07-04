@@ -15,6 +15,13 @@ const ALL_MASS_CATEGORIES: MassCategory[] = [
 ];
 const isPaymentMass = (cat: MassCategory) => isPaymentMassCategory(cat);
 
+const createUniqueId = (prefix: string) => {
+  const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID().slice(0, 8)
+    : Math.random().toString(36).slice(2, 10);
+  return `${prefix}-${Date.now().toString(36)}-${randomPart}`;
+};
+
 interface MassManagementProps {
   currentLang: Language;
   masses: Mass[];
@@ -140,7 +147,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
     if (!massName) return;
     setMassSaveError('');
 
-    const massId = `MS${String(masses.length + 1).padStart(3, '0')}`;
+    const massId = createUniqueId('mass');
     const newMass: Mass = {
       id: massId,
       name: massName,
@@ -165,7 +172,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
       const recvAmt  = amountReceived ? receivedAmount : 0;
       const pending  = Math.max(amountProposed - recvAmt, 0);
       const status   = paymentStatus(amountProposed, amountReceived, receivedAmount);
-      const pid      = `PAY${String(payments.length + 1).padStart(3, '0')}`;
+      const pid      = createUniqueId('payment');
 
       const newPayment: Payment = {
         id: pid, massId, partyName, mobile: '',
