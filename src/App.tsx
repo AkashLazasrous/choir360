@@ -14,7 +14,7 @@ import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
-import { ARCHDIOCESE_ID } from './data/madrasMylaporeParishes';
+import { ARCHDIOCESE_ID, findParishById } from './data/madrasMylaporeParishes';
 import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
@@ -129,10 +129,28 @@ const BreadcrumbParishLabel: React.FC = () => {
 
 // AppInner lives inside <ParishProvider> so useParish() works.
 function AppInner() {
-  const { selectedParish, archdioceseId } = useParish();
+  const { selectedParish, archdioceseId, selectParish } = useParish();
+  const authState = useFirebaseAuth();
+
+  useEffect(() => {
+    const claimedParishId = authState.claims.parishId;
+    if (claimedParishId && selectedParish?.id !== claimedParishId && findParishById(claimedParishId)) {
+      selectParish(claimedParishId);
+    }
+  }, [authState.claims.parishId, selectedParish?.id, selectParish]);
 
   // Build TenantContext from the selected parish; fall back to DEFAULT_TENANT_CONTEXT.
   const tenantContext: TenantContext = React.useMemo(() => {
+    if (authState.claims.parishId && authState.claims.tenantId && authState.claims.choirId) {
+      const claimedParish = findParishById(authState.claims.parishId);
+      return {
+        archdioceseId: authState.claims.archdioceseId ?? claimedParish?.archdioceseId ?? archdioceseId ?? ARCHDIOCESE_ID,
+        parishName: authState.claims.parishName ?? claimedParish?.displayName ?? authState.claims.parishId,
+        tenantId: authState.claims.tenantId,
+        parishId: authState.claims.parishId,
+        choirId: authState.claims.choirId,
+      };
+    }
     if (!selectedParish) return DEFAULT_TENANT_CONTEXT;
     return {
       archdioceseId: selectedParish.archdioceseId,
@@ -141,7 +159,7 @@ function AppInner() {
       parishId: selectedParish.id,
       choirId: `${selectedParish.id}-choir`,
     };
-  }, [selectedParish, archdioceseId]);
+  }, [authState.claims, selectedParish, archdioceseId]);
 
 
   const [currentLang, setCurrentLang] = useState<Language>('en');
@@ -152,8 +170,6 @@ function AppInner() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSearchResultsOpen, setIsSearchResultsOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
-
-  const authState = useFirebaseAuth();
 
   // SECURITY: effectiveRole always from Firebase custom claims when configured.
   // demoRole only applies when Firebase is NOT configured (pure demo mode).
@@ -277,7 +293,7 @@ function AppInner() {
 
   const handleUpdateMemberStatus = (memberId: string, status: MemberStatus, note?: string) => {
     if (!guard.isAdmin) return;
-    void memberSync.patch(memberId, { status, correctionNote: note ?? '' });
+    void memberSync.patch(memberId, { status, correctionNote: note ?? '' }, authState.user?.uid);
   };
 
   const currentMember = members.find((m) => m.id === authState.user?.uid) ?? members[0];
@@ -474,9 +490,10 @@ function AppInner() {
             {activeTab === 'masses' && (
               guard.canAccess('choir_member') ? (
                 <MassManagement currentLang={currentLang} masses={masses} payments={payments} members={members}
+                  isAdmin={guard.isAdmin}
                   onAddMass={(mass) => {
-                    if (!guard.canAccess('choir_member')) {
-                      return Promise.resolve({ ok: false, error: 'Missing or insufficient permissions.' });
+                    if (!guard.isAdmin) {
+                      return Promise.resolve({ ok: false, error: 'Admin access required.' });
                     }
                     return massSync.upsert({ ...mass, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid);
                   }}
@@ -484,7 +501,7 @@ function AppInner() {
                     if (!guard.isAdmin) {
                       return Promise.resolve({ ok: false, error: 'Admin access required.' });
                     }
-                    return massSync.upsert({ ...mass, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid);
+                    return massSync.patch(mass.id, mass as any, authState.user?.uid);
                   }}
                   onDeleteMass={(massId) => {
                     if (!guard.isAdmin) return;

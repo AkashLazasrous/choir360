@@ -20,6 +20,7 @@ interface MassManagementProps {
   masses: Mass[];
   payments: Payment[];
   members: Member[];
+  isAdmin: boolean;
   onAddMass: (newMass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
   onUpdateMass?: (mass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
   onDeleteMass?: (massId: string) => void;
@@ -32,6 +33,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   masses,
   payments,
   members,
+  isAdmin,
   onAddMass,
   onUpdateMass,
   onDeleteMass,
@@ -294,6 +296,11 @@ export const MassManagement: React.FC<MassManagementProps> = ({
             <p className="text-xs p-2 bg-rose-50 text-rose-800 border border-rose-200 rounded font-medium">{massSaveError}</p>
           )}
 
+          {!isAdmin ? (
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs font-medium leading-5 text-amber-900">
+              Sign in with the parish admin email to log, edit, or delete liturgy entries.
+            </div>
+          ) : (
           <form onSubmit={handleAddMass} className="space-y-3 text-xs">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Mass Name / Description</label>
@@ -420,6 +427,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
               Log Liturgy Mass
             </button>
           </form>
+          )}
         </div>
 
         {/* ── Special Mass Payments Table ── */}
@@ -689,7 +697,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
                       </button>
 
                       {/* Edit */}
-                      {onUpdateMass && (
+                      {isAdmin && onUpdateMass && (
                         <button
                           onClick={() => setEditingMass({ ...m })}
                           className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
@@ -700,7 +708,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
                       )}
 
                       {/* Delete */}
-                      {onDeleteMass && (
+                      {isAdmin && onDeleteMass && (
                         <button
                           onClick={() => handleDeleteMass(m.id, m.name)}
                           className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-500 transition"

@@ -19,7 +19,7 @@ config({ path: '.env.local', override: false });
 
 // ── Target admin ──────────────────────────────────────────────────────────────
 const ADMIN_EMAIL   = 'stjosephschoirambattur@gmail.com';
-const ROLE          = 'choir_admin';          // full admin for this parish
+const ROLE          = 'parish_admin';         // add/delete/approve for this parish
 const ARCHDIOCESE_ID = 'madras-mylapore';
 const PARISH_ID     = 'church-of-sts-joseph-the-worker-philip-ambattur-ot';
 const CHOIR_ID      = `${PARISH_ID}-choir`;

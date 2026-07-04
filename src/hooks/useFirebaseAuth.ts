@@ -13,6 +13,8 @@ import { Role } from '../types';
 
 export interface AuthClaims {
   role?: Role;
+  archdioceseId?: string;
+  parishName?: string;
   tenantId?: string;
   parishId?: string;
   choirId?: string;

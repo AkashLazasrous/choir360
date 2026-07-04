@@ -240,10 +240,10 @@ app.post("/api/admin/bootstrap-super-admin", async (req, res) => {
     await admin.auth().setCustomUserClaims(user.uid, {
       role: "super_admin",
       archdioceseId: process.env.DEFAULT_ARCHDIOCESE_ID || process.env.VITE_DEFAULT_ARCHDIOCESE_ID || "madras-mylapore",
-      parishName: process.env.DEFAULT_PARISH_NAME || process.env.VITE_DEFAULT_PARISH_NAME || "St Thomas Cathedral",
-      tenantId: "global",
-      parishId: "st-thomas-cathedral",
-      choirId: "st-thomas-cathedral-choir",
+      parishName: process.env.DEFAULT_PARISH_NAME || process.env.VITE_DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT",
+      tenantId: process.env.DEFAULT_TENANT_ID || process.env.VITE_DEFAULT_TENANT_ID || "madras-mylapore",
+      parishId: process.env.DEFAULT_PARISH_ID || process.env.VITE_DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot",
+      choirId: process.env.DEFAULT_CHOIR_ID || process.env.VITE_DEFAULT_CHOIR_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir",
     });
 
     return res.json({
@@ -275,16 +275,20 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       .split(",")
       .map((e: string) => e.toLowerCase().trim())
       .filter(Boolean);
+    const parishAdminEmails = new Set([
+      ...adminEmails,
+      "stjosephschoirambattur@gmail.com",
+    ]);
 
-    const role = adminEmails.length > 0 && adminEmails.includes(email)
-      ? "choir_admin"
+    const role = parishAdminEmails.has(email)
+      ? "parish_admin"
       : "choir_member";
 
-    const tenantId = process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "global";
-    const parishId = process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "st-thomas-cathedral";
-    const choirId  = process.env.VITE_DEFAULT_CHOIR_ID  || process.env.DEFAULT_CHOIR_ID  || "st-thomas-cathedral-choir";
+    const tenantId = process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "madras-mylapore";
+    const parishId = process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
+    const choirId  = process.env.VITE_DEFAULT_CHOIR_ID  || process.env.DEFAULT_CHOIR_ID  || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir";
     const archdioceseId = process.env.VITE_DEFAULT_ARCHDIOCESE_ID || process.env.DEFAULT_ARCHDIOCESE_ID || tenantId;
-    const parishName = process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || parishId;
+    const parishName = process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT";
 
     await admin.auth().setCustomUserClaims(uid, { role, archdioceseId, parishName, tenantId, parishId, choirId });
 
@@ -339,10 +343,10 @@ interface DailyReadingRecord {
 const ARULVAKKU_CALENDAR_URL = "https://www.arulvakku.com/calendar.php";
 const DEFAULT_TENANT_CONTEXT = {
   archdioceseId: process.env.VITE_DEFAULT_ARCHDIOCESE_ID || process.env.DEFAULT_ARCHDIOCESE_ID || "madras-mylapore",
-  parishName: process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "St Thomas Cathedral",
-  tenantId: "demo-tenant",
-  parishId: "st-thomas-cathedral",
-  choirId: "cathedral-choir",
+  parishName: process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT",
+  tenantId: process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "madras-mylapore",
+  parishId: process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot",
+  choirId: process.env.VITE_DEFAULT_CHOIR_ID || process.env.DEFAULT_CHOIR_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir",
 };
 
 function getDateInIndia() {

@@ -30,7 +30,7 @@ export function useSyncedCollection<T extends { id: string }>(
 
   useEffect(() => {
     if (!isFirebaseConfigured || !syncEnabled) {
-      setRecords(fallbackRecords);
+      setRecords(isFirebaseConfigured ? [] : fallbackRecords);
       setIsLive(false);
       setSyncError(null);
       return;
