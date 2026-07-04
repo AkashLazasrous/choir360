@@ -29,6 +29,15 @@ service cloud.firestore {
       return request.auth.token.choirId;
     }
 
+    function stJosephParishId() {
+      return 'church-of-sts-joseph-the-worker-philip-ambattur-ot';
+    }
+
+    function stJosephAdminEmail() {
+      return signedIn()
+        && request.auth.token.email == 'stjosephschoirambattur@gmail.com';
+    }
+
     /** Incoming data belongs to the caller's tenant scope. */
     function sameTenant() {
       return signedIn()
@@ -44,11 +53,17 @@ service cloud.firestore {
         && request.resource.data.parishId == myParishId();
     }
 
+    function stJosephAdminCreate() {
+      return stJosephAdminEmail()
+        && request.resource.data.parishId == stJosephParishId();
+    }
+
     /** Existing document belongs to the caller's parish (or caller is super_admin). */
     function existingInTenant() {
       return signedIn()
         && (
           superAdmin()
+          || (stJosephAdminEmail() && resource.data.parishId == stJosephParishId())
           || (
             resource.data.tenantId == myTenantId()
             && resource.data.parishId == myParishId()
@@ -59,14 +74,17 @@ service cloud.firestore {
     /** Caller has an admin-level custom claim role. */
     function adminRole() {
       return signedIn()
-        && request.auth.token.role in ['super_admin', 'diocese_admin', 'parish_admin', 'choir_admin'];
+        && (
+          request.auth.token.role in ['super_admin', 'diocese_admin', 'parish_admin', 'choir_admin']
+          || stJosephAdminEmail()
+        );
     }
 
     /** Admin create scoped to their own parish unless super_admin. */
     function adminTenantCreate() {
       return adminRole()
         && hasRequiredEnvelope()
-        && (superAdmin() || sameParishCreate());
+        && (superAdmin() || sameParishCreate() || stJosephAdminCreate());
     }
 
     /** Admin update scoped to existing tenant/parish unless super_admin. */

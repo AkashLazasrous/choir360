@@ -6,7 +6,6 @@ import {
   getFirestore,
   limit,
   onSnapshot,
-  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -101,16 +100,20 @@ export function listenToTenantCollection<T>(
     where('archdioceseId', '==', ctx.archdioceseId),
     where('tenantId', '==', ctx.tenantId),
     where('parishId', '==', ctx.parishId),
-    where('status', '!=', 'deleted'),
-    orderBy('status'),
-    orderBy('updatedAt', 'desc'),
     limit(pageSize),
     ...extraConstraints,
   ];
 
   return onSnapshot(
     query(collection(db, COLLECTIONS[collectionName]), ...constraints),
-    (snapshot) => onChange(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as T)),
+    (snapshot) => {
+      const records = snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }) as unknown as T & { status?: string; updatedAt?: string })
+        .filter((item) => item.status !== 'deleted')
+        .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+        .slice(0, pageSize) as T[];
+      onChange(records);
+    },
     (error) => onError?.(error),
   );
 }
