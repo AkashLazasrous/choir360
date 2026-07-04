@@ -155,17 +155,17 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
           placeholder="Password"
           autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           minLength={mode === 'create' ? 8 : undefined}
-          className="w-full rounded-xl border border-slate-200 px-3 py-3 pr-11 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+          className="w-full rounded-xl border border-slate-200 py-3 pl-3 pr-14 min-h-[44px] text-xs outline-none focus:border-emerald-500"
           required
         />
         <button
           type="button"
           onClick={() => setShowPassword((value) => !value)}
-          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+          className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-[#18392f] shadow-sm ring-1 ring-slate-200 hover:bg-emerald-50"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           title={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showPassword ? <EyeOff className="h-4 w-4 stroke-[2.4]" /> : <Eye className="h-4 w-4 stroke-[2.4]" />}
         </button>
       </div>
       {mode === 'create' && (
@@ -177,17 +177,17 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             placeholder="Confirm password"
             autoComplete="new-password"
             minLength={8}
-            className="w-full rounded-xl border border-slate-200 px-3 py-3 pr-11 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+            className="w-full rounded-xl border border-slate-200 py-3 pl-3 pr-14 min-h-[44px] text-xs outline-none focus:border-emerald-500"
             required
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((value) => !value)}
-            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+            className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-[#18392f] shadow-sm ring-1 ring-slate-200 hover:bg-emerald-50"
             aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
             title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
           >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showConfirmPassword ? <EyeOff className="h-4 w-4 stroke-[2.4]" /> : <Eye className="h-4 w-4 stroke-[2.4]" />}
           </button>
         </div>
       )}
