@@ -37,7 +37,14 @@ service cloud.firestore {
         && request.resource.data.choirId == myChoirId();
     }
 
-    /** Existing document belongs to the caller's tenant (or caller is super_admin). */
+    /** Incoming data belongs to the caller's selected parish. */
+    function sameParishCreate() {
+      return signedIn()
+        && request.resource.data.tenantId == myTenantId()
+        && request.resource.data.parishId == myParishId();
+    }
+
+    /** Existing document belongs to the caller's parish (or caller is super_admin). */
     function existingInTenant() {
       return signedIn()
         && (
@@ -45,7 +52,6 @@ service cloud.firestore {
           || (
             resource.data.tenantId == myTenantId()
             && resource.data.parishId == myParishId()
-            && resource.data.choirId == myChoirId()
           )
         );
     }
@@ -60,7 +66,7 @@ service cloud.firestore {
     function adminTenantCreate() {
       return adminRole()
         && hasRequiredEnvelope()
-        && (superAdmin() || sameTenant());
+        && (superAdmin() || sameParishCreate());
     }
 
     /** Admin update scoped to existing tenant/parish unless super_admin. */
