@@ -44,11 +44,33 @@ function readCachedReading(date: string, language: string): DailyReading | null 
   }
 }
 
+function readingBelongsToDate(reading: DailyReading | null | undefined, date: string) {
+  return Boolean(
+    reading?.date === date ||
+    reading?.sourceUrl?.includes(`dt=${date}`),
+  );
+}
+
+function sectionHasText(section?: DailyReadingSection) {
+  return Boolean(section?.text || section?.reference);
+}
+
+function readingHasContent(reading: DailyReading | null | undefined) {
+  return Boolean(
+    sectionHasText(reading?.firstReading) ||
+    sectionHasText(reading?.psalm) ||
+    sectionHasText(reading?.secondReading) ||
+    sectionHasText(reading?.gospelAcclamation) ||
+    sectionHasText(reading?.gospel),
+  );
+}
+
 function getFallbackReading(date: string): DailyReading {
   return {
     ...FALLBACK_DAILY_READING,
     id: `${date}-ta-fallback`,
     date,
+    sourceUrl: `${SOURCE_URL}?dt=${date}`,
     syncStatus: 'cached',
   };
 }
@@ -122,8 +144,8 @@ export const DailyReadingsCard: React.FC = () => {
     const shouldRefresh = forceRefresh;
 
     const cached = readCachedReading(date, 'ta');
-    const cachedUsesSelectedDate = cached?.sourceUrl?.includes(`dt=${date}`);
-    if (cached && !shouldRefresh && cached.syncStatus !== 'pending' && cachedUsesSelectedDate) {
+    const cachedUsesSelectedDate = readingBelongsToDate(cached, date);
+    if (cached && !shouldRefresh && cached.syncStatus !== 'pending' && cachedUsesSelectedDate && readingHasContent(cached)) {
       setReading({ ...cached, syncStatus: cached.syncStatus === 'synced' ? 'cached' : cached.syncStatus });
     }
 
@@ -133,21 +155,34 @@ export const DailyReadingsCard: React.FC = () => {
       if (!response.ok) {
         throw new Error(payload?.error || 'Daily readings could not be loaded.');
       }
-      setReading(payload.reading);
-      writeCachedReading(payload.reading);
-    } catch (loadError) {
-      const fallback = cachedUsesSelectedDate ? cached : (isToday ? readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date) : null);
+      if (readingHasContent(payload.reading)) {
+        setReading(payload.reading);
+        writeCachedReading(payload.reading);
+      } else {
+        const fallback = cachedUsesSelectedDate && readingHasContent(cached) ? cached : getFallbackReading(date);
+        setReading({
+          ...fallback,
+          syncStatus: 'cached',
+          syncMessage: payload.reading?.syncMessage || 'Showing bundled cached readings while the live source is unavailable.',
+        });
+        writeCachedReading(fallback);
+      }
+    } catch {
+      const fallback = cachedUsesSelectedDate && readingHasContent(cached)
+        ? cached
+        : isToday
+        ? readCachedReading(todayInIndia(), 'ta') || getFallbackReading(date)
+        : getFallbackReading(date);
+
       if (fallback) {
         setReading({
           ...fallback,
           syncStatus: 'cached',
-          syncMessage: fallback.syncMessage || 'Showing offline cached readings.',
+          syncMessage: fallback.syncMessage || 'Showing bundled cached readings while live sync is unavailable.',
         });
         writeCachedReading(fallback);
-      } else {
-        setReading(null);
       }
-      setError(loadError instanceof Error ? loadError.message : 'Daily readings could not be loaded.');
+      setError('');
     } finally {
       setIsLoading(false);
     }
@@ -171,15 +206,7 @@ export const DailyReadingsCard: React.FC = () => {
 
   const isSelectedDateToday = selectedDate === todayInIndia();
 
-  const sectionHasContent = (section?: DailyReadingSection) => Boolean(section?.text || section?.reference);
-
-  const hasContent = Boolean(
-    sectionHasContent(reading?.firstReading) ||
-    sectionHasContent(reading?.psalm) ||
-    sectionHasContent(reading?.secondReading) ||
-    sectionHasContent(reading?.gospelAcclamation) ||
-    sectionHasContent(reading?.gospel)
-  );
+  const hasContent = readingHasContent(reading);
 
   // Always show every tab — including "all" — so the reading menu matches the
   // source site exactly. Tabs with no content for the date render a disabled
@@ -187,7 +214,7 @@ export const DailyReadingsCard: React.FC = () => {
   const availableTabs: ReadingTabItem<TabKey>[] = TAB_DEFINITIONS.map((tab) => ({
     key: tab.key,
     label: tab.label,
-    disabled: tab.key !== 'all' && !sectionHasContent(reading?.[tab.key]),
+    disabled: tab.key !== 'all' && !sectionHasText(reading?.[tab.key]),
   }));
 
   const selectReadingTab = (key: TabKey) => {
