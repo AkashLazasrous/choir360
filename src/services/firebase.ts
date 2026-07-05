@@ -1,5 +1,5 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
 import {
   collection,
   doc,
@@ -28,19 +28,56 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey &&
-  firebaseConfig.authDomain &&
-  firebaseConfig.projectId &&
-  firebaseConfig.appId,
-);
+function hasRequiredFirebaseConfig(config: Partial<FirebaseOptions>) {
+  return Boolean(config.apiKey && config.authDomain && config.projectId && config.appId);
+}
 
-const firebaseApp = isFirebaseConfigured && getApps().length === 0
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+function normalizeFirebaseConfig(config: Partial<FirebaseOptions>): FirebaseOptions {
+  return {
+    apiKey: config.apiKey,
+    authDomain: config.authDomain,
+    projectId: config.projectId,
+    storageBucket: config.storageBucket,
+    messagingSenderId: config.messagingSenderId,
+    appId: config.appId,
+  };
+}
 
-export const auth = firebaseApp ? getAuth(firebaseApp) : null;
-export const db: Firestore | null = firebaseApp ? getFirestore(firebaseApp) : null;
+function createFirebaseApp(config?: Partial<FirebaseOptions>): FirebaseApp | null {
+  const existingApp = getApps()[0];
+  if (existingApp) return existingApp;
+  if (!config || !hasRequiredFirebaseConfig(config)) return null;
+  return initializeApp(normalizeFirebaseConfig(config));
+}
+
+let firebaseApp = createFirebaseApp(firebaseConfig);
+export let isFirebaseConfigured = Boolean(firebaseApp);
+export let auth: Auth | null = firebaseApp ? getAuth(firebaseApp) : null;
+export let db: Firestore | null = firebaseApp ? getFirestore(firebaseApp) : null;
+let firebaseConfigPromise: Promise<boolean> | null = null;
+
+function applyFirebaseApp(app: FirebaseApp | null) {
+  firebaseApp = app;
+  isFirebaseConfigured = Boolean(firebaseApp);
+  auth = firebaseApp ? getAuth(firebaseApp) : null;
+  db = firebaseApp ? getFirestore(firebaseApp) : null;
+  return isFirebaseConfigured;
+}
+
+export async function ensureFirebaseConfigured() {
+  if (isFirebaseConfigured) return true;
+  if (typeof window === 'undefined') return false;
+  if (!firebaseConfigPromise) {
+    firebaseConfigPromise = fetch('/__/firebase/init.json', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return false;
+        const hostingConfig = await response.json() as Partial<FirebaseOptions>;
+        return applyFirebaseApp(createFirebaseApp(hostingConfig));
+      })
+      .catch(() => false);
+  }
+  return firebaseConfigPromise;
+}
 
 export const COLLECTIONS = {
   members: 'members',

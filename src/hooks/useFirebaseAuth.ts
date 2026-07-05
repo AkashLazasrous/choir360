@@ -7,7 +7,7 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '../services/firebase';
+import { auth, ensureFirebaseConfigured, isFirebaseConfigured } from '../services/firebase';
 import { apiFetch } from '../services/apiClient';
 import { Role } from '../types';
 
@@ -63,22 +63,42 @@ export function hasMinimumRole(userRole: Role, requiredRole: Role): boolean {
 export function useFirebaseAuth() {
   const [user, setUser] = useState<User | null>(auth?.currentUser ?? null);
   const [claims, setClaims] = useState<AuthClaims>({});
-  const [isReady, setIsReady] = useState(!isFirebaseConfigured);
+  const [isReady, setIsReady] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(isFirebaseConfigured);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!auth) return;
-    return onIdTokenChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsReady(true);
-      setAuthError(null);
-      if (firebaseUser) {
-        const token = await firebaseUser.getIdTokenResult();
-        setClaims(token.claims as AuthClaims);
-      } else {
-        setClaims({});
+    let unsubscribe: (() => void) | undefined;
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      const configured = await ensureFirebaseConfigured();
+      if (!isMounted) return;
+
+      setIsConfigured(configured);
+      if (!auth) {
+        setIsReady(true);
+        return;
       }
-    });
+
+      unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+        setUser(firebaseUser);
+        setIsReady(true);
+        setAuthError(null);
+        if (firebaseUser) {
+          const token = await firebaseUser.getIdTokenResult();
+          setClaims(token.claims as AuthClaims);
+        } else {
+          setClaims({});
+        }
+      });
+    };
+
+    void initializeAuth();
+    return () => {
+      isMounted = false;
+      unsubscribe?.();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -130,7 +150,7 @@ export function useFirebaseAuth() {
     claims,
     isReady,
     authError,
-    isConfigured: isFirebaseConfigured,
+    isConfigured,
     effectiveRole,
     signIn,
     createAccount,
