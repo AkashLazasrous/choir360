@@ -376,20 +376,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Sync status is written by the server (Admin SDK) and read by admins only.
+    // Sync status is written by the server (Admin SDK) and safe for public reads.
     match /catholicHubSongSyncStatus/{categoryId} {
-      allow read: if adminRole();
+      allow read: if true;
       allow create, update, delete: if false;
     }
 
     // Sync metadata is an operational/admin concern only — not shown to
     // regular users, and never written by clients (server-only via Admin SDK).
     match /contentSyncStatus/{docId} {
-      allow read: if adminRole();
-      allow create, update, delete: if false;
-    }
-
-    match /catholicHubSongSyncStatus/{docId} {
       allow read: if adminRole();
       allow create, update, delete: if false;
     }

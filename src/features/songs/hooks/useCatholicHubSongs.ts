@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
 import { apiFetch } from '../../../services/apiClient';
-import { db } from '../../../services/firebase';
+import { db, ensureFirebaseConfigured } from '../../../services/firebase';
 
 export interface CatholicHubSong {
   id: string;
@@ -88,6 +88,8 @@ async function loadSongsFromApi() {
 }
 
 async function loadSongsFromFirestore() {
+  await ensureFirebaseConfigured();
+
   if (!db) {
     return { songs: [] as CatholicHubSong[], syncStatuses: [] as CatholicHubSongSyncStatus[] };
   }
@@ -99,11 +101,19 @@ async function loadSongsFromFirestore() {
       limit(1500),
     ),
   );
-  const statusSnap = await getDocs(collection(db, 'catholicHubSongSyncStatus'));
+  let syncStatuses: CatholicHubSongSyncStatus[] = [];
+  try {
+    const statusSnap = await getDocs(collection(db, 'catholicHubSongSyncStatus'));
+    syncStatuses = statusSnap.docs.map((d) => d.data() as CatholicHubSongSyncStatus);
+  } catch {
+    // Public users can still use cached songs even if operational sync metadata
+    // is temporarily unavailable because of rules or rollout timing.
+    syncStatuses = [];
+  }
 
   return {
     songs: dedupeAndSortSongs(songsSnap.docs.map((d) => d.data() as CatholicHubSong)),
-    syncStatuses: statusSnap.docs.map((d) => d.data() as CatholicHubSongSyncStatus),
+    syncStatuses,
   };
 }
 
