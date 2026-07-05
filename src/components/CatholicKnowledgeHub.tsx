@@ -149,7 +149,7 @@ const TAMIL_PRAYERS = [
   },
   {
     id: 'matha_prayer',
-    title: 'Matha Prayer (மாதா பிரார்த்தனை)',
+    title: 'The Litany of the Blessed Virgin Mary (மாதா பிரார்த்தனை)',
     category: 'Marian Prayers',
     tamil: `சுவாமி கிருபையாயிரும்
 கிறிஸ்துவே கிருபையாயிரும்
@@ -251,7 +251,89 @@ const TAMIL_PRAYERS = [
 குழு: எங்கள் பாவங்கள் பொறுத்தருளும் – 2
 குழு: எங்கள் மன்றாட்டைக் கேட்டருளும் – 2
 குழு: எம்மேல் இரக்கம் வைத்தருளும் – 2`,
-    english: `Lord, have mercy. Christ, have mercy. Christ, hear our prayer. Christ, graciously hear us. Holy Mary and Mother of God, pray for us. Queen of the Holy Rosary, Queen of Peace, and Our Lady of Good Health, pray for us. Lamb of God, who takes away the sins of the world, forgive us, hear our prayer, and have mercy on us.`,
+    english: `Lord, have mercy on us.
+Christ, have mercy on us.
+Lord, have mercy on us.
+Christ, hear us.
+Christ, graciously hear us.
+
+God the Father of Heaven, have mercy on us.
+God the Son, Redeemer of the world, have mercy on us.
+God the Holy Ghost, have mercy on us.
+Holy Trinity, one God, have mercy on us.
+
+Holy Mary, pray for us.
+Holy Mother of God, pray for us.
+Holy Virgin of virgins, pray for us.
+
+Mother of Christ, pray for us.
+Mother of the Church, pray for us.
+Mother of divine grace, pray for us.
+
+Mother most pure, pray for us.
+Mother most chaste, pray for us.
+Mother inviolate, pray for us.
+
+Mother undefiled, pray for us.
+Mother most amiable, pray for us.
+Mother most admirable, pray for us.
+
+Mother of good counsel, pray for us.
+Mother of our Creator, pray for us.
+Mother of our Saviour, pray for us.
+
+Virgin most prudent, pray for us.
+Virgin most venerable, pray for us.
+Virgin most renowned, pray for us.
+
+Virgin most powerful, pray for us.
+Virgin most merciful, pray for us.
+Virgin most faithful, pray for us.
+
+Mirror of justice, pray for us.
+Seat of wisdom, pray for us.
+Cause of our joy, pray for us.
+
+Spiritual vessel, pray for us.
+Vessel of honour, pray for us.
+Singular vessel of devotion, pray for us.
+
+Mystical rose, pray for us.
+Tower of David, pray for us.
+Tower of ivory, pray for us.
+
+House of gold, pray for us.
+Ark of the covenant, pray for us.
+Gate of heaven, pray for us.
+
+Morning star, pray for us.
+Health of the sick, pray for us.
+Refuge of sinners, pray for us.
+
+Comforter of the afflicted, pray for us.
+Help of Christians, pray for us.
+Queen of Angels, pray for us.
+
+Queen of Patriarchs, pray for us.
+Queen of Prophets, pray for us.
+Queen of Apostles, pray for us.
+
+Queen of Martyrs, pray for us.
+Queen of Confessors, pray for us.
+Queen of Virgins, pray for us.
+
+Queen of all Saints, pray for us.
+Queen conceived without original sin, pray for us.
+Queen assumed into heaven, pray for us.
+
+Queen of the most holy Rosary, pray for us.
+Queen of peace, pray for us.
+Queen of Our Lady of Good Health, pray for us. (Note: This specific title reflects the Velankanni health devotion mentioned in the Tamil text).
+
+Concluding Prayers
+Lamb of God, who takest away the sins of the world, spare us, O Lord.
+Lamb of God, who takest away the sins of the world, graciously hear us, O Lord.
+Lamb of God, who takest away the sins of the world, have mercy on us.`,
   },
 ];
 
