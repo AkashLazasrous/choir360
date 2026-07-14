@@ -1,10 +1,11 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { MotionConfig, motion } from 'motion/react';
 import {
   BarChart3, Bell, CalendarDays, Church, Command,
   HeartHandshake, LayoutDashboard, Menu, Music2, Search,
   Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText,
 } from 'lucide-react';
-import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab } from './types';
+import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { AuthPanel } from './components/AuthPanel';
 import { AccessDenied } from './components/AccessDenied';
@@ -15,6 +16,8 @@ import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
 import { ARCHDIOCESE_ID, findParishById } from './data/madrasMylaporeParishes';
+import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
+import { ToastProvider, useToast } from './components/feedback/ToastProvider';
 import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
@@ -40,6 +43,7 @@ const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
 const RehearsalManager = React.lazy(() => import('./components/RehearsalManager').then((m) => ({ default: m.RehearsalManager })));
 
 const LandingPage = React.lazy(() => import('./components/LandingPage').then((m) => ({ default: m.LandingPage })));
+const MarketingLanding = React.lazy(() => import('./components/marketing/MarketingLanding').then((m) => ({ default: m.MarketingLanding })));
 const MemberRegistration = React.lazy(() => import('./components/MemberRegistration').then((m) => ({ default: m.MemberRegistration })));
 const DashboardMember = React.lazy(() => import('./components/DashboardMember').then((m) => ({ default: m.DashboardMember })));
 const MassManagement = React.lazy(() => import('./components/MassManagement').then((m) => ({ default: m.MassManagement })));
@@ -113,6 +117,7 @@ const BreadcrumbParishLabel: React.FC = () => {
 function AppInner() {
   const { selectedParish, archdioceseId, selectParish } = useParish();
   const authState = useFirebaseAuth();
+  const showToast = useToast();
 
   useEffect(() => {
     const claimedParishId = authState.claims.parishId;
@@ -145,7 +150,8 @@ function AppInner() {
 
 
   const [currentLang, setCurrentLang] = useState<Language>('en');
-  const [activeTab, setActiveTab] = useState<Tab>('landing');
+  // The URL is the source of truth for the active tab (deep links + back/forward).
+  const [activeTab, setActiveTab] = useState<Tab>(() => tabFromPath(window.location.pathname));
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [demoRole, setDemoRole] = useState<Role>('choir_admin');
@@ -192,11 +198,20 @@ function AppInner() {
   useEffect(() => {
     if (!authState.user && TAB_REQUIRED_ROLE[activeTab] !== 'public_user') {
       setActiveTab('landing');
+      replaceTabPath('landing');
     }
   }, [authState.user, activeTab]);
 
+  // Browser back/forward: follow the URL without pushing new history entries.
+  useEffect(() => {
+    const onPopState = () => setActiveTab(tabFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   const navigate = (tab: Tab) => {
     setActiveTab(tab);
+    pushTabPath(tab);
     setMobileNavOpen(false);
     setMobileMoreOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -289,7 +304,19 @@ function AppInner() {
 
   const handleUpdateMemberStatus = (memberId: string, status: MemberStatus, note?: string) => {
     if (!guard.isAdmin) return;
-    void memberSync.patch(memberId, { status, correctionNote: note ?? '' }, authState.user?.uid);
+    const previousStatus = members.find((m) => m.id === memberId)?.status;
+    void memberSync.patch(memberId, { status, correctionNote: note ?? '' }, authState.user?.uid).then((result) => {
+      if (!result.ok) {
+        showToast({ tone: 'error', message: result.error ?? 'Could not update member status.' });
+      } else {
+        showToast({
+          message: status === 'Active Member' ? 'Member approved.' : `Member status set to ${status}.`,
+          onUndo: previousStatus && previousStatus !== status
+            ? () => void memberSync.patch(memberId, { status: previousStatus }, authState.user?.uid)
+            : undefined,
+        });
+      }
+    });
   };
 
   const currentMember = members.find((m) => m.id === authState.user?.uid) ?? members[0];
@@ -439,15 +466,22 @@ function AppInner() {
                 return (
                   <button key={item.id} onClick={() => { if (accessible) navigate(item.id); }} disabled={!accessible}
                     aria-current={isActive ? 'page' : undefined}
-                    className={'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ' +
-                      (isActive ? 'bg-[#18392f] text-white shadow-sm' : accessible ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' : 'cursor-not-allowed text-slate-300')}>
-                    <item.icon className={'h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-slate-400' : 'text-slate-300')} />
-                    {item.label}
+                    className={'relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ' +
+                      (isActive ? 'text-white' : accessible ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' : 'cursor-not-allowed text-slate-300')}>
+                    {isActive && (
+                      <motion.span
+                        layoutId="sidebar-active-pill"
+                        className="absolute inset-0 rounded-xl bg-[#18392f] shadow-sm"
+                        transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                      />
+                    )}
+                    <item.icon className={'relative h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-slate-400' : 'text-slate-300')} />
+                    <span className="relative">{item.label}</span>
                     {item.id === 'registration' && pendingCount > 0 && (
-                      <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">{pendingCount}</span>
+                      <span className="relative ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">{pendingCount}</span>
                     )}
                     {!accessible && authState.isConfigured && (
-                      <span className="ml-auto text-[9px] text-slate-300">[locked]</span>
+                      <span className="relative ml-auto text-[9px] text-slate-300">[locked]</span>
                     )}
                   </button>
                 );
@@ -471,10 +505,15 @@ function AppInner() {
           </div>
 
           <Suspense fallback={<ModuleSkeleton />}>
+            {/* Signed-out visitors get the marketing page; members get the ops dashboard. */}
             {activeTab === 'landing' && (
-              <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
-                events={events} announcements={announcements}
-                onNavigate={navigate} />
+              authState.user ? (
+                <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
+                  events={events} announcements={announcements}
+                  onNavigate={navigate} />
+              ) : (
+                <MarketingLanding onNavigate={navigate} parishName={selectedParish?.parishName} />
+              )
             )}
             {activeTab === 'calendar' && (
               <UnifiedCalendar currentLang={currentLang} masses={masses} events={events}
@@ -501,7 +540,17 @@ function AppInner() {
                   }}
                   onDeleteMass={(massId) => {
                     if (!guard.isAdmin) return;
-                    void massSync.patch(massId, { status: 'deleted' } as any, authState.user?.uid);
+                    const previousStatus = (masses.find((m) => m.id === massId) as Partial<TenantScopedRecord> | undefined)?.status ?? 'active';
+                    void massSync.patch(massId, { status: 'deleted' } as any, authState.user?.uid).then((result) => {
+                      if (!result.ok) {
+                        showToast({ tone: 'error', message: result.error ?? 'Could not delete the mass.' });
+                      } else {
+                        showToast({
+                          message: 'Mass deleted.',
+                          onUndo: () => void massSync.patch(massId, { status: previousStatus } as any, authState.user?.uid),
+                        });
+                      }
+                    });
                   }}
                   onAddPayment={(payment) => {
                     if (!guard.isAdmin) {
@@ -635,8 +684,15 @@ function AppInner() {
             const isActive = activeTab === id;
             return (
               <button key={id} onClick={() => navigate(id)}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 min-h-[56px]"
+                className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 min-h-[56px]"
                 aria-current={isActive ? 'page' : undefined}>
+                {isActive && (
+                  <motion.span
+                    layoutId="bottomnav-active-bar"
+                    className="absolute top-0 h-0.5 w-10 rounded-full bg-[#18392f]"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                  />
+                )}
                 <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-slate-400')} />
                 <span className={'text-[9px] font-bold ' + (isActive ? 'text-[#18392f]' : 'text-slate-400')}>{label}</span>
               </button>
@@ -660,8 +716,14 @@ function AppInner() {
 // =============================================================================
 export default function App() {
   return (
-    <ParishProvider>
-      <AppInner />
-    </ParishProvider>
+    // reducedMotion="user" disables transform/layout animations app-wide for
+    // users with prefers-reduced-motion enabled.
+    <MotionConfig reducedMotion="user">
+      <ParishProvider>
+        <ToastProvider>
+          <AppInner />
+        </ToastProvider>
+      </ParishProvider>
+    </MotionConfig>
   );
 }

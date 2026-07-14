@@ -109,6 +109,17 @@ function requireDb() {
   return db;
 }
 
+/**
+ * Firestore rejects writes containing `undefined` field values. Optional
+ * fields in our record types (e.g. Payment.receiptNo) are often set to
+ * `undefined` when left blank, so drop them before writing.
+ */
+function stripUndefined<T extends Record<string, unknown>>(payload: T): T {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined),
+  ) as T;
+}
+
 function tenantContextFromRecord(record: Partial<TenantScopedRecord>): TenantContext {
   return {
     archdioceseId: record.archdioceseId || DEFAULT_TENANT_CONTEXT.archdioceseId,
@@ -161,12 +172,12 @@ export async function upsertTenantRecord<T extends { id: string } & Partial<Tena
   userId = auth?.currentUser?.uid || 'system',
 ) {
   const database = requireDb();
-  const payload = {
+  const payload = stripUndefined({
     ...record,
     ...(record.createdAt
       ? updateRecordMetadata(record, userId)
       : createRecordMetadata(userId, record.status || 'active', tenantContextFromRecord(record))),
-  };
+  });
   await setDoc(doc(database, COLLECTIONS[collectionName], record.id), payload, { merge: true });
 }
 
@@ -177,7 +188,7 @@ export async function updateTenantRecord<T extends Partial<TenantScopedRecord>>(
   userId = auth?.currentUser?.uid || 'system',
 ) {
   const database = requireDb();
-  await updateDoc(doc(database, COLLECTIONS[collectionName], recordId), updateRecordMetadata(patch, userId) as DocumentData);
+  await updateDoc(doc(database, COLLECTIONS[collectionName], recordId), stripUndefined(updateRecordMetadata(patch, userId) as DocumentData));
 }
 
 export async function batchUpsertTenantRecords<T extends { id: string } & Partial<TenantScopedRecord>>(
@@ -189,12 +200,12 @@ export async function batchUpsertTenantRecords<T extends { id: string } & Partia
   const batch = writeBatch(database);
 
   records.forEach((record) => {
-    const payload = {
+    const payload = stripUndefined({
       ...record,
       ...(record.createdAt
         ? updateRecordMetadata(record, userId)
         : createRecordMetadata(userId, record.status || 'active', tenantContextFromRecord(record))),
-    };
+    });
     batch.set(doc(database, COLLECTIONS[collectionName], record.id), payload, { merge: true });
   });
 

@@ -101,7 +101,7 @@ async function loadSongsFromFirestore() {
       limit(1500),
     ),
   );
-  let syncStatuses: CatholicHubSongSyncStatus[] = [];
+  let syncStatuses: CatholicHubSongSyncStatus[];
   try {
     const statusSnap = await getDocs(collection(db, 'catholicHubSongSyncStatus'));
     syncStatuses = statusSnap.docs.map((d) => d.data() as CatholicHubSongSyncStatus);

@@ -32,7 +32,7 @@ let user;
 try {
   user = await auth.getUserByEmail(ADMIN_EMAIL);
   console.log(`✓ Found Firebase user: ${user.uid} (${user.email})`);
-} catch (err) {
+} catch {
   // Account doesn't exist — create it with a temporary password
   console.log(`ℹ  No account found for ${ADMIN_EMAIL} — creating one...`);
   const tempPassword = 'Choir360@' + Math.random().toString(36).slice(-6).toUpperCase();

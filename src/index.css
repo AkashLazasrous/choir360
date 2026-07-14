@@ -89,6 +89,26 @@ select:focus-visible {
   animation: rotateSlow 24s infinite linear;
 }
 
+/* Toast entrance (motion-safe: prefixed usage respects prefers-reduced-motion) */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-toast-in {
+  animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-toast-in,
+  .animate-border-pulse,
+  .animate-gold-glow,
+  .animate-rotate-slow {
+    animation: none;
+  }
+}
+
 /* Glassmorphism details */
 .glass-panel {
   backdrop-filter: blur(12px) saturate(180%);

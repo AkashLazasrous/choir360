@@ -24,6 +24,9 @@ import { formatINR } from '../utils/currency';
 import { getISTGreeting } from '../utils/timezone';
 import { calculateChoirHealth, isActiveMember, sumPendingCollections } from '../utils/choirStats';
 import { useParish } from '../features/parish/ParishContext';
+import { Reveal } from './interactions/Reveal';
+import { CountUp } from './interactions/CountUp';
+import { MagneticButton } from './interactions/MagneticButton';
 
 interface LandingPageProps {
   currentLang: Language;
@@ -124,13 +127,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <button
+              <MagneticButton
                 onClick={() => onNavigate('masses')}
                 className="group flex items-center gap-2 rounded-2xl bg-amber-300 px-6 py-3.5 text-sm font-bold text-[#18392f] shadow-[0_4px_24px_rgba(251,191,36,0.4)] transition hover:bg-amber-200 hover:shadow-[0_4px_32px_rgba(251,191,36,0.55)] active:scale-95"
               >
                 {nextMass ? 'Open Liturgy Desk' : 'Log First Mass'}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </button>
+              </MagneticButton>
               <button
                 onClick={() => onNavigate('registration')}
                 className="rounded-2xl border border-white/15 bg-white/8 px-6 py-3.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/14 active:scale-95"
@@ -147,7 +150,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 { val: masses.length, label: 'Masses Logged' },
               ].map(({ val, label }) => (
                 <div key={label}>
-                  <p className="text-xl font-extrabold text-amber-300 font-mono">{val}</p>
+                  <p className="text-xl font-extrabold text-amber-300 font-mono">
+                    {typeof val === 'number' ? <CountUp value={val} /> : val}
+                  </p>
                   <p className="text-[10px] font-semibold text-emerald-200/60 uppercase tracking-wider">{label}</p>
                 </div>
               ))}
@@ -261,15 +266,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             text: 'text-violet-700',
             bar: healthScore,
           },
-        ].map((stat) => (
-          <article key={stat.label} className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+        ].map((stat, i) => (
+          <Reveal key={stat.label} delay={i * 0.06}>
+          <article className="group relative h-full overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
             {/* Gradient orb */}
             <div className={`absolute -right-4 -top-4 h-20 w-20 rounded-full bg-gradient-to-br ${stat.grad} opacity-10 blur-xl group-hover:opacity-20 transition-opacity`} />
 
             <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${stat.light} ${stat.text}`}>
               <stat.icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-extrabold tracking-tight text-slate-900">{stat.value}</p>
+            <p className="text-2xl font-extrabold tracking-tight text-slate-900">
+              {typeof stat.value === 'number' ? <CountUp value={stat.value} /> : stat.value}
+            </p>
             <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">{stat.label}</p>
             <p className="mt-2 text-[11px] text-slate-500">{stat.sub}</p>
 
@@ -278,10 +286,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className={`h-1.5 rounded-full bg-gradient-to-r ${stat.grad} transition-all duration-700`} style={{ width: `${stat.bar}%` }} />
             </div>
           </article>
+          </Reveal>
         ))}
       </section>
 
       {/* ── LITURGY LOG + AI INSIGHT ─────────────────────────────────────────── */}
+      <Reveal>
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.85fr]">
 
         {/* Liturgy log — timeline style */}
@@ -409,8 +419,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* ── BOTTOM CARDS ─────────────────────────────────────────────────────── */}
+      <Reveal delay={0.08}>
       <section className="grid gap-5 lg:grid-cols-3">
 
         {/* Rehearsal */}
@@ -476,6 +488,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </article>
 
       </section>
+      </Reveal>
     </div>
   );
 };

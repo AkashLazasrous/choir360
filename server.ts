@@ -1693,7 +1693,7 @@ app.get("/api/radio/stream-url", async (_req, res) => {
       if (r.ok) {
         const html = await r.text();
         // Look for listen.radioking.com stream URLs embedded in page JS/JSON
-        const match = html.match(/https:\/\/listen\.radioking\.com\/radio\/[\w\/]+/);
+        const match = html.match(/https:\/\/listen\.radioking\.com\/radio\/[\w/]+/);
         if (match) {
           streamUrl = match[0];
           console.log("[Radio] stream URL extracted from play page:", streamUrl);

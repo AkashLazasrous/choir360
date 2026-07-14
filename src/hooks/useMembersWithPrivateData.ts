@@ -107,19 +107,20 @@ export function useMembersWithPrivateData(
     return publicCollection.records.map((pub) => mergeMember(pub, privateById.get(pub.id)));
   }, [publicCollection.records, privateCollection.records]);
 
-  const upsert = async (member: Member, userId?: string) => {
+  const upsert = async (member: Member, userId?: string): Promise<{ ok: boolean; error?: string }> => {
     const { publicPart, privatePart } = splitMember(member);
-    await Promise.all([
+    const results = await Promise.all([
       publicCollection.actions.upsert(publicPart, userId),
       privateCollection.actions.upsert(privatePart, userId),
     ]);
+    return results.find((r) => !r.ok) ?? { ok: true };
   };
 
   const patch = async (
     id: string,
     patchData: Partial<Member & TenantScopedRecord>,
     userId?: string,
-  ) => {
+  ): Promise<{ ok: boolean; error?: string }> => {
     const privatePatch: Record<string, unknown> = {};
     const publicPatch: Record<string, unknown> = {};
     const privateKeySet: readonly string[] = PRIVATE_FIELD_KEYS;
@@ -132,14 +133,15 @@ export function useMembersWithPrivateData(
       }
     }
 
-    await Promise.all([
+    const results = await Promise.all([
       Object.keys(publicPatch).length
         ? publicCollection.actions.patch(id, publicPatch as Partial<PublicMember & TenantScopedRecord>, userId)
-        : Promise.resolve(),
+        : Promise.resolve({ ok: true as const }),
       Object.keys(privatePatch).length
         ? privateCollection.actions.patch(id, privatePatch as Partial<PrivateFields & TenantScopedRecord>, userId)
-        : Promise.resolve(),
+        : Promise.resolve({ ok: true as const }),
     ]);
+    return results.find((r) => !r.ok) ?? { ok: true };
   };
 
   return {

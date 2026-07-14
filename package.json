@@ -11,8 +11,10 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "lint:js": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-choir360-rules \"vitest run --config vitest.rules.config.ts\"",
     "firebase:set-claims": "node scripts/setFirebaseClaims.mjs",
     "firebase:seed": "node scripts/seedFirestore.mjs",
     "firebase:provision-admin": "node scripts/provisionParishAdmin.mjs"
@@ -36,6 +38,8 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
@@ -43,9 +47,13 @@
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "firebase-tools": "^15.23.0",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.64.0",
     "vite": "^6.2.3",
     "vitest": "^3.2.7"
   }

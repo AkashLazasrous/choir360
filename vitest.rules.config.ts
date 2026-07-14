@@ -1,0 +1,10 @@
+import { defineConfig } from 'vitest/config';
+
+/** Rules tests need the Firestore emulator — run via `npm run test:rules`. */
+export default defineConfig({
+  test: {
+    include: ['tests/rules/**/*.test.ts'],
+    testTimeout: 20000,
+    hookTimeout: 30000,
+  },
+});
