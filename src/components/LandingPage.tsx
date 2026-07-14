@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { RadioPlayer } from './RadioPlayer';
-import { Announcement, ChoirEvent, Language, Mass, Member, Payment } from '../types';
+import { Announcement, ChoirEvent, Language, Mass, Member, Payment, Tab } from '../types';
 import {
   ArrowUpRight,
   BookOpen,
@@ -22,11 +22,12 @@ import {
 } from 'lucide-react';
 import { formatINR } from '../utils/currency';
 import { getISTGreeting } from '../utils/timezone';
+import { calculateChoirHealth, isActiveMember, sumPendingCollections } from '../utils/choirStats';
 import { useParish } from '../features/parish/ParishContext';
 
 interface LandingPageProps {
   currentLang: Language;
-  onNavigate: (section: string) => void;
+  onNavigate: (section: Tab) => void;
   members: Member[];
   masses: Mass[];
   payments: Payment[];
@@ -65,19 +66,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const greeting = useMemo(() => getISTGreeting(), []);
 
-  const activeMembers      = members.filter((m) => m.status === 'Active Member');
-  const pendingMembers     = members.filter((m) => m.status !== 'Active Member');
+  const activeMembers      = members.filter(isActiveMember);
+  const pendingMembers     = members.filter((m) => !isActiveMember(m));
   const nextMass           = masses[0];
   const nextPractice       = events.find((e) => e.category === 'Choir Practice') ?? events[0];
-  const pendingCollections = payments.reduce((sum, p) => sum + p.pendingAmount, 0);
+  const pendingCollections = sumPendingCollections(payments);
   const openPaymentCount   = payments.filter((p) => p.status === 'Pending').length;
-  const averageAttendance  = Math.round(
-    activeMembers.reduce((sum, m) => sum + (m.attendanceRate ?? 0), 0) / Math.max(activeMembers.length, 1),
-  );
-  const totalMembersCount  = members.length;
-  const healthScore        = Math.min(100, Math.round((activeMembers.length / Math.max(totalMembersCount, 1)) * 50 + averageAttendance * 0.5));
-  const healthLabel        = healthScore >= 80 ? 'Excellent' : healthScore >= 60 ? 'Good' : healthScore >= 40 ? 'Fair' : 'Needs attention';
-  const confirmedPercent   = totalMembersCount > 0 ? Math.round((activeMembers.length / totalMembersCount) * 100) : 0;
+  const { averageAttendance, healthScore, healthLabel, confirmedPercent } = calculateChoirHealth(members);
 
   const today      = new Date();
   const todayLabel = today.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
@@ -122,7 +117,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </h1>
 
             <p className="mt-4 max-w-lg text-[15px] leading-7 text-emerald-100/75">
-              {totalMembersCount === 0
+              {members.length === 0
                 ? 'Your parish choir management platform. Start by registering members and logging your first mass.'
                 : `${confirmedPercent}% of choir active · ${pendingMembers.length > 0 ? `${pendingMembers.length} pending review` : 'All members approved'} · ${masses.length} mass${masses.length !== 1 ? 'es' : ''} logged`
               }
@@ -137,7 +132,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </button>
               <button
-                onClick={() => onNavigate('people')}
+                onClick={() => onNavigate('registration')}
                 className="rounded-2xl border border-white/15 bg-white/8 px-6 py-3.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/14 active:scale-95"
               >
                 Manage Members
@@ -399,8 +394,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Quick actions strip */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: UsersRound, label: 'Members', sub: `${activeMembers.length} active`, nav: 'people', color: 'bg-blue-50 text-blue-700 border-blue-100' },
-              { icon: IndianRupee, label: 'Accounts', sub: formatINR(pendingCollections), nav: 'masses', color: 'bg-amber-50 text-amber-700 border-amber-100' },
+              { icon: UsersRound, label: 'Members', sub: `${activeMembers.length} active`, nav: 'registration' as Tab, color: 'bg-blue-50 text-blue-700 border-blue-100' },
+              { icon: IndianRupee, label: 'Accounts', sub: formatINR(pendingCollections), nav: 'masses' as Tab, color: 'bg-amber-50 text-amber-700 border-amber-100' },
             ].map(({ icon: Icon, label, sub, nav, color }) => (
               <button key={label} onClick={() => onNavigate(nav)}
                 className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-left transition hover:shadow-sm active:scale-95 ${color}`}>
@@ -434,7 +429,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ) : (
               <h3 className="mt-1.5 text-sm text-violet-100/60">No rehearsal scheduled</h3>
             )}
-            <button onClick={() => onNavigate('unified_calendar')}
+            <button onClick={() => onNavigate('calendar')}
               className="mt-4 flex items-center gap-1 text-xs font-bold text-violet-200 hover:text-white transition group">
               Manage calendar <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
             </button>

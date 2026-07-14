@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { formatINR } from '../utils/currency';
+import { calculatePaymentShares, derivePaymentStatus } from '../utils/choirStats';
 
 const ALL_MASS_CATEGORIES: MassCategory[] = [
   'Sunday Mass', 'Weekday Mass', 'Special Mass', 'Wedding', 'Funeral',
@@ -95,23 +96,11 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   const activePayment = payments.find((p) => p.id === selectedPaymentId) || payments[0];
   const isLocked      = activePayment ? !!lockedCalcs[activePayment.id] : false;
 
-  const calcEngine = (amount: number, singers: number, instruments: number) => {
-    const totalUnits = singers * 1 + instruments * 2;
-    const unitValue  = totalUnits > 0 ? amount / totalUnits : 0;
-    return {
-      totalUnits,
-      unitValue:            Math.round(unitValue),
-      singerShare:          Math.round(unitValue),
-      instrumentalistShare: Math.round(unitValue * 2),
-    };
-  };
+  const calcEngine = calculatePaymentShares;
 
   const calc = calcEngine(activePayment?.promisedAmount || 0, singerCount, instrumentalistCount);
 
-  const paymentStatus = (proposed: number, received: boolean, recvAmt: number): 'Pending' | 'Received' => {
-    if (!received) return 'Pending';
-    return recvAmt >= proposed ? 'Received' : 'Pending';
-  };
+  const paymentStatus = derivePaymentStatus;
 
   // ── Attendance helpers ─────────────────────────────────────────────────────
   const activeMembers = members.filter((m) => ['Active Member', 'Approved', 'Admin'].includes(m.status));

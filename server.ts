@@ -5,14 +5,12 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -43,7 +41,8 @@ app.use(helmet({
       frameSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
-      upgradeInsecureRequests: isProd ? [] : undefined,
+      // This directives object is only used when isProd is true (see ternary above).
+      upgradeInsecureRequests: [],
     },
   } : false, // Relaxed in dev to allow Vite HMR
   crossOriginEmbedderPolicy: false,
@@ -109,6 +108,16 @@ const uploadLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { error: "Upload rate limit reached. Please wait before uploading again." },
+});
+
+// Strict limiter for the public song-category ensure endpoint: it can trigger
+// server-side scraping of the source site, so allow only a few calls per IP.
+const ensureSyncLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 4,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Category sync rate limit reached. Please try again in a minute." },
 });
 
 // Per-user AI limiter: prevents a single authenticated account from
@@ -1544,7 +1553,7 @@ app.post("/api/catholic-hub/songs/sync", requireFirebaseAuth, requireAdminRole, 
   }
 });
 
-app.post("/api/catholic-hub/songs/ensure", async (req, res) => {
+app.post("/api/catholic-hub/songs/ensure", ensureSyncLimiter, async (req, res) => {
   const requestedCategory = typeof req.body?.categoryId === "string" ? req.body.categoryId : "";
   try {
     if (!requestedCategory || requestedCategory === "all") {

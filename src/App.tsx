@@ -4,7 +4,7 @@ import {
   HeartHandshake, LayoutDashboard, Menu, Music2, Search,
   Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText,
 } from 'lucide-react';
-import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role } from './types';
+import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { AuthPanel } from './components/AuthPanel';
 import { AccessDenied } from './components/AccessDenied';
@@ -19,24 +19,6 @@ import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
 
-// Song data is lazy-loaded inside SongLibraryWidget to keep the main bundle small.
-// We use an empty array here for global search (searches within song library navigate to the tab).
-const ALL_SONGS: { id: string; displayTitle?: string; title?: string; pageNumber?: number; sourcePageNumber?: number; category?: string; lyrics?: string; composer?: string }[] = [];
-
-type Tab =
-  | 'landing'
-  | 'calendar'
-  | 'masses'
-  | 'registration'
-  | 'dashboard_member'
-  | 'bible'
-  | 'song_library'
-  | 'ai_hub'
-  | 'analytics'
-  | 'catholic_hub'
-  | 'liturgical_planner'
-  | 'gamification'
-  | 'rehearsals';
 
 const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
   landing: 'public_user',
@@ -171,6 +153,18 @@ function AppInner() {
   const [isSearchResultsOpen, setIsSearchResultsOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Song data (~1.4MB chunk) stays out of the main bundle: load it on demand
+  // the first time the user actually types a global search query.
+  const [searchableSongs, setSearchableSongs] = useState<Song[]>([]);
+  const songsLoadStarted = useRef(false);
+  useEffect(() => {
+    if (globalSearchQuery.trim().length < 2 || songsLoadStarted.current) return;
+    songsLoadStarted.current = true;
+    import('./data/jebathotta-jeyageethangal')
+      .then((mod) => setSearchableSongs(mod.JEBATHOTTA_JEYAGEETHANGAL_SONGS))
+      .catch(() => { songsLoadStarted.current = false; });
+  }, [globalSearchQuery]);
+
   // SECURITY: effectiveRole always from Firebase custom claims when configured.
   // demoRole only applies when Firebase is NOT configured (pure demo mode).
   const effectiveRole: Role = authState.isConfigured ? authState.effectiveRole : demoRole;
@@ -192,6 +186,8 @@ function AppInner() {
     useSyncedCollection<Announcement>('announcements', MOCK_ANNOUNCEMENTS, syncEnabled, tenantContext);
   const { records: rehearsals, actions: rehearsalSync } =
     useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext);
+  const { actions: attendanceSync } =
+    useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext);
 
   useEffect(() => {
     if (!authState.user && TAB_REQUIRED_ROLE[activeTab] !== 'public_user') {
@@ -237,7 +233,7 @@ function AppInner() {
         onSelect: () => navigate('registration'),
       }));
 
-    const songResults: GlobalSearchResult[] = ALL_SONGS
+    const songResults: GlobalSearchResult[] = searchableSongs
       .filter((s) =>
         (s.displayTitle || s.title || '').toLowerCase().includes(query)
         || (s.lyrics || '').toLowerCase().includes(query)
@@ -267,7 +263,7 @@ function AppInner() {
       }));
 
     return [...memberResults, ...songResults, ...massResults].slice(0, 10);
-  }, [globalSearchQuery, members, masses]);
+  }, [globalSearchQuery, members, masses, searchableSongs]);
 
   useEffect(() => {
     if (!isSearchResultsOpen) return;
@@ -478,7 +474,7 @@ function AppInner() {
             {activeTab === 'landing' && (
               <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
                 events={events} announcements={announcements}
-                onNavigate={(section) => navigate(section === 'songs_library' ? 'song_library' : section === 'unified_calendar' ? 'calendar' : section as Tab)} />
+                onNavigate={navigate} />
             )}
             {activeTab === 'calendar' && (
               <UnifiedCalendar currentLang={currentLang} masses={masses} events={events}
@@ -511,7 +507,7 @@ function AppInner() {
                     if (!guard.isAdmin) {
                       return Promise.resolve({ ok: false, error: 'Admin access required.' });
                     }
-                    return paymentSync.upsert({ ...payment, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid);
+                    return paymentSync.upsert({ ...payment, ...createRecordMetadata(authState.user?.uid ?? 'admin', payment.status, tenantContext) }, authState.user?.uid);
                   }}
                   onUpdatePayment={(id, receivedAmount, status) => {
                     if (!guard.isAdmin) return;
@@ -562,9 +558,15 @@ function AppInner() {
                   rehearsals={rehearsals}
                   members={members}
                   isAdmin={guard.isAdmin}
-                  onAddRehearsal={(r) => void rehearsalSync.upsert({ ...r, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid)}
-                  onUpdateRehearsal={(r) => void rehearsalSync.upsert({ ...r, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid)}
-                  onMarkAttendance={(_rec: AttendanceRecord) => { /* TODO: persist to attendance collection */ }}
+                  onAddRehearsal={(r) => void rehearsalSync.upsert({ ...r, ...createRecordMetadata(authState.user?.uid ?? 'admin', r.status, tenantContext) }, authState.user?.uid)}
+                  onUpdateRehearsal={(r) => void rehearsalSync.upsert({ ...r, ...createRecordMetadata(authState.user?.uid ?? 'admin', r.status, tenantContext) }, authState.user?.uid)}
+                  onMarkAttendance={(rec: AttendanceRecord) => {
+                    if (!guard.isAdmin) return;
+                    void attendanceSync.upsert(
+                      { ...rec, ...createRecordMetadata(authState.user?.uid ?? 'admin', rec.status, tenantContext) },
+                      authState.user?.uid,
+                    );
+                  }}
                 />
               ) : <AccessDenied requiredRole="choir_member" />
             )}

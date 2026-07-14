@@ -3,6 +3,7 @@ import { Member, Mass, Payment, Language } from '../types';
 import { BarChart2, IndianRupee, Layers, Users, TrendingUp, Music2, ChevronRight } from 'lucide-react';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { formatINR } from '../utils/currency';
+import { calculateChoirHealth, isActiveMember, sumProposed, sumReceived } from '../utils/choirStats';
 import { useParish } from '../features/parish/ParishContext';
 
 interface AnalyticsDashboardProps {
@@ -26,8 +27,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
   const { selectedParish } = useParish();
 
-  const activeMembers    = members.filter((m) => m.status === 'Active Member');
-  const pendingCount     = members.filter((m) => m.status === 'Pending').length;
+  const activeMembers    = members.filter(isActiveMember);
+  const { pendingCount, averageAttendance: avgAttendance } = calculateChoirHealth(members);
   const singers          = activeMembers.filter((m) => m.memberType === 'Singer');
   const instrumentalists = activeMembers.filter((m) => m.memberType !== 'Singer');
 
@@ -39,10 +40,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const pct      = (n: number) => Math.round((n / total) * 100);
 
   const specialMassCategories = ['Special Mass', 'Death Mass', 'Death Anniversary Mass'];
-  const totalReceived  = payments.filter((p) => p.status === 'Received').reduce((s, p) => s + (p.receivedAmount || p.promisedAmount), 0);
+  const totalReceived  = sumReceived(payments);
   const totalPending   = payments.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.pendingAmount, 0);
-  const totalProposed  = payments.reduce((s, p) => s + p.promisedAmount, 0);
-  const avgAttendance  = Math.round(activeMembers.reduce((s, m) => s + (m.attendanceRate ?? 0), 0) / Math.max(activeMembers.length, 1));
+  const totalProposed  = sumProposed(payments);
   const parishLabel    = selectedParish?.parishName ?? 'Parish';
 
   const voiceParts = [

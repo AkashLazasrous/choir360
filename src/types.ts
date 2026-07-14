@@ -8,6 +8,22 @@ export type Role =
 
 export type Language = 'en' | 'ta' | 'ml' | 'te' | 'hi';
 
+/** App navigation tabs. Keep in sync with the nav config in App.tsx. */
+export type Tab =
+  | 'landing'
+  | 'calendar'
+  | 'masses'
+  | 'registration'
+  | 'dashboard_member'
+  | 'bible'
+  | 'song_library'
+  | 'ai_hub'
+  | 'analytics'
+  | 'catholic_hub'
+  | 'liturgical_planner'
+  | 'gamification'
+  | 'rehearsals';
+
 export type RecordStatus = string;
 
 export interface TenantScopedRecord {

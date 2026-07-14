@@ -159,7 +159,7 @@ export const DailyReadingsCard: React.FC = () => {
         setReading(payload.reading);
         writeCachedReading(payload.reading);
       } else {
-        const fallback = cachedUsesSelectedDate && readingHasContent(cached) ? cached : getFallbackReading(date);
+        const fallback = cachedUsesSelectedDate && cached && readingHasContent(cached) ? cached : getFallbackReading(date);
         setReading({
           ...fallback,
           syncStatus: 'cached',

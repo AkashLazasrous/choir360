@@ -42,7 +42,7 @@ const LeaderboardRow: React.FC<{ profile: GamificationProfile; isCurrentUser: bo
 
 export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
   member,
-  allMembers = [],
+  allMembers = [] as Member[],
 }) => {
   const [showBadges, setShowBadges] = useState(true);
   const [showLeaderboard, setShowLeaderboard] = useState(false);

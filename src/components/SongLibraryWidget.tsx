@@ -113,7 +113,7 @@ const PdfSongPage: React.FC<PdfSongPageProps> = ({ song, isPresentationMode }) =
         const pdfjsLib = await getPdfjsLib();
         const loadingTask = pdfjsLib.getDocument({ url: song.sourcePdfUrl });
         const document = await loadingTask.promise;
-        const page = await document.getPage(song.sourcePageNumber);
+        const page = await document.getPage(song.sourcePageNumber ?? song.pageNumber ?? 1);
         if (!isMounted) return;
 
         const baseViewport = page.getViewport({ scale: 1 });

@@ -27,11 +27,11 @@ export const DEFAULT_TENANT_CONTEXT: TenantContext = {
   choirId: import.meta.env.VITE_DEFAULT_CHOIR_ID || 'church-of-sts-joseph-the-worker-philip-ambattur-ot-choir',
 };
 
-export function createRecordMetadata(
+export function createRecordMetadata<S extends RecordStatus = RecordStatus>(
   userId = 'system',
-  status: RecordStatus = 'active',
+  status: S = 'active' as S,
   context: TenantContext = DEFAULT_TENANT_CONTEXT,
-): TenantScopedRecord {
+): Omit<TenantScopedRecord, 'status'> & { status: S } {
   const timestamp = nowIso();
   return {
     ...context,

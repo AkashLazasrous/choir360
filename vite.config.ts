@@ -16,7 +16,8 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       proxy: {
         '/api': {
-          target: 'http://localhost:3001',
+          // Express API (server.ts) listens on 3000 by default.
+          target: 'http://localhost:3000',
           changeOrigin: true,
         },
       },

@@ -23,9 +23,10 @@ PROJECT_ID="choir360x"
 REGION="asia-south1"
 SERVICE_NAME="choir360-backend"
 
-CLOUDINARY_CLOUD_NAME="${CLOUDINARY_CLOUD_NAME:-dq4inx7d3}"
-CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY:-522143587251288}"
-CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET:-XNIfdRHZrHcMNrbI46KRt00_gC0}"
+# Cloudinary credentials must come from the environment — never commit them.
+: "${CLOUDINARY_CLOUD_NAME:?Set CLOUDINARY_CLOUD_NAME before deploying}"
+: "${CLOUDINARY_API_KEY:?Set CLOUDINARY_API_KEY before deploying}"
+: "${CLOUDINARY_API_SECRET:?Set CLOUDINARY_API_SECRET before deploying}"
 
 echo ""
 echo "╔══════════════════════════════════════╗"
