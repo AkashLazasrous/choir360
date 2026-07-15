@@ -11,7 +11,7 @@ import { Member, TenantScopedRecord } from '../types';
  * rosters, voice-part lists, attendance, etc. keep working off a single
  * cheap read.
  */
-const PRIVATE_FIELD_KEYS = ['dob', 'mobile', 'whatsapp', 'email', 'address', 'emergencyContact'] as const;
+const PRIVATE_FIELD_KEYS = ['dob', 'mobile', 'mobileNormalized', 'whatsapp', 'email', 'address', 'emergencyContact'] as const;
 type PrivateFieldKey = typeof PRIVATE_FIELD_KEYS[number];
 type PrivateFields = Pick<Member, PrivateFieldKey>;
 type PublicMember = Omit<Member, PrivateFieldKey>;
@@ -20,6 +20,7 @@ type PrivateMemberRecord = PrivateFields & { id: string } & Partial<TenantScoped
 const EMPTY_PRIVATE_FIELDS: PrivateFields = {
   dob: '',
   mobile: '',
+  mobileNormalized: '',
   whatsapp: '',
   email: '',
   address: '',
@@ -52,13 +53,14 @@ function copyTenantEnvelope(record: Partial<TenantScopedRecord>) {
 }
 
 function splitMember(member: Member & Partial<TenantScopedRecord>): { publicPart: PublicMember; privatePart: PrivateMemberRecord } {
-  const { dob, mobile, whatsapp, email, address, emergencyContact, ...publicPart } = member;
+  const { dob, mobile, mobileNormalized, whatsapp, email, address, emergencyContact, ...publicPart } = member;
   return {
     publicPart,
     privatePart: {
       id: member.id,
       dob,
       mobile,
+      mobileNormalized: mobileNormalized || mobile.replace(/\D/g, ''),
       whatsapp,
       email,
       address,

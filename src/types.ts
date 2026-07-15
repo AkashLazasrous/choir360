@@ -106,6 +106,8 @@ export interface Member {
   gender: string;
   dob: string;
   mobile: string;
+  /** Digits-only mobile for login lookup (privateMembers). */
+  mobileNormalized?: string;
   whatsapp: string;
   email: string;
   address: string;

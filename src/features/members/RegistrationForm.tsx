@@ -9,19 +9,23 @@ import {
   Clock,
   Send,
 } from 'lucide-react';
-import { VoiceType, MemberType, Language } from '../../types';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { Member, VoiceType, MemberType, Language } from '../../types';
 import type { CloudinaryMediaRecord } from '../../types';
 import { MULTILINGUAL_DICTIONARY } from '../../data/mockData';
 import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { useParish } from '../parish/ParishContext';
 import { activeParishes, findParishById } from '../../data/madrasMylaporeParishes';
 import { apiFetch } from '../../services/apiClient';
-import { dobToPassword } from '../../utils/memberAuth';
+import { auth } from '../../services/firebase';
+import { dobToPassword, normalizeMobile } from '../../utils/memberAuth';
 
 interface RegistrationFormProps {
   currentLang: Language;
   isAdmin: boolean;
   onSubmitted: (message: string) => void;
+  /** Used when the server register API is unavailable (e.g. Render not redeployed yet). */
+  onPersistMember?: (member: Member) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const REG_STEPS = [
@@ -51,6 +55,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   currentLang,
   isAdmin,
   onSubmitted,
+  onPersistMember,
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
   const { selectedParish } = useParish();
@@ -107,6 +112,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       photoUrl;
 
     setIsSubmitting(true);
+    const successMessage =
+      `Success! ${firstName}'s registration is pending parish approval. After approval, sign in with email or mobile and DOB password ${dobPasswordHint}.`;
+
+    const resetForm = () => {
+      setFirstName('');
+      setLastName('');
+      setMobile('');
+      setWhatsapp('');
+      setEmail('');
+      setAddress('');
+      setSkills('');
+      setCloudinaryRecord(null);
+      setEmergencyName('');
+      setEmergencyRelation('');
+      setEmergencyPhone('');
+      setStep(1);
+    };
+
     try {
       const response = await apiFetch('/api/members/register', {
         method: 'POST',
@@ -133,35 +156,76 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           },
         }),
       });
-      const payload = await response.json().catch(() => ({} as { error?: string }));
-      if (!response.ok) {
+      const payload = await response.json().catch(() => ({} as { error?: string; message?: string }));
+
+      if (response.ok) {
+        onSubmitted(payload?.message || successMessage);
+        resetForm();
+        return;
+      }
+
+      // Backend not redeployed yet — create Auth user + Pending member from the client.
+      if (response.status !== 404 || !onPersistMember || !auth) {
         const detail = typeof payload?.error === 'string' && payload.error.trim()
           ? payload.error
-          : response.status === 404
-            ? 'Registration service is updating. Please wait a minute and try again.'
-            : `Registration failed (${response.status}). Please try again.`;
+          : `Registration failed (${response.status}). Please try again.`;
         throw new Error(detail);
       }
 
-      onSubmitted(
-        payload?.message
-          || `Success! ${firstName}'s registration is pending parish approval. After approval, sign in with email or mobile and DOB password ${dobPasswordHint}.`,
-      );
+      const password = dobToPassword(dob);
+      const credential = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      const uid = credential.user.uid;
+      await updateProfile(credential.user, { displayName: `${firstName} ${lastName}`.trim() });
 
-      setFirstName('');
-      setLastName('');
-      setMobile('');
-      setWhatsapp('');
-      setEmail('');
-      setAddress('');
-      setSkills('');
-      setCloudinaryRecord(null);
-      setEmergencyName('');
-      setEmergencyRelation('');
-      setEmergencyPhone('');
-      setStep(1);
+      try {
+        await apiFetch('/api/auth/sync-role', { method: 'POST' });
+        await credential.user.getIdToken(true);
+      } catch {
+        // Non-fatal: claims sync may still run on next sign-in
+      }
+
+      const member: Member = {
+        id: uid,
+        photoUrl: finalPhotoUrl,
+        firstName,
+        lastName,
+        gender,
+        dob,
+        mobile,
+        mobileNormalized: normalizeMobile(mobile),
+        whatsapp: whatsapp || mobile,
+        email: email.trim().toLowerCase(),
+        address,
+        parish: parish.displayName,
+        choirName: choirName || `${parish.parishName} Choir`,
+        voiceType: memberType === 'Singer' ? voiceType : 'None',
+        memberType,
+        skills,
+        experience: Number(experience),
+        emergencyContact: {
+          name: emergencyName || 'Guardian',
+          relationship: emergencyRelation || 'Family',
+          phone: emergencyPhone || mobile,
+        },
+        status: 'Pending',
+        joiningDate: new Date().toISOString().split('T')[0],
+        attendanceRate: 0,
+      };
+
+      const persist = await onPersistMember(member);
+      if (!persist.ok) {
+        throw new Error(persist.error || 'Could not save your registration. Please try again.');
+      }
+
+      onSubmitted(successMessage);
+      resetForm();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Registration failed.');
+      const code = error && typeof error === 'object' && 'code' in error ? String((error as { code: string }).code) : '';
+      if (code === 'auth/email-already-in-use') {
+        setFormError('An account already exists for this email. Sign in instead, or ask an admin to review your application.');
+      } else {
+        setFormError(error instanceof Error ? error.message : 'Registration failed.');
+      }
     } finally {
       setIsSubmitting(false);
     }

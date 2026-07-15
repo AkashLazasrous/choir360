@@ -15,7 +15,7 @@ import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
-import { ARCHDIOCESE_ID, findParishById } from './data/madrasMylaporeParishes';
+import { ARCHDIOCESE_ID, activeParishes, findParishById } from './data/madrasMylaporeParishes';
 import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
 import { ToastProvider, useToast } from './components/feedback/ToastProvider';
 import { PageTransition } from './components/interactions/PageTransition';
@@ -593,6 +593,17 @@ function AppInner() {
             )}
             {activeTab === 'registration' && (
               <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
+                onPersistMember={async (member) => {
+                  // Firestore rules require tenant envelope to match JWT claims.
+                  return memberSync.upsert(
+                    {
+                      ...member,
+                      parish: tenantContext.parishName || member.parish,
+                      ...createRecordMetadata(member.id, 'Pending', tenantContext),
+                    },
+                    member.id,
+                  );
+                }}
                 onUpdateMemberStatus={handleUpdateMemberStatus} />
             )}
             {activeTab === 'dashboard_member' && (

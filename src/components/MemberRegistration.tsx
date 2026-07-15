@@ -9,6 +9,7 @@ interface MemberRegistrationProps {
   currentLang: Language;
   currentUserRole: string;
   members: Member[];
+  onPersistMember: (member: Member) => Promise<{ ok: boolean; error?: string }>;
   onUpdateMemberStatus: (memberId: string, status: MemberStatus, note?: string) => void;
 }
 
@@ -21,6 +22,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
   currentLang,
   currentUserRole,
   members,
+  onPersistMember,
   onUpdateMemberStatus
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
@@ -84,6 +86,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
           currentLang={currentLang}
           isAdmin={isAdmin}
           onSubmitted={handleSubmitted}
+          onPersistMember={onPersistMember}
         />
       )}
 
