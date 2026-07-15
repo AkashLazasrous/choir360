@@ -36,28 +36,43 @@ export const HubSongsTab: React.FC = () => {
   }, [songs, selectedSongId]);
 
   const ensureSongCategory = async (categoryId: string) => {
+    setSongCategory(categoryId);
+    setSelectedSongId('');
+    setSongSyncMessage('');
+
     if (categoryId === 'all') {
-      setSongCategory('all');
-      setSelectedSongId('');
+      setSongSyncMessage('Loading all cached songs...');
+      await loadSongs('all');
       setSongSyncMessage('');
-      await loadSongs();
       return;
     }
 
-    setSongCategory(categoryId);
-    setSelectedSongId('');
-    setSongSyncMessage('Checking cached songs for this category...');
     setEnsuringSongCategory(categoryId);
+    setSongSyncMessage('Loading cached songs for this category...');
 
     try {
-      const response = await apiFetch('/api/catholic-hub/songs/ensure', {
-        method: 'POST',
-        body: JSON.stringify({ categoryId }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || 'Song category sync failed.');
-      setSongSyncMessage(payload?.skipped ? payload.message || 'Category already synced.' : 'Category synced. Loading songs...');
-      await loadSongs();
+      // Load category-scoped songs first — avoids the global 1500-song cap that
+      // was hiding categories like varugai even though they were synced in Firestore.
+      let categorySongs = await loadSongs(categoryId);
+
+      if (categorySongs.length === 0) {
+        setSongSyncMessage('No cached songs found — syncing from source...');
+        const response = await apiFetch('/api/catholic-hub/songs/ensure', {
+          method: 'POST',
+          body: JSON.stringify({ categoryId, force: true }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error || 'Song category sync failed.');
+        setSongSyncMessage(payload?.skipped ? payload.message || 'Category already synced.' : 'Category synced. Loading songs...');
+        categorySongs = await loadSongs(categoryId);
+      }
+
+      if (categorySongs.length > 0) {
+        setSelectedSongId(categorySongs[0].id);
+        setSongSyncMessage('');
+      } else {
+        setSongSyncMessage('Sync completed but no songs were found for this category.');
+      }
     } catch (error) {
       setSongSyncMessage(error instanceof Error ? error.message : 'Song category sync failed.');
     } finally {
@@ -68,6 +83,7 @@ export const HubSongsTab: React.FC = () => {
   const filteredSongs = useMemo(() => {
     const queryParts = expandHubSearchQuery(songSearch);
     const seen = new Set<string>();
+    // When a category is selected, songs are already category-scoped from the API.
     return songs.filter((song) => {
       if (seen.has(song.id)) return false;
       seen.add(song.id);
@@ -141,7 +157,7 @@ export const HubSongsTab: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => void loadSongs()}
+              onClick={() => void loadSongs(songCategory === 'all' ? undefined : songCategory)}
               disabled={isLoadingSongs}
               className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
             >
@@ -203,8 +219,8 @@ export const HubSongsTab: React.FC = () => {
               ) : filteredSongs.length === 0 ? (
                 <div className="space-y-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
                   {/* Category not synced yet — show targeted sync action for admins */}
-                  {songCategory !== 'all' && songs.length > 0 ? (
-                    // Songs exist globally but none for this category → not synced
+                  {songCategory !== 'all' && filteredSongs.length === 0 && !isLoadingSongs ? (
+                    // Category truly empty after a category-scoped load
                     <div className="space-y-2 px-1 py-2 text-center">
                       <p className="font-bold text-slate-700">
                         {`"${HUB_SONG_CATEGORIES.find(c => c.categoryId === songCategory)?.categoryTamil || songCategory}" has not been synced yet.`}
@@ -280,7 +296,7 @@ export const HubSongsTab: React.FC = () => {
               <p className="mt-1 max-w-md text-xs text-slate-500">Songs are not available yet. Please sync content or try again.</p>
               <button
                 type="button"
-                onClick={() => void loadSongs()}
+                onClick={() => void loadSongs(songCategory === 'all' ? undefined : songCategory)}
                 className="mt-4 inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-amber-800 px-4 text-xs font-bold text-white"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Retry

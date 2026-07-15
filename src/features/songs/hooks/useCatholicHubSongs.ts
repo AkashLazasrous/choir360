@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { collection, getDocs, limit, query, where } from 'firebase/firestore';
 import { apiFetch } from '../../../services/apiClient';
 import { db, ensureFirebaseConfigured } from '../../../services/firebase';
+import { stripSongSiteChrome } from '../../../utils/songLyricsClean';
 
 export interface CatholicHubSong {
   id: string;
@@ -52,7 +53,15 @@ export interface UseCatholicHubSongsResult {
   loading: boolean;
   error: string;
   lastLoadedAt: string;
-  refresh: () => Promise<void>;
+  /** Reload songs. Pass a categoryId to fetch only that category (avoids the global cap). */
+  refresh: (categoryId?: string) => Promise<CatholicHubSong[]>;
+}
+
+function cleanSongRecord(song: CatholicHubSong): CatholicHubSong {
+  return {
+    ...song,
+    lyrics: stripSongSiteChrome(song.lyrics || ''),
+  };
 }
 
 function dedupeAndSortSongs(rawSongs: CatholicHubSong[]) {
@@ -69,7 +78,7 @@ function dedupeAndSortSongs(rawSongs: CatholicHubSong[]) {
     }
   }
 
-  const loaded = Array.from(seenUrls.values());
+  const loaded = Array.from(seenUrls.values()).map(cleanSongRecord);
   loaded.sort((a, b) => {
     const cat = (a.category ?? '').localeCompare(b.category ?? '');
     return cat !== 0 ? cat : (a.order ?? 0) - (b.order ?? 0);
@@ -77,8 +86,11 @@ function dedupeAndSortSongs(rawSongs: CatholicHubSong[]) {
   return loaded;
 }
 
-async function loadSongsFromApi() {
-  const response = await apiFetch('/api/catholic-hub/songs');
+async function loadSongsFromApi(categoryId?: string) {
+  const qs = categoryId && categoryId !== 'all'
+    ? `?category=${encodeURIComponent(categoryId)}`
+    : '';
+  const response = await apiFetch(`/api/catholic-hub/songs${qs}`);
   if (!response.ok) throw new Error('Backend song cache is unavailable.');
   const payload = await response.json();
   return {
@@ -87,19 +99,20 @@ async function loadSongsFromApi() {
   };
 }
 
-async function loadSongsFromFirestore() {
+async function loadSongsFromFirestore(categoryId?: string) {
   await ensureFirebaseConfigured();
 
   if (!db) {
     return { songs: [] as CatholicHubSong[], syncStatuses: [] as CatholicHubSongSyncStatus[] };
   }
 
+  const constraints = [where('status', '==', 'active')];
+  if (categoryId && categoryId !== 'all') {
+    constraints.push(where('category', '==', categoryId));
+  }
+
   const songsSnap = await getDocs(
-    query(
-      collection(db, 'catholicHubSongs'),
-      where('status', '==', 'active'),
-      limit(1500),
-    ),
+    query(collection(db, 'catholicHubSongs'), ...constraints, limit(10000)),
   );
   let syncStatuses: CatholicHubSongSyncStatus[];
   try {
@@ -124,21 +137,23 @@ export function useCatholicHubSongs(): UseCatholicHubSongsResult {
   const [error, setError] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState('');
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (categoryId?: string): Promise<CatholicHubSong[]> => {
     setLoading(true);
     setError('');
 
     try {
-      const loaded = await loadSongsFromApi();
+      const loaded = await loadSongsFromApi(categoryId);
       setSongs(loaded.songs);
       setSyncStatuses(loaded.syncStatuses);
       setLastLoadedAt(new Date().toISOString());
+      return loaded.songs;
     } catch (apiError) {
       try {
-        const loaded = await loadSongsFromFirestore();
+        const loaded = await loadSongsFromFirestore(categoryId);
         setSongs(loaded.songs);
         setSyncStatuses(loaded.syncStatuses);
         setLastLoadedAt(new Date().toISOString());
+        return loaded.songs;
       } catch (fallbackError) {
         const msg = fallbackError instanceof Error ? fallbackError.message : String(apiError);
         if (msg.includes('Missing or insufficient permissions')) {
@@ -147,6 +162,7 @@ export function useCatholicHubSongs(): UseCatholicHubSongsResult {
         } else {
           setError('Songs could not be loaded. Please try refreshing.');
         }
+        return [];
       }
     } finally {
       setLoading(false);

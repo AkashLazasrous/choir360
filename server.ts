@@ -6,6 +6,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
 import dotenv from "dotenv";
+import { stripSongSiteChrome, isSongChromeLine } from "./src/utils/songLyricsClean";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -773,7 +774,7 @@ function decodeHtmlEntities(value: string) {
 function decodeCatholicHubSongRecord(record: any) {
   const title = decodeHtmlEntities(String(record.title || ""));
   const categoryTamil = decodeHtmlEntities(String(record.categoryTamil || ""));
-  const lyrics = decodeHtmlEntities(String(record.lyrics || ""));
+  const lyrics = stripSongSiteChrome(decodeHtmlEntities(String(record.lyrics || "")));
   const tags = Array.isArray(record.tags) ? record.tags.map((tag: unknown) => decodeHtmlEntities(String(tag))) : [];
 
   return {
@@ -893,7 +894,9 @@ function extractCatholicSongLinks(categoryPageHtml: string, sourceUrl: string) {
         return false;
       }
     })();
-    const isSongPage = /\/20\d{2}\/\d{2}\//.test(href) || /\.(?:html?|xhtml)(?:$|[?#])/i.test(href);
+    const isSongPage = /\/20\d{2}\/\d{2}\//.test(href)
+      || /\/s\d+\.htm/i.test(href)
+      || /\.(?:html?|xhtml)(?:$|[?#])/i.test(href);
     if (!title || title.length < 2 || !isSameHost || href === sourceUrl || !isSongPage || seen.has(href)) continue;
     seen.add(href);
     links.push({ title, sourceUrl: href });
@@ -911,25 +914,12 @@ function extractCatholicSongLyrics(songHtml: string, fallbackTitle: string, sour
     .filter(Boolean);
   const title = lines.find((line) => normalizeTamilSearchText(line).includes(normalizeTamilSearchText(fallbackTitle)))
     || fallbackTitle;
-  const chromePatterns = [
-    /^posted by/i,
-    /^labels?:/i,
-    /^இதற்கு குழுசேர்/,
-    /^முகப்பு$/,
-    /^நமது தளங்கள்/,
-    /^♫ பாடல்கள்/,
-    // site watermark: "♪ பாடலைக் கேட்க / பதிவிரக்கம் செய்ய..."
-    /♪\s*பாடலைக்/,
-    /பதிவிரக்கம் செய்ய/,
-    /^♪\s*♪/,
-    /கேட்க\s*\/\s*பதிவிரக்கம்/,
-  ];
-  const lyrics = lines
-    .filter((line) => line !== title)
-    .filter((line) => !chromePatterns.some((pattern) => pattern.test(line)))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  const lyrics = stripSongSiteChrome(
+    lines
+      .filter((line) => line !== title)
+      .filter((line) => !isSongChromeLine(line))
+      .join("\n"),
+  );
   return { title, lyrics };
 }
 
@@ -1507,7 +1497,7 @@ app.get("/api/catholic-hub/songs", async (req, res) => {
     }
 
     // Read from Firestore only — no lazy sync here.
-    const snapshot = await firestoreQuery.limit(1500).get();
+    const snapshot = await firestoreQuery.limit(10000).get();
 
     const songs = snapshot.docs
       .map((doc) => decodeCatholicHubSongRecord(doc.data()))
@@ -1555,6 +1545,7 @@ app.post("/api/catholic-hub/songs/sync", requireFirebaseAuth, requireAdminRole, 
 
 app.post("/api/catholic-hub/songs/ensure", ensureSyncLimiter, async (req, res) => {
   const requestedCategory = typeof req.body?.categoryId === "string" ? req.body.categoryId : "";
+  const force = req.body?.force === true || req.body?.force === "1";
   try {
     if (!requestedCategory || requestedCategory === "all") {
       return res.status(400).json({ error: "Select a song category to sync." });
@@ -1563,7 +1554,7 @@ app.post("/api/catholic-hub/songs/ensure", ensureSyncLimiter, async (req, res) =
     const [category] = resolveCatholicHubSongCategories(requestedCategory);
     const decision = await shouldSyncCatholicHubSongCategory(category.categoryId, category.sourceUrl);
 
-    if (!decision.shouldSync) {
+    if (!force && !decision.shouldSync) {
       return res.json({
         ok: true,
         skipped: true,
