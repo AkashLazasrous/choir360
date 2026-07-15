@@ -9,6 +9,7 @@ interface MemberRegistrationProps {
   currentLang: Language;
   currentUserRole: string;
   members: Member[];
+  parishName?: string;
   onPersistMember: (member: Member) => Promise<{ ok: boolean; error?: string }>;
   onUpdateMemberStatus: (memberId: string, status: MemberStatus, note?: string) => void;
 }
@@ -22,6 +23,7 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
   currentLang,
   currentUserRole,
   members,
+  parishName,
   onPersistMember,
   onUpdateMemberStatus
 }) => {
@@ -91,7 +93,11 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
       )}
 
       {isAdmin && activeTab === 'admin_dashboard' && (
-        <ApprovalDesk members={members} onUpdateMemberStatus={onUpdateMemberStatus} />
+        <ApprovalDesk
+          members={members}
+          parishName={parishName}
+          onUpdateMemberStatus={onUpdateMemberStatus}
+        />
       )}
     </div>
   );

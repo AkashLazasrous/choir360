@@ -12,7 +12,7 @@ import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS, MOCK_REHEARSALS } from './data/mockData';
 import { useSyncedCollection } from './hooks/useSyncedCollection';
 import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
-import { useFirebaseAuth } from './hooks/useFirebaseAuth';
+import { hasMinimumRole, useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
 import { ARCHDIOCESE_ID, activeParishes, findParishById } from './data/madrasMylaporeParishes';
@@ -119,15 +119,52 @@ function AppInner() {
   const authState = useFirebaseAuth();
   const showToast = useToast();
 
+  const claimRole = (authState.claims.role ?? 'public_user') as Role;
+  const isAdminViewer = hasMinimumRole(claimRole, 'choir_admin');
+
+  // Seed parish from JWT only when nothing is selected yet (do not force admins
+  // back to DEFAULT parish — that hid Pending applicants under other parishes).
   useEffect(() => {
+    if (selectedParish) return;
     const claimedParishId = authState.claims.parishId;
-    if (claimedParishId && selectedParish?.id !== claimedParishId && findParishById(claimedParishId)) {
+    if (claimedParishId && findParishById(claimedParishId)) {
       selectParish(claimedParishId);
     }
-  }, [authState.claims.parishId, selectedParish?.id, selectParish]);
+  }, [authState.claims.parishId, selectedParish, selectParish]);
 
-  // Build TenantContext from the selected parish; fall back to DEFAULT_TENANT_CONTEXT.
+  // Admins: keep JWT parish claims aligned with the sidebar parish so Firestore
+  // rules + Approval listeners both see that parish's Pending applications.
+  useEffect(() => {
+    if (!authState.user || authState.user.isAnonymous || !selectedParish || !isAdminViewer) return;
+    if (authState.claims.parishId === selectedParish.id) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await apiFetch('/api/auth/set-parish', {
+          method: 'POST',
+          body: JSON.stringify({ parishId: selectedParish.id }),
+        });
+        if (!response.ok || cancelled) return;
+        await authState.refreshToken();
+      } catch {
+        // Non-fatal: listener may still use selectedParish context below
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [authState.user?.uid, authState.claims.parishId, selectedParish?.id, isAdminViewer]);
+
+  // Prefer UI-selected parish for admins (Approval Desk scope). Members keep JWT scope.
   const tenantContext: TenantContext = React.useMemo(() => {
+    if (selectedParish && (isAdminViewer || !authState.claims.parishId)) {
+      return {
+        archdioceseId: selectedParish.archdioceseId,
+        parishName: selectedParish.displayName,
+        tenantId: archdioceseId ?? ARCHDIOCESE_ID,
+        parishId: selectedParish.id,
+        choirId: `${selectedParish.id}-choir`,
+      };
+    }
     if (authState.claims.parishId && authState.claims.tenantId && authState.claims.choirId) {
       const claimedParish = findParishById(authState.claims.parishId);
       return {
@@ -146,7 +183,7 @@ function AppInner() {
       parishId: selectedParish.id,
       choirId: `${selectedParish.id}-choir`,
     };
-  }, [authState.claims, selectedParish, archdioceseId]);
+  }, [authState.claims, selectedParish, archdioceseId, isAdminViewer]);
 
 
   const [currentLang, setCurrentLang] = useState<Language>('en');
@@ -593,13 +630,25 @@ function AppInner() {
             )}
             {activeTab === 'registration' && (
               <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
+                parishName={tenantContext.parishName}
                 onPersistMember={async (member) => {
-                  // Firestore rules require tenant envelope to match JWT claims.
+                  // Prefer the parish chosen on the form (display name → id).
+                  const formParish = activeParishes().find((p) => p.displayName === member.parish)
+                    ?? findParishById(tenantContext.parishId);
+                  const context: TenantContext = formParish
+                    ? {
+                        archdioceseId: formParish.archdioceseId,
+                        parishName: formParish.displayName,
+                        tenantId: formParish.archdioceseId,
+                        parishId: formParish.id,
+                        choirId: `${formParish.id}-choir`,
+                      }
+                    : tenantContext;
                   return memberSync.upsert(
                     {
                       ...member,
-                      parish: tenantContext.parishName || member.parish,
-                      ...createRecordMetadata(member.id, 'Pending', tenantContext),
+                      parish: context.parishName,
+                      ...createRecordMetadata(member.id, 'Pending', context),
                     },
                     member.id,
                   );

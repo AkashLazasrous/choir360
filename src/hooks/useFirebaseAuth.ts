@@ -125,8 +125,18 @@ export function useFirebaseAuth() {
       await signInWithEmailAndPassword(auth, resolveData.email as string, password);
 
       // Sync claims from member status / admin allow-list. Non-fatal on outage.
+      // Pass sidebar parish so parish admins are not forced onto DEFAULT parish.
       try {
-        const syncRes = await apiFetch('/api/auth/sync-role', { method: 'POST' });
+        let selectedParishId = '';
+        try {
+          selectedParishId = localStorage.getItem('choir360_selected_parish_id') || '';
+        } catch {
+          selectedParishId = '';
+        }
+        const syncRes = await apiFetch('/api/auth/sync-role', {
+          method: 'POST',
+          body: JSON.stringify(selectedParishId ? { parishId: selectedParishId } : {}),
+        });
         const syncData = await syncRes.json().catch(() => ({}));
         await auth.currentUser?.getIdToken(true);
         if (auth.currentUser) {

@@ -45,7 +45,7 @@ export function useSyncedCollection<T extends { id: string }>(
       (items) => { setRecords(items); setIsLive(true); setSyncError(null); },
       (error) => { setSyncError(error.message); setIsLive(false); },
       [],
-      50,
+      200,
       tenantContext,
     );
     return unsubscribe;

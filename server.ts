@@ -86,7 +86,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     service: "choir360-backend",
     // Bump when Cloudinary public-signature support changes (ops probe).
-    build: "member-register-dob-login-v1",
+    build: "member-register-parish-scope-v2",
     timestamp: new Date().toISOString(),
   });
 });
@@ -575,14 +575,39 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
     ]);
 
     if (parishAdminEmails.has(email)) {
-      const tenantId = process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "madras-mylapore";
-      const parishId = process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
-      const choirId = process.env.VITE_DEFAULT_CHOIR_ID || process.env.DEFAULT_CHOIR_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir";
-      const archdioceseId = process.env.VITE_DEFAULT_ARCHDIOCESE_ID || process.env.DEFAULT_ARCHDIOCESE_ID || tenantId;
-      const parishName = process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT";
-      const claims = { role: "parish_admin", archdioceseId, parishName, tenantId, parishId, choirId };
+      // Resolve parish for this admin (do NOT always force DEFAULT — that hides
+      // Pending applicants registered under other parishes).
+      const bodyParishId = typeof req.body?.parishId === "string" ? req.body.parishId.trim() : "";
+      const adminDoc = await admin.firestore().collection("admins").doc(uid).get();
+      const adminParishId = String(adminDoc.data()?.parishId || "").trim();
+      const tokenParishId = String((req as any).user?.parishId || "").trim();
+      const defaultParishId =
+        process.env.VITE_DEFAULT_PARISH_ID
+        || process.env.DEFAULT_PARISH_ID
+        || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
+
+      let resolvedParishId = defaultParishId;
+      for (const candidate of [bodyParishId, adminParishId, tokenParishId, defaultParishId]) {
+        if (candidate && findParishById(candidate)) {
+          resolvedParishId = candidate;
+          break;
+        }
+      }
+
+      const tenant = tenantFromParishId(resolvedParishId);
+      const claims = { role: "parish_admin", ...tenant };
       await setMemberClaims(uid, claims);
-      console.log(`[Auth] sync-role: uid=${uid} email=${email} → parish_admin`);
+      // Keep /admins mapping in sync so future logins remember this parish.
+      await admin.firestore().collection("admins").doc(uid).set({
+        uid,
+        email,
+        role: "parish_admin",
+        ...tenant,
+        status: "active",
+        updatedAt: new Date().toISOString(),
+        updatedBy: uid,
+      }, { merge: true });
+      console.log(`[Auth] sync-role: uid=${uid} email=${email} → parish_admin parish=${claims.parishId}`);
       return res.json({ ok: true, role: "parish_admin", claims, pendingApproval: false });
     }
 
@@ -635,6 +660,39 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
     });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to sync role." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: switch active parish (updates JWT claims so listeners/rules match UI)
+// ---------------------------------------------------------------------------
+app.post("/api/auth/set-parish", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const uid = (req as any).user.uid as string;
+    const email = ((req as any).user.email || "").toLowerCase().trim();
+    const role = String((req as any).user?.role || "parish_admin");
+    const parishId = requireString(req.body?.parishId, "parishId", 200);
+    const tenant = tenantFromParishId(parishId);
+    const claims = { role, ...tenant };
+    await setMemberClaims(uid, claims);
+    await admin.firestore().collection("admins").doc(uid).set({
+      uid,
+      email,
+      role,
+      ...tenant,
+      status: "active",
+      updatedAt: new Date().toISOString(),
+      updatedBy: uid,
+    }, { merge: true });
+
+    console.log(`[Auth] set-parish: uid=${uid} → ${parishId}`);
+    return res.json({ ok: true, claims });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "Failed to set parish." });
   }
 });
 
