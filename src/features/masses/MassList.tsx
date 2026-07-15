@@ -24,33 +24,22 @@ export const MassList: React.FC<MassListProps> = ({
   onDeleteMass,
 }) => {
   const [attendanceOpen, setAttendanceOpen] = useState<string | null>(null);
-  const [attendance, setAttendance] = useState<Record<string, string[]>>({});
   const [editingMass, setEditingMass] = useState<Mass | null>(null);
   const [editError, setEditError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const activeMembers = members.filter((m) => ['Active Member', 'Approved', 'Admin'].includes(m.status));
 
-  const toggleAttendee = (massId: string, memberId: string) => {
-    setAttendance((prev) => {
-      const current = prev[massId] || [];
-      const updated = current.includes(memberId)
-        ? current.filter((id) => id !== memberId)
-        : [...current, memberId];
-      return { ...prev, [massId]: updated };
-    });
-  };
-
-  const getAttendees = (massId: string) =>
-    (attendance[massId] || [])
+  const getAttendees = (mass: Mass) =>
+    (mass.attendingMemberIds ?? [])
       .map((id) => activeMembers.find((m) => m.id === id))
       .filter(Boolean) as Member[];
 
-  const getPaymentBreakdown = (massId: string) => {
-    const attendees = getAttendees(massId);
+  const getPaymentBreakdown = (mass: Mass) => {
+    const attendees = getAttendees(mass);
     const singers = attendees.filter((m) => m.memberType === 'Singer' || m.memberType === 'Other');
     const instrumentalists = attendees.filter((m) => !['Singer', 'Other'].includes(m.memberType));
-    const payment = payments.find((p) => p.massId === massId);
+    const payment = payments.find((p) => p.massId === mass.id);
     if (!payment) return null;
     const c = calculatePaymentShares(payment.promisedAmount, singers.length, instrumentalists.length);
     return { singers, instrumentalists, ...c, payment };
@@ -91,9 +80,9 @@ export const MassList: React.FC<MassListProps> = ({
       <div className="space-y-3">
         {masses.map((m) => {
           const isOpen = attendanceOpen === m.id;
-          const attendees = getAttendees(m.id);
-          const bdown = getPaymentBreakdown(m.id);
-          const attendeeIds = attendance[m.id] || [];
+          const attendees = getAttendees(m);
+          const bdown = getPaymentBreakdown(m);
+          const attendeeIds = m.attendingMemberIds ?? [];
           const menuOpen = menuOpenId === m.id;
 
           return (
@@ -169,37 +158,30 @@ export const MassList: React.FC<MassListProps> = ({
                 <div className="space-y-4 border-t border-black/[0.06] bg-[#f5f5f7] px-4 py-4">
                   <div>
                     <p className="apple-label mb-2 flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" /> Mark attendance
+                      <Users className="h-3.5 w-3.5" /> Attendance
                     </p>
-                    {activeMembers.length === 0 ? (
-                      <p className="text-[14px] text-[#86868b]">No active members found.</p>
+                    {attendeeIds.length === 0 ? (
+                      <p className="text-[14px] text-[#86868b]">
+                        No attendance logged yet. Use the Attendance tab to mark members.
+                      </p>
                     ) : (
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
-                        {activeMembers.map((mem) => {
-                          const checked = attendeeIds.includes(mem.id);
+                        {attendees.map((mem) => {
                           const isInstrumentalist = !['Singer', 'Other'].includes(mem.memberType);
                           return (
-                            <label
+                            <div
                               key={mem.id}
-                              className={`flex min-h-[52px] cursor-pointer items-center gap-3 rounded-2xl border px-3 py-2.5 text-[14px] transition ${
-                                checked
-                                  ? isInstrumentalist
-                                    ? 'border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.14)] text-[#8a6a10]'
-                                    : 'border-[rgba(24,57,47,0.25)] bg-[rgba(24,57,47,0.08)] text-[#18392f]'
-                                  : 'border-black/[0.06] bg-white text-[#3a3a3c]'
+                              className={`flex min-h-[52px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-[14px] ${
+                                isInstrumentalist
+                                  ? 'border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.14)] text-[#8a6a10]'
+                                  : 'border-[rgba(24,57,47,0.25)] bg-[rgba(24,57,47,0.08)] text-[#18392f]'
                               }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleAttendee(m.id, mem.id)}
-                                className="h-5 w-5 rounded accent-[#18392f]"
-                              />
                               <span>
                                 <span className="font-semibold">{mem.firstName} {mem.lastName}</span>
                                 <span className="block text-[12px] opacity-70">{mem.memberType}</span>
                               </span>
-                            </label>
+                            </div>
                           );
                         })}
                       </div>

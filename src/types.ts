@@ -22,7 +22,8 @@ export type Tab =
   | 'catholic_hub'
   | 'liturgical_planner'
   | 'gamification'
-  | 'rehearsals';
+  | 'rehearsals'
+  | 'attendance';
 
 export type RecordStatus = string;
 
@@ -179,6 +180,8 @@ export interface Mass {
   notes?: string;
   /** Choir members who attended this Mass */
   attendingMemberIds?: string[];
+  /** Links attendance logs to Sunday vs Special Mass sheets */
+  activityKind?: ActivityKind;
 }
 
 export interface Payment {
@@ -240,10 +243,15 @@ export interface ShareCalculation {
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
 
+/** Choir activity kinds aligned with the Ambattur OT spreadsheet tabs. */
+export type ActivityKind = 'sunday_mass' | 'practice' | 'special_mass';
+
 export interface AttendanceRecord {
   id: string;
   entityId: string;
   entityType: 'Mass' | 'Rehearsal' | 'Event';
+  /** Activity subtype for stats rules (Excused counts differently on practice). */
+  activityKind?: ActivityKind;
   entityName: string;
   date: string;
   memberId: string;
@@ -276,6 +284,8 @@ export interface Rehearsal {
   songs?: string[];
   notes?: string;
   attendingMemberIds?: string[];
+  /** Practice sessions from the attendance spreadsheet */
+  activityKind?: ActivityKind;
   status: 'Scheduled' | 'Completed' | 'Cancelled';
 }
 

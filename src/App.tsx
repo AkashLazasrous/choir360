@@ -3,7 +3,7 @@ import { MotionConfig, motion } from 'motion/react';
 import {
   BarChart3, Bell, CalendarDays, Church, Command,
   HeartHandshake, LayoutDashboard, Menu, Music2, Search,
-  Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText,
+  Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText, ClipboardList,
 } from 'lucide-react';
 import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
@@ -15,6 +15,16 @@ import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { hasMinimumRole, useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
+import {
+  attendingMemberIdsFromMarks,
+  buildAttendanceRecords,
+  buildMassFromActivity,
+  buildRehearsalFromActivity,
+  dedupeImportSessions,
+  findActivityParent,
+  sessionMarksUnchanged,
+} from './utils/attendanceActivity';
+import type { ActivityAttendanceImportPayload, ActivityAttendanceSavePayload } from './features/attendance/ActivityAttendance';
 import { ARCHDIOCESE_ID, activeParishes, findParishById } from './data/madrasMylaporeParishes';
 import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
 import { ToastProvider, useToast } from './components/feedback/ToastProvider';
@@ -39,6 +49,7 @@ const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
   gamification: 'choir_member',
   analytics: 'choir_admin',
   rehearsals: 'choir_member',
+  attendance: 'choir_member',
 };
 
 // ─── Lazy Imports ─────────────────────────────────────────────────────────────
@@ -57,12 +68,14 @@ const AnalyticsDashboard = React.lazy(() => import('./components/AnalyticsDashbo
 const CatholicKnowledgeHub = React.lazy(() => import('./components/CatholicKnowledgeHub').then((m) => ({ default: m.CatholicKnowledgeHub })));
 const LiturgicalPlanner = React.lazy(() => import('./components/LiturgicalPlanner').then((m) => ({ default: m.LiturgicalPlanner })));
 const GamificationProfileView = React.lazy(() => import('./components/GamificationProfile').then((m) => ({ default: m.GamificationProfileView })));
+const ActivityAttendance = React.lazy(() => import('./features/attendance/ActivityAttendance').then((m) => ({ default: m.ActivityAttendance })));
 
 // ─── Nav Config ──────────────────────────────────────────────────────────────
 const navItems: { id: Tab; label: string; icon: React.ElementType; minRole: Role }[] = [
   { id: 'landing',             label: 'Overview',         icon: LayoutDashboard, minRole: 'public_user' },
   { id: 'calendar',            label: 'Calendar',         icon: CalendarDays,    minRole: 'public_user' },
   { id: 'masses',              label: 'Liturgy & Masses', icon: Church,          minRole: 'choir_member' },
+  { id: 'attendance',          label: 'Attendance',       icon: ClipboardList,   minRole: 'choir_member' },
   { id: 'bible',               label: 'Bible',            icon: BookText,        minRole: 'public_user' },
   { id: 'song_library',        label: 'Music Library',    icon: Music2,          minRole: 'public_user' },
   { id: 'registration',        label: 'People',           icon: UsersRound,      minRole: 'public_user' },
@@ -227,7 +240,7 @@ function AppInner() {
     useSyncedCollection<Announcement>('announcements', MOCK_ANNOUNCEMENTS, syncEnabled, tenantContext);
   const { records: rehearsals, actions: rehearsalSync } =
     useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext);
-  const { actions: attendanceSync } =
+  const { records: attendanceRecords, actions: attendanceSync } =
     useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext);
 
   useEffect(() => {
@@ -250,6 +263,89 @@ function AppInner() {
     setMobileNavOpen(false);
     setMobileMoreOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const persistActivitySession = async (
+    payload: ActivityAttendanceSavePayload,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    const userId = authState.user?.uid ?? 'admin';
+    const attendingIds = attendingMemberIdsFromMarks(payload.marks);
+    const existing = findActivityParent(payload.kind, payload.date, masses, rehearsals);
+
+    let entityId: string;
+    let entityName: string;
+
+    if (payload.kind === 'practice') {
+      const rehearsal = buildRehearsalFromActivity(
+        payload.date,
+        payload.title,
+        payload.notes,
+        attendingIds,
+        existing as Rehearsal | undefined,
+      );
+      entityId = rehearsal.id;
+      entityName = rehearsal.name;
+      const rehearsalResult = await rehearsalSync.upsert(
+        { ...rehearsal, ...createRecordMetadata(userId, rehearsal.status, tenantContext) },
+        userId,
+      );
+      if (!rehearsalResult.ok) return rehearsalResult;
+    } else {
+      const mass = buildMassFromActivity(
+        payload.kind,
+        payload.date,
+        payload.title,
+        payload.notes,
+        attendingIds,
+        existing as Mass | undefined,
+      );
+      entityId = mass.id;
+      entityName = mass.name;
+      const massResult = await massSync.upsert(
+        { ...mass, ...createRecordMetadata(userId, 'active', tenantContext) },
+        userId,
+      );
+      if (!massResult.ok) return massResult;
+    }
+
+    const records = buildAttendanceRecords(
+      payload.kind,
+      entityId,
+      entityName,
+      payload.date,
+      payload.marks,
+      members,
+    );
+
+    for (const record of records) {
+      const result = await attendanceSync.upsert(
+        { ...record, ...createRecordMetadata(userId, record.status, tenantContext) },
+        userId,
+      );
+      if (!result.ok) return result;
+    }
+
+    return { ok: true };
+  };
+
+  const importActivitySessions = async (
+    payload: ActivityAttendanceImportPayload,
+  ): Promise<{ ok: boolean; error?: string; imported?: number; skipped?: number }> => {
+    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    const sessions = dedupeImportSessions(payload.sessions);
+    let imported = 0;
+    let skipped = 0;
+    for (const session of sessions) {
+      if (sessionMarksUnchanged(session.kind, session.date, session.marks, attendanceRecords)) {
+        skipped += 1;
+        continue;
+      }
+      const result = await persistActivitySession(session);
+      if (!result.ok) return { ...result, imported, skipped };
+      imported += 1;
+    }
+    return { ok: true, imported, skipped };
   };
 
   // ---------------------------------------------------------------------
@@ -661,7 +757,7 @@ function AppInner() {
               guard.canAccess('choir_member') ? (
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
-                    members={members} events={events} masses={masses}
+                    members={members} events={events} masses={masses} attendanceRecords={attendanceRecords}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert({ ...updated, ...createRecordMetadata(authState.user?.uid ?? updated.id, updated.status, tenantContext) }, authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);
@@ -679,7 +775,7 @@ function AppInner() {
             )}
             {activeTab === 'analytics' && (
               guard.canAccess('choir_admin') ? (
-                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} />
+                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} attendanceRecords={attendanceRecords} />
               ) : <AccessDenied requiredRole="choir_admin" />
             )}
             {activeTab === 'catholic_hub' && <CatholicKnowledgeHub />}
@@ -703,6 +799,20 @@ function AppInner() {
                       authState.user?.uid,
                     );
                   }}
+                />
+              ) : <AccessDenied requiredRole="choir_member" />
+            )}
+            {activeTab === 'attendance' && (
+              guard.canAccess('choir_member') ? (
+                <ActivityAttendance
+                  members={members}
+                  masses={masses}
+                  rehearsals={rehearsals}
+                  attendanceRecords={attendanceRecords}
+                  isAdmin={guard.isAdmin}
+                  viewerMemberId={authState.user?.uid ?? currentMember?.id ?? null}
+                  onSaveSession={persistActivitySession}
+                  onImportSessions={importActivitySessions}
                 />
               ) : <AccessDenied requiredRole="choir_member" />
             )}
@@ -742,6 +852,7 @@ function AppInner() {
                 { id: 'bible' as Tab,             Icon: BookText,       label: 'Bible' },
                 { id: 'catholic_hub' as Tab,       Icon: BookOpen,       label: 'Catholic' },
                 { id: 'rehearsals' as Tab,         Icon: Sparkles,       label: 'Rehearsals' },
+                { id: 'attendance' as Tab,         Icon: ClipboardList,  label: 'Attendance' },
                 { id: 'dashboard_member' as Tab,   Icon: HeartHandshake, label: 'Ministry' },
                 { id: 'liturgical_planner' as Tab, Icon: Sparkles,       label: 'Planner' },
                 { id: 'gamification' as Tab,       Icon: Star,           label: 'Achievements' },

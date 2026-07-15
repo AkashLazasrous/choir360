@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -8,6 +8,7 @@ import { BadgesCard } from '../features/memberDashboard/BadgesCard';
 import { EarningsAndEvents } from '../features/memberDashboard/EarningsAndEvents';
 import { PracticeConsole } from '../features/memberDashboard/PracticeConsole';
 import { PrayerWall } from '../features/memberDashboard/PrayerWall';
+import { computeMemberStatsForId } from '../utils/attendanceStats';
 
 interface DashboardMemberProps {
   currentLang: Language;
@@ -15,6 +16,7 @@ interface DashboardMemberProps {
   members: Member[];
   events: ChoirEvent[];
   masses: Mass[];
+  attendanceRecords?: AttendanceRecord[];
   onUpdateMemberDetails: (updated: Member) => void;
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
 }
@@ -28,10 +30,12 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   memberId,
   members,
   events,
+  attendanceRecords = [],
   onUpdateMemberDetails,
   onUpdateEventRsvp
 }) => {
   const member = members.find(m => m.id === memberId) || members[0];
+  const liveStats = computeMemberStatsForId(attendanceRecords, members, member?.id ?? memberId);
 
   const [dashTab, setDashTab] = useState<'overview' | 'id_card'>('overview');
   const [hasRequestedChange, setHasRequestedChange] = useState(false);
@@ -100,13 +104,15 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
 
         <div className="flex shrink-0 items-center gap-4 rounded-2xl bg-[rgba(24,57,47,0.06)] p-4">
           <div className="text-center">
-            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#18392f]">{member.attendanceRate || 92}%</p>
-            <p className="text-[12px] font-medium text-[#86868b]">Attendance</p>
+            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#18392f]">
+              {liveStats?.finalPercent ?? member.attendanceRate ?? 0}%
+            </p>
+            <p className="text-[12px] font-medium text-[#86868b]">Attendance (final)</p>
           </div>
           <div className="space-y-0.5 border-l border-black/10 pl-3 text-[13px] text-[#3a3a3c]">
-            <p>Present: <span className="font-semibold text-[#18392f]">12 Masses</span></p>
-            <p>Late: <span className="font-semibold text-[#8a6a10]">2 Masses</span></p>
-            <p>Absent: <span className="font-semibold text-[#d70015]">1 Mass</span></p>
+            <p>Present: <span className="font-semibold text-[#18392f]">{liveStats?.present ?? 0}</span></p>
+            <p>Late: <span className="font-semibold text-[#8a6a10]">{liveStats?.late ?? 0}</span></p>
+            <p>Absent: <span className="font-semibold text-[#d70015]">{liveStats?.absent ?? 0}</span></p>
           </div>
         </div>
       </div>

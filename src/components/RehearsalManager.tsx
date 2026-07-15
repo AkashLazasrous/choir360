@@ -95,6 +95,7 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
       id: `att-${rehearsalId}-${memberId}`,
       entityId: rehearsalId,
       entityType: 'Rehearsal',
+      activityKind: 'practice',
       entityName: rehearsal.name,
       date: rehearsal.date,
       memberId,

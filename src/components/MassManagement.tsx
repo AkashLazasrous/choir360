@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookOpen, Bell } from 'lucide-react';
 import { Mass, Payment, Member, Language } from '../types';
 import { formatINR } from '../utils/currency';
 import { calculatePaymentShares } from '../utils/choirStats';
+import { countAttendeesByRole } from '../utils/attendanceStats';
 import { MassForm } from '../features/masses/MassForm';
 import { PaymentsTable } from '../features/masses/PaymentsTable';
 import { ShareCalculator } from '../features/masses/ShareCalculator';
@@ -48,6 +49,15 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   const activePayment = payments.find((p) => p.id === selectedPaymentId) || payments[0];
   const isLocked      = activePayment ? !!lockedCalcs[activePayment.id] : false;
   const calc = calculatePaymentShares(activePayment?.promisedAmount || 0, singerCount, instrumentalistCount);
+
+  useEffect(() => {
+    if (!activePayment?.massId || isLocked) return;
+    const mass = masses.find((m) => m.id === activePayment.massId);
+    if (!mass?.attendingMemberIds?.length) return;
+    const { singers, instrumentalists } = countAttendeesByRole(mass.attendingMemberIds, members);
+    if (singers > 0) setSingerCount(singers);
+    if (instrumentalists > 0) setInstrumentalistCount(instrumentalists);
+  }, [activePayment?.massId, activePayment?.id, masses, members, isLocked]);
 
   const handleLock = () => {
     if (!activePayment) return;

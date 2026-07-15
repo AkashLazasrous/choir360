@@ -24,6 +24,7 @@ export const TAB_PATHS: Record<Tab, string> = {
   liturgical_planner: '/planner',
   gamification: '/achievements',
   rehearsals: '/rehearsals',
+  attendance: '/attendance',
 };
 
 const PATH_TO_TAB: Record<string, Tab> = Object.fromEntries(

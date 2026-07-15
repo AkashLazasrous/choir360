@@ -17,7 +17,8 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-choir360-rules \"vitest run --config vitest.rules.config.ts\"",
     "firebase:set-claims": "node scripts/setFirebaseClaims.mjs",
     "firebase:seed": "node scripts/seedFirestore.mjs",
-    "firebase:provision-admin": "node scripts/provisionParishAdmin.mjs"
+    "firebase:provision-admin": "node scripts/provisionParishAdmin.mjs",
+    "firebase:import-attendance": "node scripts/importAttendanceCsv.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Member, Mass, Payment, Language } from '../types';
-import { BarChart2, IndianRupee, Layers, Users, TrendingUp, Music2, ChevronRight } from 'lucide-react';
+import { Member, Mass, Payment, Language, AttendanceRecord } from '../types';
+import { BarChart2, IndianRupee, Layers, Users, TrendingUp, Music2, ChevronRight, UserCheck } from 'lucide-react';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { formatINR } from '../utils/currency';
 import { calculateChoirHealth, isActiveMember, sumProposed, sumReceived } from '../utils/choirStats';
+import { computeParishStats } from '../utils/attendanceStats';
 import { useParish } from '../features/parish/ParishContext';
 
 interface AnalyticsDashboardProps {
@@ -11,6 +12,7 @@ interface AnalyticsDashboardProps {
   members: Member[];
   masses: Mass[];
   payments: Payment[];
+  attendanceRecords?: AttendanceRecord[];
 }
 
 const NoteIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -22,13 +24,17 @@ const NoteIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
-  currentLang, members, masses, payments,
+  currentLang, members, masses, payments, attendanceRecords = [],
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
   const { selectedParish } = useParish();
 
   const activeMembers    = members.filter(isActiveMember);
-  const { pendingCount, averageAttendance: avgAttendance } = calculateChoirHealth(members);
+  const parishAttendance = computeParishStats(attendanceRecords, members);
+  const { pendingCount } = calculateChoirHealth(members);
+  const avgAttendance = attendanceRecords.length > 0
+    ? parishAttendance.averageFinalPercent
+    : calculateChoirHealth(members).averageAttendance;
   const singers          = activeMembers.filter((m) => m.memberType === 'Singer');
   const instrumentalists = activeMembers.filter((m) => m.memberType !== 'Singer');
 
@@ -56,7 +62,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     { label: 'Active Choralists', value: activeMembers.length, sub: `${pendingCount} pending`, icon: Users, grad: 'from-[#18392f] to-[#0f2b22]', bar: Math.round((activeMembers.length / Math.max(members.length, 1)) * 100) },
     { label: 'Gross Received',    value: formatINR(totalReceived), sub: `${payments.filter(p=>p.status==='Received').length} payments cleared`, icon: IndianRupee, grad: 'from-[#18392f] to-[#1e4035]', bar: totalProposed > 0 ? Math.round((totalReceived / totalProposed) * 100) : 0 },
     { label: 'Dues Outstanding',  value: formatINR(totalPending), sub: `${payments.filter(p=>p.status==='Pending').length} open invoices`, icon: TrendingUp, grad: 'from-rose-500 to-red-600', bar: totalProposed > 0 ? Math.round((totalPending / totalProposed) * 100) : 0 },
-    { label: 'Liturgy Log',       value: masses.length, sub: `${masses.filter(m => specialMassCategories.includes(m.category)).length} special masses`, icon: Music2, grad: 'from-amber-400 to-[#f5c24c]', bar: Math.min(100, masses.length * 5) },
+    attendanceRecords.length > 0
+      ? { label: 'Avg Attendance', value: `${avgAttendance}%`, sub: `${parishAttendance.totalSessions} sessions · 30d ${parishAttendance.trendLast30Days}%`, icon: UserCheck, grad: 'from-emerald-500 to-[#18392f]', bar: avgAttendance }
+      : { label: 'Liturgy Log', value: masses.length, sub: `${masses.filter(m => specialMassCategories.includes(m.category)).length} special masses`, icon: Music2, grad: 'from-amber-400 to-[#f5c24c]', bar: Math.min(100, masses.length * 5) },
   ];
 
   return (

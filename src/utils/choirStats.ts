@@ -34,7 +34,8 @@ export function derivePaymentStatus(proposed: number, received: boolean, receive
 
 // ─── Membership / health metrics ──────────────────────────────────────────────
 
-export const isActiveMember = (m: Member) => m.status === 'Active Member';
+export const isActiveMember = (m: Member) =>
+  m.status === 'Active Member' || m.status === 'Approved' || m.status === 'Admin';
 
 export interface ChoirHealth {
   activeCount: number;
