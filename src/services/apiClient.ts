@@ -1,7 +1,7 @@
 import { auth } from './firebase';
 
 // In production, the backend lives on Render (no Firebase Hosting rewrite in use).
-// Locally, Vite's dev proxy forwards relative /api/* calls to localhost:3001.
+// Locally, Vite's dev proxy forwards relative /api/* calls to localhost:3000.
 const DEFAULT_PRODUCTION_API_BASE_URL = 'https://choir360-backend.onrender.com';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? DEFAULT_PRODUCTION_API_BASE_URL : '');
 

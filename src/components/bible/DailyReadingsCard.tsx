@@ -5,6 +5,7 @@ import { FALLBACK_DAILY_READING } from '../../data/dailyReadingsFallback';
 import { ReadingDatePicker } from './ReadingDatePicker';
 import { ReadingSourceStatus } from './ReadingSourceStatus';
 import { apiFetch } from '../../services/apiClient';
+import { fetchStoredDailyReading } from '../../services/dailyReadings';
 import { DailyReadingTabs } from '../../features/readings/components/DailyReadingTabs';
 import { MobileReadingTabs, ReadingTabItem } from '../../features/readings/components/MobileReadingTabs';
 
@@ -159,15 +160,37 @@ export const DailyReadingsCard: React.FC = () => {
         setReading(payload.reading);
         writeCachedReading(payload.reading);
       } else {
-        const fallback = cachedUsesSelectedDate && cached && readingHasContent(cached) ? cached : getFallbackReading(date);
-        setReading({
-          ...fallback,
-          syncStatus: 'cached',
-          syncMessage: payload.reading?.syncMessage || 'Showing bundled cached readings while the live source is unavailable.',
-        });
-        writeCachedReading(fallback);
+        // API responded but had no content — try Firestore directly before
+        // resorting to the bundled snapshot.
+        const stored = await fetchStoredDailyReading(date, 'ta');
+        if (readingHasContent(stored)) {
+          const reading = { ...(stored as DailyReading), syncStatus: 'cached' as const };
+          setReading(reading);
+          writeCachedReading(reading);
+        } else {
+          const fallback = cachedUsesSelectedDate && cached && readingHasContent(cached) ? cached : getFallbackReading(date);
+          setReading({
+            ...fallback,
+            syncStatus: 'cached',
+            syncMessage: payload.reading?.syncMessage || 'Showing bundled cached readings while the live source is unavailable.',
+          });
+          writeCachedReading(fallback);
+        }
       }
     } catch {
+      // Backend unreachable — read the synced document straight from
+      // Firestore (public read allowed for publicDisplay docs) so users
+      // still get real readings when the API is down or asleep.
+      const stored = await fetchStoredDailyReading(date, 'ta');
+      if (readingHasContent(stored)) {
+        const reading = { ...(stored as DailyReading), syncStatus: 'cached' as const };
+        setReading(reading);
+        writeCachedReading(reading);
+        setError('');
+        setIsLoading(false);
+        return;
+      }
+
       const fallback = cachedUsesSelectedDate && readingHasContent(cached)
         ? cached
         : isToday
