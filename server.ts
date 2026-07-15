@@ -80,7 +80,13 @@ app.use(express.json({ limit: "512kb" })); // Tighter limit – 1mb is excessive
 // HEALTH CHECK – used by Render's healthCheckPath
 // ---------------------------------------------------------------------------
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", service: "choir360-backend", timestamp: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    service: "choir360-backend",
+    // Bump when Cloudinary public-signature support changes (ops probe).
+    build: "cloudinary-public-signature-v1",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ---------------------------------------------------------------------------
