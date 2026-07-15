@@ -263,7 +263,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                   }
                 }}
                 placeholder={dict.songSearchPlaceholder || 'Search imported songbook'}
-                className="apple-input py-3 pl-9 pr-4 text-xs"
+                className="apple-input py-3 pl-9 pr-4 !text-[16px]"
                 id="song-search-box"
               />
             </div>
@@ -284,7 +284,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
             <select
               value={selectedLanguage}
               onChange={(event) => setSelectedLanguage(event.target.value as 'All' | 'Tamil' | 'English')}
-              className="apple-select text-xs"
+              className="apple-select !text-[15px]"
             >
               <option value="All">All Languages</option>
               <option value="Tamil">Tamil</option>
@@ -297,7 +297,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
             <select
               value={selectedCategory}
               onChange={(event) => setSelectedCategory(event.target.value)}
-              className="apple-select text-xs"
+              className="apple-select !text-[15px]"
             >
               {categoriesList.map((category) => (
                 <option key={category} value={category}>{category}</option>
@@ -324,8 +324,8 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
           isFavorite={!!favoriteSongs[selectedSong.id]}
           lyricsContainerRef={lyricsContainerRef}
           onClose={() => setIsMobileLyricsOpen(false)}
-          onCopy={(song) => void handleCopyLyrics(song)}
-          onShare={(song) => void handleShareSong(song)}
+          onCopy={() => void handleCopyLyrics(selectedSong)}
+          onShare={() => void handleShareSong(selectedSong)}
           onToggleFavorite={toggleFavoriteSong}
           onFontSizeChange={setViewerFontSize}
           onToggleDarkMode={() => setViewerDarkMode(!viewerDarkMode)}
@@ -335,7 +335,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3" id="song-split-panel">
         <div className="song-index-scroll space-y-3 overflow-y-auto pr-1 lg:h-[620px]" id="songs-sidebar-list">
-          <div className="sticky top-0 z-10 glass-panel p-4">
+          <div className="sticky-below-header sticky z-10 glass-panel p-4">
             <p className="apple-label text-[#18392f]">Song Index</p>
             <h3 className="apple-title mt-1">Jebathotta Jeyageethangal</h3>
             <p className="apple-caption mt-1">
@@ -400,8 +400,8 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                   </div>
 
                   <div>
-                    <h4 className="line-clamp-1 text-xs font-bold">{getDisplayTitle(song)}</h4>
-                    <p className="text-[10px] text-slate-400">
+                    <h4 className="tamil-text line-clamp-2 text-[16px] font-semibold tracking-[-0.015em] text-[#1d1d1f]">{getDisplayTitle(song)}</h4>
+                    <p className="text-[13px] text-[#86868b]">
                       Page {song.sourcePageNumber ?? song.pageNumber ?? '-'} • {song.category}
                     </p>
                   </div>

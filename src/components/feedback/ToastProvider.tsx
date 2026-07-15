@@ -51,11 +51,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={showToast}>
       {children}
-      {/* Above the mobile bottom nav (56px + safe area); bottom-right on desktop */}
+      {/* Clears bottom tab bar via --bottom-chrome; bottom-right on desktop */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 z-[60] flex flex-col items-center gap-2 px-4 lg:items-end lg:pr-6"
-        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+        className="app-toast-stack pointer-events-none fixed inset-x-0 z-[60] flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:items-end lg:pr-6"
       >
         {toasts.map((toast) => {
           const { icon: Icon, iconClass } = TONE_STYLES[toast.tone];
@@ -71,16 +70,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 <button
                   type="button"
                   onClick={() => { toast.onUndo?.(); dismiss(toast.id); }}
-                  className="btn-pill btn-pill-gold btn-pill-xs !min-h-[28px]"
+                  className="btn-pill btn-pill-gold btn-pill-sm !min-h-[44px]"
                 >
-                  <Undo2 className="h-3 w-3" /> Undo
+                  <Undo2 className="h-3.5 w-3.5" /> Undo
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => dismiss(toast.id)}
                 aria-label="Dismiss notification"
-                className="shrink-0 rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

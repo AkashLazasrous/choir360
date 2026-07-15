@@ -456,94 +456,93 @@ export const BiblePdfViewer: React.FC<BiblePdfViewerProps> = ({ document }) => {
         </div>
       ) : (
         <>
-          <div className="border-b border-slate-200 bg-white p-3">
+          <div className="sticky-below-header sticky z-20 border-b border-black/[0.06] bg-white/95 p-3 backdrop-blur-xl">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => goToPage(pageNumber - 1)}
                 disabled={!pdf || pageNumber === 1}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
+                className="btn-pill btn-pill-secondary !min-h-[44px] disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="hidden sm:inline">Prev</span>
               </button>
               <button
                 type="button"
                 onClick={() => goToPage(pageNumber + 1)}
                 disabled={!pdf || pageNumber >= totalPages}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#18392f] px-3 text-xs font-bold text-white disabled:opacity-40"
+                className="btn-pill btn-pill-primary !min-h-[44px] disabled:opacity-40"
               >
-                Next
+                <span className="hidden sm:inline">Next</span>
                 <ChevronRight className="h-4 w-4 text-amber-300" />
               </button>
 
-              <div className="flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2">
-                <span className="px-1 text-[10px] font-black uppercase tracking-wider text-slate-500">Page</span>
+              <div className="flex min-h-[44px] flex-1 items-center gap-2 rounded-full bg-black/[0.04] px-3 sm:flex-none">
+                <span className="text-[12px] font-medium text-[#86868b]">Page</span>
                 <input
                   type="number"
                   min={1}
                   max={totalPages || 1}
                   value={pageInput}
                   onChange={(event) => setPageInput(event.target.value)}
-                  className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-sm font-bold outline-none focus:border-emerald-500"
+                  className="h-9 w-16 rounded-xl border-0 bg-white px-2 text-[15px] font-semibold outline-none"
                 />
                 <button
                   type="button"
                   onClick={submitPageInput}
                   disabled={!pdf}
-                  className="h-8 rounded-lg bg-white px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
+                  className="text-[14px] font-semibold text-[#18392f] disabled:opacity-40"
                 >
                   Go
                 </button>
-                <span className="pr-1 text-xs font-semibold text-slate-500">/ {totalPages || '...'}</span>
+                <span className="text-[13px] text-[#86868b]">/ {totalPages || '…'}</span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setZoom((currentZoom) => Math.max(currentZoom - 0.15, 0.7))}
-                disabled={!pdf}
-                className="ml-0 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40 md:ml-auto"
-              >
-                <ZoomOut className="h-4 w-4" />
-                Zoom out
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom((currentZoom) => Math.min(currentZoom + 0.15, 2))}
-                disabled={!pdf}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
-              >
-                <ZoomIn className="h-4 w-4" />
-                Zoom in
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom(1)}
-                disabled={!pdf || zoom === 1}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 disabled:opacity-40"
-                title="Reset zoom to fit the available width"
-              >
-                Fit Width
-              </button>
+              <div className="ml-auto hidden gap-2 md:flex">
+                <button
+                  type="button"
+                  onClick={() => setZoom((currentZoom) => Math.max(currentZoom - 0.15, 0.7))}
+                  disabled={!pdf}
+                  className="btn-pill btn-pill-secondary !min-h-[44px] disabled:opacity-40"
+                >
+                  <ZoomOut className="h-4 w-4" /> Zoom out
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom((currentZoom) => Math.min(currentZoom + 0.15, 2))}
+                  disabled={!pdf}
+                  className="btn-pill btn-pill-secondary !min-h-[44px] disabled:opacity-40"
+                >
+                  <ZoomIn className="h-4 w-4" /> Zoom in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(1)}
+                  disabled={!pdf || zoom === 1}
+                  className="btn-pill btn-pill-secondary !min-h-[44px] disabled:opacity-40"
+                >
+                  Fit
+                </button>
+              </div>
             </div>
           </div>
 
           {hasChapterIndex && isChapterDrawerOpen && (
-            <div className="fixed inset-0 z-50 bg-slate-950/40 lg:hidden">
-              <div className="h-full w-[86vw] max-w-sm shadow-2xl">
+            <div className="fixed inset-0 z-[60] bg-black/40 lg:hidden" style={{ paddingTop: 'var(--app-header-offset)' }}>
+              <div className="h-full w-[86vw] max-w-sm bg-white shadow-2xl">
                 {ChapterNavigation}
               </div>
             </div>
           )}
 
-          <div className={`grid min-h-[560px] ${hasChapterIndex ? 'lg:grid-cols-[300px_minmax(0,1fr)]' : 'lg:grid-cols-1'}`}>
+          <div className={`grid min-h-[50svh] md:min-h-[560px] ${hasChapterIndex ? 'lg:grid-cols-[300px_minmax(0,1fr)]' : 'lg:grid-cols-1'}`}>
             {hasChapterIndex && (
               <aside className="hidden border-r border-slate-200 lg:block">
                 {ChapterNavigation}
               </aside>
             )}
 
-          <div ref={viewerRef} className="relative min-w-0 h-[100svh] max-h-[calc(100dvh-21rem)] min-h-[560px] overflow-auto bg-slate-200 p-4">
+          <div ref={viewerRef} className="relative min-h-[50svh] min-w-0 max-h-[calc(100dvh-var(--app-header-offset)-var(--bottom-chrome)-8rem)] overflow-auto bg-[#e8e8ed] p-3 md:min-h-[560px] md:max-h-[calc(100dvh-21rem)] md:p-4">
             {(isDocumentLoading || isPageLoading) && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
                 <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">

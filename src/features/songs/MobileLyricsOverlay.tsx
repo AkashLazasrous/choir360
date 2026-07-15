@@ -1,35 +1,61 @@
-import React from 'react';
-import { ArrowLeft, BookOpen, Copy, Minus, Moon, Pause, Play, Plus, Share2, Star, Sun, X } from 'lucide-react';
-import { Song } from '../../types';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, BookOpen, Copy, Minus, Moon, MoreHorizontal, Pause, Play, Plus, Share2, Star, Sun, X } from 'lucide-react';
 import { PdfSongPage } from './PdfSongPage';
-import { getDisplayTitle } from './utils/songDisplay';
+import { Song } from '../../types';
 
-interface MobileLyricsOverlayProps {
-  song: Song;
-  isPdfSong: boolean;
-  viewerDarkMode: boolean;
-  viewerFontSize: number;
-  isPlayingScroll: boolean;
-  isFavorite: boolean;
-  lyricsContainerRef: React.RefObject<HTMLDivElement | null>;
-  onClose: () => void;
-  onCopy: (song: Song) => void;
-  onShare: (song: Song) => void;
-  onToggleFavorite: (songId: string) => void;
-  onFontSizeChange: (size: number) => void;
-  onToggleDarkMode: () => void;
-  onToggleScroll: () => void;
+/** Minimal song shape for Library + Catholic Hub mobile readers. */
+export interface MobileLyricsSong {
+  id: string;
+  title: string;
+  category?: string;
+  language?: string;
+  lyrics?: string;
+  pageNumber?: number;
+  sourcePageNumber?: number;
+  sourcePdfUrl?: string;
+  metaLine?: string;
 }
 
-/** Full-screen mobile lyrics reader with copy/share/favorite/scroll controls. */
+interface MobileLyricsOverlayProps {
+  song: MobileLyricsSong;
+  isPdfSong?: boolean;
+  viewerDarkMode?: boolean;
+  viewerFontSize?: number;
+  isPlayingScroll?: boolean;
+  isFavorite?: boolean;
+  showFavorite?: boolean;
+  showAutoScroll?: boolean;
+  lyricsContainerRef?: React.RefObject<HTMLDivElement | null>;
+  onClose: () => void;
+  onCopy: (song: MobileLyricsSong) => void;
+  onShare: (song: MobileLyricsSong) => void;
+  onToggleFavorite?: (songId: string) => void;
+  onFontSizeChange?: (size: number) => void;
+  onToggleDarkMode?: () => void;
+  onToggleScroll?: () => void;
+}
+
+function displayTitle(song: MobileLyricsSong) {
+  return song.title || `Untitled · Page ${song.sourcePageNumber ?? song.pageNumber ?? '-'}`;
+}
+
+function subtitle(song: MobileLyricsSong) {
+  if (song.metaLine) return song.metaLine;
+  const parts = [song.category, song.language, song.sourcePageNumber ?? song.pageNumber ? `Page ${song.sourcePageNumber ?? song.pageNumber}` : null].filter(Boolean);
+  return parts.join(' · ');
+}
+
+/** Full-screen mobile lyrics reader — hides app bottom nav while open. */
 export const MobileLyricsOverlay: React.FC<MobileLyricsOverlayProps> = ({
   song,
-  isPdfSong,
-  viewerDarkMode,
-  viewerFontSize,
-  isPlayingScroll,
-  isFavorite,
-  lyricsContainerRef,
+  isPdfSong = false,
+  viewerDarkMode: controlledDark,
+  viewerFontSize: controlledFont,
+  isPlayingScroll: controlledScroll,
+  isFavorite = false,
+  showFavorite = true,
+  showAutoScroll = true,
+  lyricsContainerRef: externalRef,
   onClose,
   onCopy,
   onShare,
@@ -37,91 +63,152 @@ export const MobileLyricsOverlay: React.FC<MobileLyricsOverlayProps> = ({
   onFontSizeChange,
   onToggleDarkMode,
   onToggleScroll,
-}) => (
-  <div className={`mobile-safe-screen fixed inset-0 z-[70] flex flex-col lg:hidden ${viewerDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'}`}>
-    <div className={`sticky top-0 z-10 border-b px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] ${
-      viewerDarkMode ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'
-    }`}>
-      <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700/20 bg-white/10"
-          aria-label="Back to song index"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <h2 className="line-clamp-2 text-base font-black tamil-text">{getDisplayTitle(song)}</h2>
-          <p className="mt-1 text-xs font-semibold opacity-70">
-            {song.category} • {song.language} • Page {song.sourcePageNumber ?? song.pageNumber ?? '-'}
-          </p>
+}) => {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [localDark, setLocalDark] = useState(false);
+  const [localFont, setLocalFont] = useState(18);
+  const [localScroll, setLocalScroll] = useState(false);
+  const internalRef = useRef<HTMLDivElement>(null);
+  const lyricsContainerRef = externalRef ?? internalRef;
+
+  const viewerDarkMode = controlledDark ?? localDark;
+  const viewerFontSize = controlledFont ?? localFont;
+  const isPlayingScroll = controlledScroll ?? localScroll;
+
+  const setFont = (size: number) => {
+    onFontSizeChange?.(size);
+    if (controlledFont === undefined) setLocalFont(size);
+  };
+  const toggleDark = () => {
+    onToggleDarkMode?.();
+    if (controlledDark === undefined) setLocalDark((d) => !d);
+  };
+  const toggleScroll = () => {
+    onToggleScroll?.();
+    if (controlledScroll === undefined) setLocalScroll((s) => !s);
+  };
+
+  useEffect(() => {
+    document.body.classList.add('mobile-reader-open');
+    return () => document.body.classList.remove('mobile-reader-open');
+  }, []);
+
+  // Local auto-scroll only when parent does not own scroll state (e.g. Catholic Hub).
+  useEffect(() => {
+    if (onToggleScroll || !isPlayingScroll) return;
+    const el = lyricsContainerRef.current;
+    if (!el) return;
+    const id = window.setInterval(() => {
+      el.scrollTop += 1;
+    }, 50);
+    return () => window.clearInterval(id);
+  }, [isPlayingScroll, lyricsContainerRef, onToggleScroll]);
+
+  const chip = viewerDarkMode
+    ? 'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 text-[14px] font-medium'
+    : 'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-black/10 bg-black/[0.04] px-3.5 text-[14px] font-medium text-[#1d1d1f]';
+
+  return (
+    <div className={`mobile-safe-screen fixed inset-0 z-[70] flex flex-col font-apple lg:hidden ${viewerDarkMode ? 'bg-[#0a0a0a] text-[#f5f5f7]' : 'bg-[#f5f5f7] text-[#1d1d1f]'}`}>
+      <div className={`sticky top-0 z-10 border-b px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] ${
+        viewerDarkMode ? 'border-white/10 bg-[#0a0a0a]/95' : 'border-black/[0.06] bg-[#f5f5f7]/95'
+      }`}>
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/80"
+            aria-label="Back to song index"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="tamil-text line-clamp-2 text-[18px] font-semibold tracking-[-0.02em]">{displayTitle(song)}</h2>
+            <p className="mt-1 text-[13px] text-[#86868b]">{subtitle(song)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/80"
+            aria-label="Close lyrics viewer"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-700/20 bg-white/10"
-          aria-label="Close lyrics viewer"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
 
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-        <button type="button" onClick={() => onCopy(song)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
-          <Copy className="h-4 w-4" /> Copy
-        </button>
-        <button type="button" onClick={() => onShare(song)} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
-          <Share2 className="h-4 w-4" /> Share
-        </button>
-        <button
-          type="button"
-          onClick={() => onToggleFavorite(song.id)}
-          className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold"
-        >
-          <Star className={'h-4 w-4 ' + (isFavorite ? 'fill-amber-300 text-amber-300' : '')} /> Favorite
-        </button>
-        <button type="button" onClick={() => onFontSizeChange(Math.max(12, viewerFontSize - 1))} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
-          <Minus className="h-4 w-4" /> A
-        </button>
-        <button type="button" onClick={() => onFontSizeChange(Math.min(30, viewerFontSize + 1))} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
-          <Plus className="h-4 w-4" /> A
-        </button>
-        <button type="button" onClick={onToggleDarkMode} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl border border-slate-700/20 px-3 text-xs font-bold">
-          {viewerDarkMode ? <Sun className="h-4 w-4 text-amber-300" /> : <Moon className="h-4 w-4" />} Mode
-        </button>
-        <button type="button" onClick={onToggleScroll} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 rounded-xl bg-emerald-700 px-3 text-xs font-bold text-white">
-          {isPlayingScroll ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />} Scroll
-        </button>
-      </div>
-    </div>
-
-    <div
-      ref={lyricsContainerRef}
-      className="mobile-scroll-contain min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))]"
-      style={{ fontSize: `${Math.max(viewerFontSize, 16)}px` }}
-    >
-      {isPdfSong ? (
-        <PdfSongPage song={song} isPresentationMode={false} />
-      ) : song.lyrics ? (
-        <pre className="tamil-text whitespace-pre-wrap text-center leading-loose">{song.lyrics}</pre>
-      ) : (
-        <div className="rounded-2xl border border-slate-700/30 p-6 text-center">
-          <BookOpen className="mx-auto h-10 w-10 text-emerald-500" />
-          <h3 className="mt-3 text-base font-black">Lyrics extraction pending</h3>
-          <p className="mt-2 text-sm opacity-70">Open the source PDF page to read this song exactly as imported.</p>
-          {song.sourcePdfUrl && (
-            <div className="mt-4 flex flex-col gap-2">
-              <a href={`${song.sourcePdfUrl}#page=${song.sourcePageNumber}`} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white">
-                Open source page
-              </a>
-              <a href={song.sourcePdfUrl} download className="rounded-xl border border-slate-700/30 px-4 py-3 text-sm font-bold">
-                Download songbook
-              </a>
-            </div>
+        <div className="mt-3 flex gap-2">
+          {showAutoScroll && (
+            <button type="button" onClick={toggleScroll} className="btn-pill btn-pill-primary flex-1 !min-h-[44px] !text-[14px]">
+              {isPlayingScroll ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />} Auto-scroll
+            </button>
           )}
+          {showFavorite && onToggleFavorite && (
+            <button type="button" onClick={() => onToggleFavorite(song.id)} className={chip}>
+              <Star className={'h-4 w-4 ' + (isFavorite ? 'fill-amber-300 text-amber-300' : '')} />
+            </button>
+          )}
+          <div className="relative">
+            <button type="button" onClick={() => setMoreOpen((o) => !o)} className={chip} aria-label="More tools">
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+            {moreOpen && (
+              <>
+                <button type="button" className="fixed inset-0 z-10" aria-label="Close" onClick={() => setMoreOpen(false)} />
+                <div className={`absolute right-0 top-[calc(100%+4px)] z-20 min-w-[11rem] overflow-hidden rounded-2xl border py-1 shadow-lg ${
+                  viewerDarkMode ? 'border-white/10 bg-[#1c1c1e]' : 'border-black/10 bg-white'
+                }`}>
+                  <button type="button" onClick={() => { onCopy(song); setMoreOpen(false); }} className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <Copy className="h-4 w-4" /> Copy
+                  </button>
+                  <button type="button" onClick={() => { onShare(song); setMoreOpen(false); }} className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <Share2 className="h-4 w-4" /> Share
+                  </button>
+                  <button type="button" onClick={() => setFont(Math.max(12, viewerFontSize - 1))} className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <Minus className="h-4 w-4" /> Smaller text
+                  </button>
+                  <button type="button" onClick={() => setFont(Math.min(30, viewerFontSize + 1))} className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <Plus className="h-4 w-4" /> Larger text
+                  </button>
+                  <button type="button" onClick={() => { toggleDark(); setMoreOpen(false); }} className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    {viewerDarkMode ? <Sun className="h-4 w-4 text-amber-300" /> : <Moon className="h-4 w-4" />} Theme
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      <div
+        ref={lyricsContainerRef}
+        className="mobile-scroll-contain min-h-0 flex-1 overflow-y-auto px-4 py-5"
+        style={{
+          fontSize: `${Math.max(viewerFontSize, 17)}px`,
+          paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        {isPdfSong ? (
+          <PdfSongPage song={song as Song} isPresentationMode={false} />
+        ) : song.lyrics ? (
+          <pre className="tamil-text whitespace-pre-wrap text-center leading-loose">{song.lyrics}</pre>
+        ) : (
+          <div className="apple-empty rounded-2xl border border-black/10">
+            <BookOpen className="h-10 w-10 text-[#18392f]" />
+            <h3>Lyrics extraction pending</h3>
+            <p>Open the source PDF page to read this song exactly as imported.</p>
+            {song.sourcePdfUrl && (
+              <div className="mt-2 flex w-full flex-col gap-2">
+                <a href={`${song.sourcePdfUrl}#page=${song.sourcePageNumber}`} target="_blank" rel="noreferrer" className="btn-pill btn-pill-primary w-full">
+                  Open source page
+                </a>
+                <a href={song.sourcePdfUrl} download className="btn-pill btn-pill-secondary w-full">
+                  Download songbook
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};

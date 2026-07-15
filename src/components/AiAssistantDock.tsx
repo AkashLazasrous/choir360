@@ -115,28 +115,32 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[580px]" id="ai-assistant-dock-panel">
+    <div
+      className="font-apple flex flex-col rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-6 md:h-[580px] max-md:mb-[var(--bottom-chrome)] max-md:max-h-[min(70dvh,520px)] max-md:min-h-[min(60dvh,480px)]"
+      id="ai-assistant-dock-panel"
+    >
       {/* Widget Header */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+      <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <div className="bg-emerald-150 p-1.5 rounded-lg text-emerald-800">
-            <Sparkles className="w-5 h-5 animate-pulse text-emerald-600" />
+          <div className="rounded-lg bg-emerald-150 p-1.5 text-emerald-800">
+            <Sparkles className="h-5 w-5 animate-pulse text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-sans font-bold text-slate-800 text-sm">{dict.aiAssistant}</h3>
+            <h3 className="font-sans text-sm font-bold text-slate-800">{dict.aiAssistant}</h3>
             <p className="text-[10px] text-slate-400">Choir360 AI · Liturgical Knowledge Base</p>
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setMessages([{ role: 'assistant', content: `Session reset. Under Role Context ${currentRole}, how can I support you now?` }])}
-          className="p-1 px-2.5 text-[9px] font-bold text-slate-500 bg-slate-100 rounded hover:bg-slate-200 transition cursor-pointer"
+          className="btn-pill btn-pill-secondary btn-pill-sm !min-h-[44px] !px-3 !text-[12px]"
         >
           Reset Chat
         </button>
       </div>
 
       {/* Messages Scroll Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs" id="chat-messages-scroll">
+      <div ref={scrollRef} className="mobile-scroll-contain flex-1 space-y-4 overflow-y-auto pr-1 text-xs" id="chat-messages-scroll">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
             <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
@@ -170,14 +174,15 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
 
       {/* Suggested Quick Prompt Chips */}
       {messages.length === 1 && (
-        <div className="py-2.5 space-y-1" id="quick-prompt-chips">
-          <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-1">Suggested Liturgical Questions:</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="py-2.5 space-y-1.5" id="quick-prompt-chips">
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Suggested Liturgical Questions:</p>
+          <div className="flex flex-wrap gap-2">
             {prompts.map((p, idx) => (
               <button
                 key={idx}
+                type="button"
                 onClick={() => handleSend(p.text)}
-                className="px-2.5 py-1 text-[10px] text-slate-600 bg-slate-100 hover:bg-slate-200 cursor-pointer rounded-lg border border-slate-200/50 transition font-medium"
+                className="btn-pill btn-pill-secondary !min-h-[44px] !px-3 !py-2 !text-[13px] !font-medium"
               >
                 {p.label}
               </button>
@@ -186,10 +191,10 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
         </div>
       )}
 
-      {/* Input area */}
+      {/* Input area — clears bottom tab bar via --bottom-chrome on mobile */}
       <form
         onSubmit={e => { e.preventDefault(); handleSend(inputMsg); }}
-        className="mt-3 flex gap-2 pt-3 border-t border-slate-100"
+        className="mt-3 flex gap-2 border-t border-slate-100 pt-3 max-md:pb-[env(safe-area-inset-bottom,0px)]"
         id="assistant-chat-form"
       >
         <input
@@ -197,13 +202,13 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
           value={inputMsg}
           onChange={e => setInputMsg(e.target.value)}
           placeholder={dict.assistantPlace || "Ask me about choral structures..."}
-          className="apple-input flex-1 !min-h-[40px] !py-2 !text-[13px]"
+          className="apple-input min-h-[44px] flex-1 !py-2.5 !text-[15px]"
         />
         <button
           type="submit"
-          className="btn-pill btn-pill-primary !min-h-[40px] !px-3"
+          className="btn-pill btn-pill-primary !min-h-[44px] !min-w-[44px] !px-3"
         >
-          <Send className="w-4 h-4" />
+          <Send className="h-4 w-4" />
         </button>
       </form>
     </div>

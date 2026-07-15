@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Mass, ChoirEvent, Language, EventCategory } from '../types';
 import {
   Calendar as CalendarIcon,
@@ -7,6 +7,7 @@ import {
   Clock,
   MapPin,
   ExternalLink,
+  MoreHorizontal,
   PlusCircle,
   Award,
   Music,
@@ -51,13 +52,26 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
 
   const todayIso = toIsoDate(new Date());
 
-  // Calendar navigation state — starts on the real current month.
-  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>('month');
+  // Calendar navigation — agenda/day-first on phone; month on larger screens.
+  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day'>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches ? 'day' : 'month',
+  );
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
   const [selectedDate, setSelectedDate] = useState(todayIso);
+  const [syncMenuOpen, setSyncMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const apply = () => {
+      if (mq.matches) setCurrentView((v) => (v === 'month' ? 'day' : v));
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   // New event form
   const [newEventName, setNewEventName] = useState('');
@@ -119,6 +133,17 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
     let count = 0;
     itemsByDate.forEach((list, date) => { if (date.startsWith(prefix)) count += list.length; });
     return count;
+  }, [itemsByDate, cursor]);
+
+  // Upcoming agenda for the current month (mobile day view).
+  const monthAgenda = useMemo(() => {
+    const prefix = `${cursor.year}-${String(cursor.month + 1).padStart(2, '0')}`;
+    const dates = Array.from(itemsByDate.keys())
+      .filter((d) => d.startsWith(prefix))
+      .sort();
+    return dates.flatMap((date) =>
+      (itemsByDate.get(date) ?? []).map((item) => ({ date, item })),
+    );
   }, [itemsByDate, cursor]);
 
   // Dates shown in the agenda panel: the selected day, or its whole week.
@@ -184,25 +209,25 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
   const renderAgendaItem = (item: CalendarItem) => (
     <div
       key={`${item.kind}-${item.id}`}
-      className="apple-card p-3.5 text-xs space-y-1.5"
+      className="apple-card space-y-2 p-4"
     >
       <div className="flex items-center justify-between gap-2">
-        <h5 className="font-semibold tracking-tight flex items-center gap-1.5 min-w-0">
+        <h5 className="flex min-w-0 items-center gap-2 text-[16px] font-semibold tracking-[-0.015em]">
           {item.kind === 'mass'
-            ? <Music className="w-3.5 h-3.5 text-[#f5c24c] shrink-0" />
-            : <Users className="w-3.5 h-3.5 text-[#18392f] shrink-0" />}
+            ? <Music className="h-4 w-4 shrink-0 text-[#f5c24c]" />
+            : <Users className="h-4 w-4 shrink-0 text-[#18392f]" />}
           <span className="truncate">{item.name}</span>
         </h5>
-        <span className={`shrink-0 apple-badge ${item.kind === 'mass' ? 'apple-badge-gold' : 'apple-badge-forest'}`}>
+        <span className={`shrink-0 ${item.kind === 'mass' ? 'apple-badge-gold' : 'apple-badge-forest'}`}>
           {item.category}
         </span>
       </div>
-      <p className="text-[10px] text-slate-500 font-mono flex items-center gap-3">
-        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{item.time || 'Time TBA'}</span>
-        <span className="flex items-center gap-1 truncate"><MapPin className="w-3 h-3" />{item.place}</span>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#86868b]">
+        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{item.time || 'Time TBA'}</span>
+        <span className="flex items-center gap-1 truncate"><MapPin className="h-3.5 w-3.5" />{item.place}</span>
       </p>
       {item.detail && (
-        <p className="text-[10px] text-slate-500 leading-relaxed">{item.detail}</p>
+        <p className="text-[13px] leading-relaxed text-[#86868b]">{item.detail}</p>
       )}
     </div>
   );
@@ -219,33 +244,57 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           </div>
         </div>
 
-        {/* View selector and sync tools */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+          {/* Sync overflow on phone */}
+          <div className="relative md:hidden">
+            <button
+              type="button"
+              onClick={() => setSyncMenuOpen((o) => !o)}
+              className="btn-pill btn-pill-secondary !min-h-[44px]"
+              aria-label="Sync calendars"
+            >
+              <MoreHorizontal className="h-4 w-4" /> Sync
+            </button>
+            {syncMenuOpen && (
+              <>
+                <button type="button" className="fixed inset-0 z-10" aria-label="Close" onClick={() => setSyncMenuOpen(false)} />
+                <div className="absolute right-0 top-[calc(100%+4px)] z-20 min-w-[12rem] overflow-hidden rounded-2xl border border-black/[0.08] bg-white py-1 shadow-lg">
+                  <button type="button" onClick={() => { handleSyncCalendar('Google'); setSyncMenuOpen(false); }}
+                    className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <ExternalLink className="h-4 w-4 text-[#18392f]" /> Google Calendar
+                  </button>
+                  <button type="button" onClick={() => { handleSyncCalendar('Outlook'); setSyncMenuOpen(false); }}
+                    className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
+                    <ExternalLink className="h-4 w-4 text-[#2997ff]" /> Outlook
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={() => handleSyncCalendar('Google')}
-            className="btn-pill btn-pill-secondary btn-pill-sm flex items-center gap-1"
+            className="btn-pill btn-pill-secondary btn-pill-sm hidden items-center gap-1 md:inline-flex"
           >
-            <ExternalLink className="w-3 h-3 text-[#18392f]" />
-            Sync Google Calendar
+            <ExternalLink className="h-3.5 w-3.5 text-[#18392f]" />
+            Sync Google
           </button>
-
           <button
             onClick={() => handleSyncCalendar('Outlook')}
-            className="btn-pill btn-pill-secondary btn-pill-sm flex items-center gap-1"
+            className="btn-pill btn-pill-secondary btn-pill-sm hidden items-center gap-1 md:inline-flex"
           >
-            <ExternalLink className="w-3 h-3 text-[#2997ff]" />
+            <ExternalLink className="h-3.5 w-3.5 text-[#2997ff]" />
             Sync Outlook
           </button>
 
           <div className="apple-segmented">
-            {(['month', 'week', 'day'] as const).map((view) => (
+            {(['day', 'week', 'month'] as const).map((view) => (
               <button
                 key={view}
                 onClick={() => setCurrentView(view)}
                 aria-selected={currentView === view}
-                className={`capitalize ${currentView === view ? 'is-active' : ''}`}
+                className={`min-h-[36px] capitalize ${currentView === view ? 'is-active' : ''}`}
               >
-                {view} View
+                {view}
               </button>
             ))}
           </div>
@@ -275,109 +324,150 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               <button
                 onClick={() => goToMonth(-1)}
                 aria-label="Previous month"
-                className="btn-pill btn-pill-secondary btn-pill-xs p-1"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.05]"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="h-5 w-5" />
               </button>
               <button
                 onClick={() => {
                   const now = new Date();
                   setCursor({ year: now.getFullYear(), month: now.getMonth() });
                   setSelectedDate(todayIso);
+                  setCurrentView('day');
                 }}
-                className="btn-pill btn-pill-secondary btn-pill-xs"
+                className="btn-pill btn-pill-secondary !min-h-[44px] !px-3"
               >
                 Today
               </button>
               <button
                 onClick={() => goToMonth(1)}
                 aria-label="Next month"
-                className="btn-pill btn-pill-secondary btn-pill-xs p-1"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.05]"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Monthly view Grid representation */}
-          {currentView === 'month' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-7 gap-1 text-center apple-caption font-medium">
-                <div>Sun</div>
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div>Sat</div>
+          {/* Compact month dots — always available as a picker on phone */}
+          {(currentView === 'month' || currentView === 'day') && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-[#86868b] md:text-[13px]">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                  <div key={`${d}-${i}`}>{d}</div>
+                ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1.5 md:gap-2">
                 {monthGrid.map((dateIso, idx) => {
                   if (!dateIso) {
-                    return <div key={`pad-${idx}`} className="apple-inset h-20 p-3" />;
+                    return <div key={`pad-${idx}`} className="aspect-square md:h-20 md:aspect-auto" />;
                   }
 
                   const dayItems = itemsByDate.get(dateIso) ?? [];
                   const hasMass = dayItems.some((i) => i.kind === 'mass');
                   const isToday = dateIso === todayIso;
                   const isSelected = dateIso === selectedDate;
-                  const dayNum = dateIso.slice(-2);
+                  const dayNum = Number(dateIso.slice(-2));
 
-                  let cellClass = 'bg-white hover:bg-[rgba(120,120,128,0.06)] border border-[rgba(0,0,0,0.08)] text-[#1d1d1f]';
+                  let cellClass = 'bg-white border border-black/[0.06] text-[#1d1d1f]';
                   if (dayItems.length > 0) {
                     cellClass = hasMass
-                      ? 'bg-[rgba(245,194,76,0.14)] hover:bg-[rgba(245,194,76,0.22)] text-[#8a6a10] border border-[rgba(245,194,76,0.35)]'
-                      : 'bg-[rgba(24,57,47,0.08)] hover:bg-[rgba(24,57,47,0.12)] text-[#18392f] border border-[rgba(24,57,47,0.18)]';
+                      ? 'bg-[rgba(245,194,76,0.16)] text-[#8a6a10] border border-[rgba(245,194,76,0.35)]'
+                      : 'bg-[rgba(24,57,47,0.08)] text-[#18392f] border border-[rgba(24,57,47,0.18)]';
                   }
                   if (isSelected) cellClass += ' ring-2 ring-[#18392f]';
-                  else if (isToday) cellClass += ' ring-2 ring-[rgba(0,0,0,0.12)]';
+                  else if (isToday) cellClass += ' ring-2 ring-black/15';
 
                   return (
-                    <div
+                    <button
                       key={dateIso}
-                      onClick={() => selectDay(dateIso)}
-                      role="button"
+                      type="button"
+                      onClick={() => { selectDay(dateIso); if (window.matchMedia('(max-width: 767px)').matches) setCurrentView('day'); }}
                       title={dayItems.map((i) => `${i.time} ${i.name}`).join('\n') || undefined}
-                      className={`p-2 rounded-xl text-center h-20 flex flex-col gap-0.5 transition cursor-pointer overflow-hidden ${cellClass}`}
+                      className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl transition md:aspect-auto md:h-20 md:items-stretch md:justify-start md:p-2 ${cellClass}`}
                     >
-                      <span className={`font-mono text-xs font-semibold block text-left ${isToday ? 'text-[#18392f]' : ''}`}>
+                      <span className={`text-[14px] font-semibold md:text-left md:text-[13px] ${isToday ? 'text-[#18392f]' : ''}`}>
                         {dayNum}
                       </span>
-
-                      {dayItems.slice(0, 2).map((item) => (
-                        <span
-                          key={`${item.kind}-${item.id}`}
-                          className={`text-[8px] font-semibold tracking-tight truncate leading-tight block text-left px-0.5 py-px rounded ${
-                            item.kind === 'mass' ? 'bg-[rgba(245,194,76,0.25)]' : 'bg-[rgba(24,57,47,0.15)]'
-                          }`}
-                        >
-                          {item.name}
-                        </span>
-                      ))}
-                      {dayItems.length > 2 && (
-                        <span className="text-[8px] text-slate-500 font-bold text-left">+{dayItems.length - 2} more</span>
-                      )}
-                    </div>
+                      {/* Phone: dots only. Desktop month: event labels. */}
+                      <span className="flex items-center justify-center gap-0.5 md:hidden">
+                        {dayItems.slice(0, 3).map((item) => (
+                          <span
+                            key={`${item.kind}-${item.id}`}
+                            className={`h-1.5 w-1.5 rounded-full ${item.kind === 'mass' ? 'bg-[#f5c24c]' : 'bg-[#18392f]'}`}
+                          />
+                        ))}
+                      </span>
+                      <span className="hidden flex-col gap-0.5 overflow-hidden md:flex">
+                        {dayItems.slice(0, 2).map((item) => (
+                          <span
+                            key={`${item.kind}-${item.id}`}
+                            className={`truncate rounded px-0.5 text-left text-[11px] font-medium leading-tight ${
+                              item.kind === 'mass' ? 'bg-[rgba(245,194,76,0.25)]' : 'bg-[rgba(24,57,47,0.15)]'
+                            }`}
+                          >
+                            {item.name}
+                          </span>
+                        ))}
+                        {dayItems.length > 2 && (
+                          <span className="text-left text-[11px] font-medium text-[#86868b]">+{dayItems.length - 2}</span>
+                        )}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* Agenda for selected day (always visible in month view; full panel in week/day view) */}
+          {/* Agenda — primary on phone */}
           <div className="apple-inset space-y-4 p-4" id="agenda-viewer">
-            {agendaDates.map((dateIso) => {
+            {currentView === 'day' && (
+              <>
+                <h4 className="text-[15px] font-semibold tracking-[-0.015em] text-[#1d1d1f]">
+                  {formatFriendly(selectedDate)}
+                  {selectedDate === todayIso && <span className="ml-2 apple-badge-forest">Today</span>}
+                </h4>
+                {(itemsByDate.get(selectedDate) ?? []).length === 0 ? (
+                  <p className="text-[14px] text-[#86868b]">Nothing scheduled this day.</p>
+                ) : (
+                  <div className="space-y-3">{(itemsByDate.get(selectedDate) ?? []).map(renderAgendaItem)}</div>
+                )}
+                {monthAgenda.length > 0 && (
+                  <div className="space-y-3 border-t border-black/[0.06] pt-4 md:hidden">
+                    <p className="apple-label">This month</p>
+                    {monthAgenda.slice(0, 8).map(({ date, item }) => (
+                      <button
+                        key={`${date}-${item.kind}-${item.id}`}
+                        type="button"
+                        onClick={() => selectDay(date)}
+                        className="flex w-full items-start gap-3 rounded-2xl bg-white p-3 text-left"
+                      >
+                        <span className="w-12 shrink-0 text-[12px] font-semibold text-[#86868b]">
+                          {date.slice(8)}/{date.slice(5, 7)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold text-[#1d1d1f]">{item.name}</span>
+                          <span className="text-[12px] text-[#86868b]">{item.time}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+            {currentView !== 'day' && agendaDates.map((dateIso) => {
               const dayItems = itemsByDate.get(dateIso) ?? [];
               if (currentView === 'week' && dayItems.length === 0) return null;
               return (
                 <div key={dateIso} className="space-y-3">
-                  <h4 className="apple-label font-semibold text-[#1d1d1f]">
+                  <h4 className="text-[15px] font-semibold text-[#1d1d1f]">
                     {formatFriendly(dateIso)}
-                    {dateIso === todayIso && <span className="ml-2 apple-badge-forest text-[9px]">Today</span>}
+                    {dateIso === todayIso && <span className="ml-2 apple-badge-forest">Today</span>}
                   </h4>
                   {dayItems.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic">Nothing scheduled — use the form to log a rehearsal, or add a mass under Liturgy &amp; Masses.</p>
+                    <p className="text-[14px] text-[#86868b]">Nothing scheduled.</p>
                   ) : (
                     <div className="space-y-3">{dayItems.map(renderAgendaItem)}</div>
                   )}
@@ -385,7 +475,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               );
             })}
             {currentView === 'week' && agendaDates.every((d) => (itemsByDate.get(d) ?? []).length === 0) && (
-              <p className="text-xs text-slate-400 italic">Nothing scheduled this week.</p>
+              <p className="text-[14px] text-[#86868b]">Nothing scheduled this week.</p>
             )}
           </div>
         </div>

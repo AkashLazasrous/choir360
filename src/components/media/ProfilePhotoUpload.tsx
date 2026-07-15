@@ -156,9 +156,9 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={phase === 'uploading'}
-            className="btn-pill btn-pill-primary btn-pill-sm w-fit !text-[13px]"
+            className="btn-pill btn-pill-primary w-fit"
           >
-            <Camera className="h-3.5 w-3.5" />
+            <Camera className="h-4 w-4" />
             {displayUrl && phase === 'idle' ? 'Change Photo' : 'Choose File'}
           </button>
 
@@ -167,17 +167,17 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
               <button
                 type="button"
                 onClick={handleUpload}
-                className="btn-pill btn-pill-gold btn-pill-sm !text-[13px]"
+                className="btn-pill btn-pill-gold"
               >
-                <Upload className="h-3.5 w-3.5" />
+                <Upload className="h-4 w-4" />
                 Upload
               </button>
               <button
                 type="button"
                 onClick={handleReset}
-                className="btn-pill btn-pill-secondary btn-pill-sm !text-[13px]"
+                className="btn-pill btn-pill-secondary"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
                 Cancel
               </button>
             </div>
@@ -187,9 +187,9 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             <button
               type="button"
               onClick={handleReset}
-              className="btn-pill btn-pill-secondary btn-pill-sm w-fit !text-[13px]"
+              className="btn-pill btn-pill-secondary w-fit"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-4 w-4" />
               Try Again
             </button>
           )}

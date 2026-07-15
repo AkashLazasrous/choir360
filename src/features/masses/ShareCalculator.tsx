@@ -18,7 +18,7 @@ interface ShareCalculatorProps {
   onUnlock: () => void;
 }
 
-/** Dark "Share Calculation Engine" panel: weighted split with lock/disburse. */
+/** Share calculation panel — summary-first on phone, full grid on desktop. */
 export const ShareCalculator: React.FC<ShareCalculatorProps> = ({
   activePayment,
   calc,
@@ -30,117 +30,132 @@ export const ShareCalculator: React.FC<ShareCalculatorProps> = ({
   onInstrumentalistCountChange,
   onLock,
   onUnlock,
-}) => (
-  <div className="apple-hero-soft p-6 md:p-8 space-y-6 font-apple">
-    <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-4 gap-4">
-      <div className="flex items-center gap-3">
-        <div className="rounded-xl border border-[#f5c24c]/30 bg-[#f5c24c]/15 text-[#f5c24c] p-2">
-          <Calculator className="w-6 h-6" />
+}) => {
+  const singerShare = (isLocked ? lockedCalc?.singerShare : calc.singerShare) ?? 0;
+  const instrumentShare = (isLocked ? lockedCalc?.instrumentShare : calc.instrumentalistShare) ?? 0;
+  const unitValue = (isLocked ? lockedCalc?.unitValue : calc.unitValue) ?? 0;
+  const totalUnits = isLocked ? lockedCalc?.totalUnits : calc.totalUnits;
+
+  return (
+    <div className="apple-hero-soft relative space-y-5 p-5 font-apple sm:p-6 md:p-8">
+      <div className="relative flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-full border border-[#f5c24c]/30 bg-[#f5c24c]/15 p-2.5 text-[#f5c24c]">
+            <Calculator className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="flex flex-wrap items-center gap-2 text-[17px] font-semibold tracking-[-0.02em] text-[#f5f5f7]">
+              Share calculator
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                isLocked ? 'bg-[rgba(48,209,88,0.2)] text-[#30d158]' : 'bg-white/10 text-amber-300'
+              }`}>
+                {isLocked ? 'Locked' : 'Live'}
+              </span>
+            </h3>
+            <p className="mt-0.5 text-[13px] text-[#a1a1a6]">
+              {activePayment.massType} · {activePayment.partyName}
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold text-white flex items-center gap-2">
-            Share Calculation Engine
-            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
-              isLocked ? 'bg-emerald-900 text-emerald-300' : 'bg-slate-800 text-amber-400'}`}>
-              {isLocked ? 'LOCKED' : 'LIVE'}
-            </span>
-          </h3>
-          <p className="text-xs text-slate-400">
-            {activePayment.massType} · Sponsor: <strong className="text-slate-200">{activePayment.partyName}</strong>
-          </p>
-        </div>
-      </div>
-      <div>
         {isLocked ? (
-          <button onClick={onUnlock}
-            className="px-4 py-2.5 min-h-[44px] bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition">
-            <Unlock className="w-4 h-4" /> Unlock Editing
+          <button type="button" onClick={onUnlock} className="btn-pill btn-pill-secondary !min-h-[44px] !bg-white/10 !text-[#ff453a]">
+            <Unlock className="h-4 w-4" /> Unlock
           </button>
         ) : (
-          <button onClick={onLock}
-            className="px-4 py-2.5 min-h-[44px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition">
-            <Lock className="w-4 h-4" /> Lock & Disburse
+          <button type="button" onClick={onLock} className="btn-pill btn-pill-gold !min-h-[44px]">
+            <Lock className="h-4 w-4" /> Lock &amp; Disburse
           </button>
         )}
       </div>
-    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {/* Controls */}
-      <div className="space-y-4">
-        <h4 className="text-xs font-bold text-emerald-400 uppercase font-mono">Attendance Parameters</h4>
-        {[
-          { label: 'Present Singers (Weight = 1)', val: singerCount, set: onSingerCountChange, max: 20 },
-          { label: 'Present Instrumentalists (Weight = 2)', val: instrumentalistCount, set: onInstrumentalistCountChange, max: 10 },
-        ].map(({ label, val, set, max }) => (
-          <div key={label} className="bg-slate-800 p-3.5 rounded-xl border border-slate-700 space-y-2">
-            <div className="flex justify-between text-xs text-slate-300">
-              <span>{label}</span>
-              <span className="font-mono font-bold text-white text-sm">{val}</span>
-            </div>
-            <input type="range" min={0} max={max} value={val} disabled={isLocked}
-              onChange={(e) => set(Number(e.target.value))}
-              className="w-full accent-emerald-500 disabled:opacity-40" />
-          </div>
-        ))}
+      {/* Mobile summary first */}
+      <div className="relative grid grid-cols-2 gap-3 md:hidden">
+        <div className="rounded-2xl bg-black/25 p-4 text-center">
+          <p className="text-[12px] text-[#a1a1a6]">Per singer</p>
+          <p className="mt-1 text-[22px] font-semibold tabular-nums text-[#f5f5f7]">{formatINR(singerShare)}</p>
+        </div>
+        <div className="rounded-2xl bg-black/25 p-4 text-center">
+          <p className="text-[12px] text-[#a1a1a6]">Per musician</p>
+          <p className="mt-1 text-[22px] font-semibold tabular-nums text-amber-300">{formatINR(instrumentShare)}</p>
+        </div>
+        <div className="col-span-2 rounded-2xl bg-black/25 p-4 text-center">
+          <p className="text-[12px] text-[#a1a1a6]">Total distributed</p>
+          <p className="mt-1 text-[24px] font-semibold tabular-nums text-[#30d158]">
+            {formatINR(singerShare * singerCount + instrumentShare * instrumentalistCount)}
+          </p>
+        </div>
       </div>
 
-      {/* Summary */}
-      <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex flex-col justify-between">
-        <h4 className="text-xs font-bold text-emerald-400 uppercase font-mono mb-4">Choral Split Summary</h4>
-        <div className="space-y-3 text-xs">
+      <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+        <div className="space-y-4">
+          <h4 className="text-[13px] font-medium text-amber-300">Attendance</h4>
           {[
-            { label: 'Gross Amount',    val: formatINR(activePayment.promisedAmount), cls: 'text-white' },
-            { label: 'Total Units',     val: `${isLocked ? lockedCalc?.totalUnits : calc.totalUnits} units`, cls: 'text-slate-200' },
-            { label: 'Unit Value',      val: formatINR((isLocked ? lockedCalc?.unitValue : calc.unitValue) ?? 0), cls: 'text-emerald-400 text-sm font-extrabold' },
-          ].map(({ label, val, cls }) => (
-            <div key={label} className="flex justify-between border-b border-slate-700 pb-2">
-              <span className="text-slate-400">{label}</span>
-              <span className={`font-bold font-mono ${cls}`}>{val}</span>
+            { label: 'Singers (×1)', val: singerCount, set: onSingerCountChange, max: 20 },
+            { label: 'Instrumentalists (×2)', val: instrumentalistCount, set: onInstrumentalistCountChange, max: 10 },
+          ].map(({ label, val, set, max }) => (
+            <div key={label} className="space-y-2 rounded-2xl bg-black/25 p-3.5">
+              <div className="flex justify-between text-[14px] text-[#a1a1a6]">
+                <span>{label}</span>
+                <span className="font-semibold tabular-nums text-[#f5f5f7]">{val}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={max}
+                value={val}
+                disabled={isLocked}
+                onChange={(e) => set(Number(e.target.value))}
+                className="w-full accent-amber-300 disabled:opacity-40"
+              />
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-emerald-300/70 font-mono mt-4 bg-emerald-950 p-2 rounded">
-          {formatINR(activePayment.promisedAmount)} / ({singerCount}×1 + {instrumentalistCount}×2)
-        </p>
-      </div>
 
-      {/* Per-member shares */}
-      <div className="space-y-4">
-        <h4 className="text-xs font-bold text-emerald-400 uppercase font-mono">Disbursement Shares</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center space-y-1">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Per Singer</p>
-            <p className="text-xl font-extrabold text-white font-mono">
-              {formatINR((isLocked ? lockedCalc?.singerShare : calc.singerShare) ?? 0)}
-            </p>
-            <p className="text-[9px] text-emerald-400">Weight 1×</p>
-          </div>
-          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center space-y-1">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Per Musician</p>
-            <p className="text-xl font-extrabold text-amber-400 font-mono">
-              {formatINR((isLocked ? lockedCalc?.instrumentShare : calc.instrumentalistShare) ?? 0)}
-            </p>
-            <p className="text-[9px] text-amber-400">Weight 2×</p>
+        <div className="hidden flex-col justify-between rounded-2xl bg-black/25 p-6 md:flex">
+          <h4 className="mb-4 text-[13px] font-medium text-amber-300">Split summary</h4>
+          <div className="space-y-3 text-[14px]">
+            {[
+              { label: 'Gross amount', val: formatINR(activePayment.promisedAmount) },
+              { label: 'Total units', val: `${totalUnits} units` },
+              { label: 'Unit value', val: formatINR(unitValue) },
+            ].map(({ label, val }) => (
+              <div key={label} className="flex justify-between border-b border-white/10 pb-2">
+                <span className="text-[#86868b]">{label}</span>
+                <span className="font-semibold tabular-nums text-[#f5f5f7]">{val}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs text-center">
-          <p className="text-slate-400">Total distributed</p>
-          <p className="text-lg font-extrabold text-emerald-400 font-mono">
-            {formatINR(
-              ((isLocked ? lockedCalc?.singerShare : calc.singerShare) ?? 0) * singerCount +
-              ((isLocked ? lockedCalc?.instrumentShare : calc.instrumentalistShare) ?? 0) * instrumentalistCount
-            )}
-          </p>
+        <div className="hidden space-y-4 md:block">
+          <h4 className="text-[13px] font-medium text-amber-300">Disbursement</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-black/25 p-4 text-center">
+              <p className="text-[12px] text-[#86868b]">Per singer</p>
+              <p className="mt-1 text-[20px] font-semibold tabular-nums text-[#f5f5f7]">{formatINR(singerShare)}</p>
+            </div>
+            <div className="rounded-2xl bg-black/25 p-4 text-center">
+              <p className="text-[12px] text-[#86868b]">Per musician</p>
+              <p className="mt-1 text-[20px] font-semibold tabular-nums text-amber-300">{formatINR(instrumentShare)}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => alert(`Audit for ${activePayment.partyName}\nProposed: ${formatINR(activePayment.promisedAmount)}\nSingers (${singerCount}): ${formatINR(calc.singerShare)} each\nInstrumentalists (${instrumentalistCount}): ${formatINR(calc.instrumentalistShare)} each`)}
+            className="btn-pill btn-pill-on-dark w-full !min-h-[44px]"
+          >
+            <Download className="h-4 w-4" /> Export audit
+          </button>
         </div>
-
-        <button
-          onClick={() => alert(`Audit for ${activePayment.partyName}\nProposed: ${formatINR(activePayment.promisedAmount)}\nSingers (${singerCount}): ${formatINR(calc.singerShare)} each\nInstrumentalists (${instrumentalistCount}): ${formatINR(calc.instrumentalistShare)} each`)}
-          className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-700 transition">
-          <Download className="w-3.5 h-3.5" /> Export Audit Report
-        </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => alert(`Audit for ${activePayment.partyName}\nProposed: ${formatINR(activePayment.promisedAmount)}\nSingers (${singerCount}): ${formatINR(calc.singerShare)} each\nInstrumentalists (${instrumentalistCount}): ${formatINR(calc.instrumentalistShare)} each`)}
+        className="btn-pill btn-pill-on-dark relative w-full !min-h-[44px] md:hidden"
+      >
+        <Download className="h-4 w-4" /> Export audit
+      </button>
     </div>
-  </div>
-);
+  );
+};

@@ -3,6 +3,8 @@ import {
   Award,
   AlertTriangle,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   Clock,
   Send,
@@ -21,6 +23,14 @@ interface RegistrationFormProps {
   onAddMember: (member: Member) => void;
   onSubmitted: (message: string) => void;
 }
+
+const REG_STEPS = [
+  { id: 1 as const, label: 'Contact', shortLabel: 'Contact' },
+  { id: 2 as const, label: 'Choir', shortLabel: 'Choir' },
+  { id: 3 as const, label: 'Photo & emergency', shortLabel: 'Photo/Emergency' },
+];
+
+type RegStep = (typeof REG_STEPS)[number]['id'];
 
 const Field: React.FC<{ label: string; required?: boolean; className?: string; children: React.ReactNode }> = ({
   label,
@@ -67,6 +77,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [emergencyName, setEmergencyName] = useState('');
   const [emergencyRelation, setEmergencyRelation] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [step, setStep] = useState<RegStep>(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,11 +133,40 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setEmergencyName('');
     setEmergencyRelation('');
     setEmergencyPhone('');
+    setStep(1);
   };
+
+  const goNext = () => setStep((s) => (s < 3 ? ((s + 1) as RegStep) : s));
+  const goBack = () => setStep((s) => (s > 1 ? ((s - 1) as RegStep) : s));
 
   return (
     <div className="font-apple grid grid-cols-1 gap-6 lg:grid-cols-3" id="registration-form-view">
       <form onSubmit={handleSubmit} className="apple-card space-y-7 p-6 lg:col-span-2 lg:p-8" id="member-form">
+        <div
+          className="sticky-below-header sticky z-10 -mx-6 border-b border-black/[0.06] bg-white/95 px-4 py-3 backdrop-blur-md lg:-mx-8 lg:px-8"
+          role="navigation"
+          aria-label="Registration steps"
+        >
+          <div className="reading-tabs-scroll flex gap-2 overflow-x-auto pb-1">
+            {REG_STEPS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setStep(s.id)}
+                aria-current={step === s.id ? 'step' : undefined}
+                className={`btn-pill shrink-0 snap-start !min-h-[44px] !px-4 !text-[13px] ${
+                  step === s.id ? 'btn-pill-primary' : 'btn-pill-secondary'
+                }`}
+              >
+                <span className="font-semibold tabular-nums">{s.id}.</span>
+                {s.shortLabel}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {step === 1 && (
+          <>
         <div>
           <h3 className="apple-title">Contact & background</h3>
           <p className="apple-caption mt-1">Tell us how to reach you and where you sing.</p>
@@ -217,9 +257,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             />
           </Field>
         </div>
+          </>
+        )}
 
-        <hr className="apple-divider" />
-
+        {step === 2 && (
+          <>
         <div>
           <h3 className="apple-title">Choir configuration</h3>
           <p className="apple-caption mt-1">Parish, role, and voice part.</p>
@@ -314,16 +356,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </select>
           </Field>
 
-          <div className="apple-inset space-y-3 p-4 md:col-span-2">
-            <p className="apple-label">Profile photo</p>
-            <ProfilePhotoUpload
-              memberId={`M${String(members.length + 1).padStart(3, '0')}`}
-              uploadedByUserId="public_user"
-              currentPhotoUrl={cloudinaryRecord?.optimizedUrl || cloudinaryRecord?.secureUrl || photoUrl}
-              onUploadComplete={(record) => setCloudinaryRecord(record)}
-            />
-          </div>
-
           <Field label="Special skills & talents" className="md:col-span-2">
             <input
               type="text"
@@ -333,6 +365,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               className="apple-input"
             />
           </Field>
+        </div>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+        <div>
+          <h3 className="apple-title">Profile photo</h3>
+          <p className="apple-caption mt-1">Upload a photo for your choir roster card.</p>
+        </div>
+
+        <div className="apple-inset space-y-3 p-4">
+          <ProfilePhotoUpload
+            memberId={`M${String(members.length + 1).padStart(3, '0')}`}
+            uploadedByUserId="public_user"
+            currentPhotoUrl={cloudinaryRecord?.optimizedUrl || cloudinaryRecord?.secureUrl || photoUrl}
+            onUploadComplete={(record) => setCloudinaryRecord(record)}
+          />
         </div>
 
         <hr className="apple-divider" />
@@ -373,16 +423,42 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             />
           </Field>
         </div>
+          </>
+        )}
 
-        <div className="flex justify-end border-t border-black/[0.06] pt-5">
-          <button
-            type="submit"
-            id="submit-registration-btn"
-            className="btn-pill btn-pill-primary !text-[15px]"
-          >
-            <Send className="h-4 w-4" />
-            {dict.submitApproval}
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-5">
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={goBack}
+              className="btn-pill btn-pill-secondary !min-h-[44px]"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back
+            </button>
+          ) : (
+            <span aria-hidden />
+          )}
+
+          {step < 3 ? (
+            <button
+              type="button"
+              onClick={goNext}
+              className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              id="submit-registration-btn"
+              className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
+            >
+              <Send className="h-4 w-4" />
+              {dict.submitApproval}
+            </button>
+          )}
         </div>
       </form>
 

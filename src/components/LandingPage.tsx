@@ -67,24 +67,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section className="apple-hero-soft">
         <div className="choir-hero-ambient" aria-hidden />
         <div className="relative grid lg:grid-cols-[1.45fr_0.85fr]">
-          <div className="px-7 py-9 sm:px-10 sm:py-11">
+          <div className="px-5 py-8 sm:px-10 sm:py-11">
             <p className="text-[13px] font-medium text-[#a1a1a6]">{todayLabel}</p>
-            <p className="mt-4 text-[17px] font-semibold tracking-[-0.01em] text-amber-300">
+            <p className="mt-3 text-[17px] font-semibold tracking-[-0.01em] text-amber-300">
               {greeting}
             </p>
-            <h1 className="mt-2 max-w-xl text-[clamp(2rem,5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#f5f5f7]">
+            <h1 className="mt-2 max-w-xl text-[clamp(1.85rem,7vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#f5f5f7]">
               {nextMass
                 ? <>Ministry ready.<br /><span className="text-amber-300">Voices aligned.</span></>
                 : <>Welcome to<br /><span className="text-amber-300">Choir360.</span></>
               }
             </h1>
-            <p className="mt-4 max-w-lg text-[17px] leading-snug tracking-[-0.01em] text-[#a1a1a6]">
+            <p className="mt-3 max-w-lg text-[15px] leading-snug tracking-[-0.01em] text-[#a1a1a6] sm:text-[17px]">
               {members.length === 0
                 ? 'Your parish choir desk. Register members and log your first mass.'
                 : `${confirmedPercent}% active · ${pendingMembers.length > 0 ? `${pendingMembers.length} pending` : 'All approved'} · ${masses.length} mass${masses.length !== 1 ? 'es' : ''}`
               }
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
               <AppleButton variant="gold" magnetic onClick={() => onNavigate('masses')}>
                 {nextMass ? 'Open Liturgy Desk' : 'Log First Mass'}
                 <ArrowUpRight className="h-4 w-4" />
@@ -95,7 +95,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col justify-between border-t border-white/10 bg-black/20 px-7 py-8 backdrop-blur-sm lg:border-l lg:border-t-0">
+          <div className="flex flex-col justify-between border-t border-white/10 bg-black/20 px-5 py-6 backdrop-blur-sm sm:px-7 sm:py-8 lg:border-l lg:border-t-0">
             <div>
               <p className="apple-caption text-[#86868b]">Next liturgy</p>
               {nextMass ? (
@@ -149,15 +149,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               )}
             </div>
-            <div className="mt-6">
+            {/* Radio deferred below fold on phone */}
+            <div className="mt-6 hidden lg:block">
               <RadioPlayer />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats — Apple grouped tiles */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Stats — two columns on phone, softer density */}
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           {
             label: 'Active choralists',
@@ -211,10 +212,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         ))}
       </section>
 
+      <div className="lg:hidden">
+        <RadioPlayer />
+      </div>
+
       <Reveal>
         <section className="grid gap-4 xl:grid-cols-[1.4fr_0.85fr]">
-          <article className="apple-card p-6">
-            <div className="mb-4 flex items-center justify-between">
+          <article className="apple-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <div>
                 <p className="apple-caption">Parish liturgy log</p>
                 <h3 className="apple-title mt-0.5">Logged masses</h3>
@@ -222,7 +227,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('masses')}
-                className="btn-pill btn-pill-secondary btn-pill-sm"
+                className="btn-pill btn-pill-secondary !min-h-[44px] !text-[13px]"
               >
                 Manage <ChevronRight className="h-3.5 w-3.5" />
               </button>

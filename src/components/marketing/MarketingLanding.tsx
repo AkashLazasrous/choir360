@@ -133,14 +133,14 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
           <div className="apple-content text-center">
             <p className="text-[17px] font-semibold text-amber-300">Built for ministry scale</p>
             <h2 className="apple-headline mt-2">Everything you need. Nothing you don&apos;t.</h2>
-            <div className="mt-16 grid grid-cols-3 gap-6">
+            <div className="mt-12 grid grid-cols-1 gap-8 sm:mt-16 sm:grid-cols-3 sm:gap-6">
               {[
                 { val: 1000, suffix: '+', label: 'Hymns & songs' },
                 { val: 12, suffix: '', label: 'Ministry modules' },
                 { val: 5, suffix: '', label: 'Languages' },
               ].map(({ val, suffix, label }) => (
-                <div key={label}>
-                  <p className="text-[clamp(2.5rem,6vw,4rem)] font-semibold tracking-[-0.04em] text-[#f5f5f7]">
+                <div key={label} className="text-center">
+                  <p className="text-[clamp(2.5rem,8vw,4rem)] font-semibold tracking-[-0.04em] text-[#f5f5f7]">
                     <CountUp value={val} />{suffix}
                   </p>
                   <p className="mt-2 text-[14px] text-[#a1a1a6]">{label}</p>

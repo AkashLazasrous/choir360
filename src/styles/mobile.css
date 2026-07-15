@@ -1,3 +1,5 @@
+/* Mobile chrome helpers — tokens live in brand.css (:root) */
+
 @supports (height: 100dvh) {
   .mobile-safe-screen {
     min-height: 100dvh;
@@ -29,4 +31,59 @@
 .song-index-scroll {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* App shell chrome */
+.app-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.app-header-inner {
+  height: var(--app-header-h);
+}
+
+.app-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.app-bottom-spacer {
+  height: var(--bottom-chrome);
+}
+
+.app-more-sheet {
+  bottom: var(--bottom-chrome);
+}
+
+.app-toast-stack {
+  bottom: calc(var(--bottom-chrome) + 0.75rem);
+}
+
+@media (min-width: 1024px) {
+  .app-toast-stack {
+    bottom: 1.5rem;
+  }
+}
+
+/* Nested stickies clear the glass header + notch */
+.sticky-below-header {
+  top: var(--app-header-offset);
+}
+
+/* Full-screen overlays clear tab bar */
+.mobile-overlay-pad {
+  padding-bottom: var(--bottom-chrome);
+}
+
+.mobile-overlay-inset {
+  bottom: var(--bottom-chrome);
+}
+
+/* Hide bottom nav when a full-screen reader is open (body class toggled in JS) */
+body.mobile-reader-open .app-bottom-nav,
+body.mobile-reader-open .app-bottom-spacer {
+  display: none !important;
+}
+
+body.mobile-reader-open .app-toast-stack {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
 }

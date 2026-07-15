@@ -327,8 +327,8 @@ function AppInner() {
     <ParishOnboardingModal />
     <div className="apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
       {/* HEADER — Apple liquid-glass bar */}
-      <header className="glass-panel-dark sticky top-0 z-50 border-b border-white/10 text-[#f5f5f7]">
-        <div className="mx-auto flex h-12 max-w-[1600px] items-center gap-4 px-4 sm:h-14 sm:px-6">
+      <header className="app-header glass-panel-dark sticky top-0 z-50 border-b border-white/10 text-[#f5f5f7]">
+        <div className="app-header-inner mx-auto flex max-w-[1600px] items-center gap-4 px-4 sm:px-6">
           <button
             onClick={() => setMobileNavOpen((o) => !o)}
             className="min-h-[44px] min-w-[44px] rounded-full p-2 transition hover:bg-white/10 lg:hidden"
@@ -399,7 +399,7 @@ function AppInner() {
                 </button>
               ))}
             </div>
-            <button className="relative min-h-[40px] min-w-[40px] rounded-full p-2.5 transition hover:bg-white/10" aria-label="Notifications">
+            <button className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2.5 transition hover:bg-white/10" aria-label="Notifications">
               <Bell className="h-4 w-4" />
               <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
             </button>
@@ -407,7 +407,7 @@ function AppInner() {
               <RoleSelector currentRole={demoRole} setRole={handleDemoRoleChange} />
             )}
             {authState.isConfigured && authState.user && (
-              <div className="btn-pill btn-pill-gold !min-h-[28px] !px-3 !py-1 !text-[11px]">
+              <div className="btn-pill btn-pill-gold btn-pill-sm !min-h-[36px] !px-3 !text-[12px]">
                 {effectiveRole.replace('_', ' ')}
               </div>
             )}
@@ -427,7 +427,13 @@ function AppInner() {
 
       <div className="mx-auto flex max-w-[1600px]">
         {/* SIDEBAR */}
-        <aside className={(mobileNavOpen ? 'fixed inset-x-0 top-12 z-40 flex sm:top-14' : 'hidden') + ' min-h-[calc(100dvh-3.5rem)] w-64 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:sticky lg:top-14 lg:flex'}>
+        <aside className={(mobileNavOpen ? 'fixed inset-x-0 z-40 flex' : 'hidden') + ' w-64 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:sticky lg:top-[var(--app-header-offset)] lg:flex'}
+          style={mobileNavOpen ? {
+            top: 'var(--app-header-offset)',
+            bottom: 'var(--bottom-chrome)',
+            maxHeight: 'calc(100dvh - var(--app-header-offset) - var(--bottom-chrome))',
+          } : undefined}
+        >
           <ParishSidebarCard
             songCount={0}
             syncStatus={
@@ -472,7 +478,7 @@ function AppInner() {
                 return (
                   <button key={item.id} onClick={() => { if (accessible) { navigate(item.id); setMobileNavOpen(false); } }} disabled={!accessible}
                     aria-current={isActive ? 'page' : undefined}
-                    className={'relative flex min-h-[40px] w-full items-center gap-3 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.01em] transition ' +
+                    className={'relative flex min-h-[44px] w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-[15px] font-medium tracking-[-0.01em] transition ' +
                       (isActive ? 'text-white' : accessible ? 'text-[#1d1d1f] hover:bg-black/[0.04]' : 'cursor-not-allowed text-[#d2d2d7]')}>
                     {isActive && (
                       <motion.span
@@ -642,25 +648,31 @@ function AppInner() {
 
       {/* Mobile bottom nav — 5 primary tabs + More drawer */}
       {mobileMoreOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileMoreOpen(false)}>
+        <div className="fixed inset-0 z-[55] lg:hidden" onClick={() => setMobileMoreOpen(false)}>
           <div className="absolute inset-0 bg-[#0f2b22]/35 backdrop-blur-sm" />
           <div
-            className="absolute bottom-[calc(56px+env(safe-area-inset-bottom))] left-0 right-0 rounded-t-2xl border-t border-[#18392f]/10 bg-white/95 shadow-xl backdrop-blur-xl"
+            className="app-more-sheet absolute left-0 right-0 rounded-t-2xl border-t border-black/5 bg-white/95 shadow-xl backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">More</span>
-              <button onClick={() => setMobileMoreOpen(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
-                <X className="h-4 w-4" />
+            <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-2">
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1d1d1f]">More</span>
+              <button
+                type="button"
+                onClick={() => setMobileMoreOpen(false)}
+                className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
+                aria-label="Close more menu"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-1 p-3">
+            <div className="grid grid-cols-4 gap-1 p-3 pb-4">
               {([
                 { id: 'bible' as Tab,             Icon: BookText,       label: 'Bible' },
                 { id: 'catholic_hub' as Tab,       Icon: BookOpen,       label: 'Catholic' },
                 { id: 'rehearsals' as Tab,         Icon: Sparkles,       label: 'Rehearsals' },
                 { id: 'dashboard_member' as Tab,   Icon: HeartHandshake, label: 'Ministry' },
-                { id: 'liturgical_planner' as Tab, Icon: Star,           label: 'Planner' },
+                { id: 'liturgical_planner' as Tab, Icon: Sparkles,       label: 'Planner' },
+                { id: 'gamification' as Tab,       Icon: Star,           label: 'Achievements' },
                 { id: 'ai_hub' as Tab,             Icon: Command,        label: 'AI Hub' },
                 { id: 'analytics' as Tab,          Icon: BarChart3,      label: 'Insights' },
               ] as { id: Tab; Icon: React.ElementType; label: string }[])
@@ -669,19 +681,17 @@ function AppInner() {
                   const isActive = activeTab === id;
                   return (
                     <button key={id} onClick={() => { navigate(id); setMobileMoreOpen(false); }}
-                      className={'flex flex-col items-center gap-1 rounded-xl p-3 min-h-[64px] ' + (isActive ? 'bg-[#18392f]/10' : 'hover:bg-slate-50')}>
-                      <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-slate-500')} />
-                      <span className={'text-[9px] font-bold ' + (isActive ? 'text-[#18392f]' : 'text-slate-500')}>{label}</span>
+                      className={'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' + (isActive ? 'bg-[#18392f]/10' : 'hover:bg-black/[0.03]')}>
+                      <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')} />
+                      <span className={'text-center text-[11px] font-medium leading-tight ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
                     </button>
                   );
                 })}
             </div>
-            <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />
           </div>
         </div>
       )}
-      <nav className="glass-panel fixed bottom-0 left-0 right-0 z-40 flex border-t border-black/5 lg:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav className="app-bottom-nav glass-panel fixed bottom-0 left-0 right-0 z-50 flex border-t border-black/5 lg:hidden">
         {([
           { id: 'landing' as Tab,      Icon: LayoutDashboard, label: 'Home' },
           { id: 'calendar' as Tab,     Icon: CalendarDays,    label: 'Calendar' },
@@ -704,17 +714,17 @@ function AppInner() {
                   />
                 )}
                 <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')} />
-                <span className={'text-[10px] font-medium ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
+                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
               </button>
             );
           })}
         <button onClick={() => setMobileMoreOpen((o) => !o)}
           className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5">
           <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')} />
-          <span className={'text-[10px] font-medium ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')}>More</span>
+          <span className={'text-[11px] font-medium ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')}>More</span>
         </button>
       </nav>
-      <div className="h-[calc(56px+env(safe-area-inset-bottom))] lg:hidden" aria-hidden="true" />
+      <div className="app-bottom-spacer lg:hidden" aria-hidden="true" />
     </div>
     </>
   );

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Copy, Music2, RefreshCw, Search, Share2, X } from 'lucide-react';
+import { Copy, Music2, RefreshCw, Search, Share2 } from 'lucide-react';
 import { apiFetch } from '../../services/apiClient';
 import {
   useCatholicHubSongs,
   type CatholicHubSong,
   type CatholicHubSongSyncStatus,
 } from '../songs/hooks/useCatholicHubSongs';
+import { MobileLyricsOverlay } from '../songs/MobileLyricsOverlay';
 import { HUB_SONG_CATEGORIES } from './data/songCategories';
 import { expandHubSearchQuery, normalizeHubSearch } from './search';
 
@@ -272,13 +273,13 @@ export const HubSongsTab: React.FC = () => {
                         key={song.id}
                         type="button"
                         onClick={() => selectSong(song, window.matchMedia('(max-width: 767px)').matches)}
-                        className={`w-full rounded-xl p-3 text-left transition ${selectedSong?.id === song.id ? 'bg-amber-50 ring-1 ring-amber-200' : 'hover:bg-slate-50'}`}
+                        className={`w-full min-h-[52px] rounded-xl p-3.5 text-left transition ${selectedSong?.id === song.id ? 'bg-amber-50 ring-1 ring-amber-200' : 'hover:bg-slate-50'}`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className="line-clamp-2 text-sm font-black text-slate-900">{song.title}</p>
-                          <span className="mt-0.5 flex-shrink-0 text-[10px] font-bold text-amber-700 md:hidden">Read →</span>
+                          <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900">{song.title}</p>
+                          <span className="mt-0.5 flex-shrink-0 text-[12px] font-semibold text-amber-700 md:hidden">Read →</span>
                         </div>
-                        <p className="mt-1 text-[11px] font-semibold text-slate-400">#{song.order}</p>
+                        <p className="mt-1 text-[12px] font-medium text-slate-400">#{song.order}</p>
                       </button>
                     ))}
                   </div>
@@ -354,32 +355,20 @@ export const HubSongsTab: React.FC = () => {
       </div>
 
       {mobileSongOpen && selectedSong && (
-        <div className="fixed inset-0 z-[70] bg-white md:hidden">
-          <div className="flex h-[100dvh] flex-col pb-[env(safe-area-inset-bottom)]">
-            <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 p-4 backdrop-blur">
-              <div className="flex items-center justify-between gap-2">
-                <button onClick={() => setMobileSongOpen(false)} className="inline-flex min-h-[40px] items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700"><ArrowLeft className="h-4 w-4" /> Songs</button>
-                <button onClick={() => setMobileSongOpen(false)} className="min-h-[40px] min-w-[40px] rounded-xl border border-slate-200 p-2 text-slate-600" aria-label="Close"><X className="h-4 w-4" /></button>
-              </div>
-              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">{selectedSong.categoryTamil}</p>
-              <h3 className="mt-1 text-lg font-black text-slate-950">{selectedSong.title}</h3>
-              <p className="mt-1 text-xs text-slate-500">Tamil · Song #{selectedSong.order}</p>
-              <div className="mt-3 flex gap-2 overflow-x-auto">
-                <button onClick={() => void copySong(selectedSong)} className="inline-flex min-h-[40px] flex-shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700"><Copy className="h-3.5 w-3.5" /> Copy</button>
-                <button onClick={() => void shareSong(selectedSong)} className="inline-flex min-h-[40px] flex-shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700"><Share2 className="h-3.5 w-3.5" /> Share</button>
-              </div>
-            </header>
-            <main className="min-h-0 flex-1 overflow-y-auto p-5 overscroll-contain">
-              {selectedSong.lyrics ? (
-                <p className="whitespace-pre-line font-serif text-xl leading-10 text-slate-900">{selectedSong.lyrics}</p>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-                  Lyrics extraction is pending. Reload this category to refresh the cached song content.
-                </div>
-              )}
-            </main>
-          </div>
-        </div>
+        <MobileLyricsOverlay
+          song={{
+            id: selectedSong.id,
+            title: selectedSong.title,
+            category: selectedSong.categoryTamil,
+            language: 'Tamil',
+            lyrics: selectedSong.lyrics,
+            metaLine: `${selectedSong.categoryTamil} · Tamil · #${selectedSong.order}`,
+          }}
+          showFavorite={false}
+          onClose={() => setMobileSongOpen(false)}
+          onCopy={() => void copySong(selectedSong)}
+          onShare={() => void shareSong(selectedSong)}
+        />
       )}
     </div>
   );

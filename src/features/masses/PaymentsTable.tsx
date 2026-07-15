@@ -13,7 +13,7 @@ interface PaymentsTableProps {
   onSendReminder: (payment: Payment) => void;
 }
 
-/** "Special Mass Payments" card: logged-mass chips plus the payments table. */
+/** Special Mass Payments — card list on phone, table on desktop. */
 export const PaymentsTable: React.FC<PaymentsTableProps> = ({
   masses,
   payments,
@@ -22,37 +22,46 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
   onSelectPayment,
   onSendReminder,
 }) => (
-  <div className="lg:col-span-2 apple-card font-apple p-6 space-y-4">
-    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 border border-amber-200">
-          <IndianRupee className="w-4 h-4 text-amber-700" />
+  <div className="apple-card font-apple space-y-4 p-5 lg:col-span-2 lg:p-6">
+    <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(245,194,76,0.18)]">
+          <IndianRupee className="h-4 w-4 text-[#8a6a10]" />
         </div>
         <div>
-          <h3 className="font-bold text-slate-900 text-sm">Special Mass Payments</h3>
-          <p className="text-[10px] text-slate-400">{payments.length} payment record{payments.length !== 1 ? 's' : ''}</p>
+          <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Special Mass Payments</h3>
+          <p className="text-[12px] text-[#86868b]">
+            {payments.length} payment record{payments.length !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
       {payments.length > 0 && (
-        <div className="flex gap-2 text-[10px] font-bold">
-          <span className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-            {payments.filter(p=>p.status==='Received').length} cleared
+        <div className="flex flex-wrap justify-end gap-1.5">
+          <span className="apple-badge-forest">
+            {payments.filter((p) => p.status === 'Received').length} cleared
           </span>
-          <span className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-            {payments.filter(p=>p.status==='Pending').length} pending
+          <span className="apple-badge-gold">
+            {payments.filter((p) => p.status === 'Pending').length} pending
           </span>
         </div>
       )}
     </div>
 
     {masses.length > 0 && (
-      <div className="mb-2">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1"><Music2 className="h-3 w-3" /> All Logged Masses ({masses.length})</p>
+      <div>
+        <p className="apple-label mb-2 flex items-center gap-1">
+          <Music2 className="h-3.5 w-3.5" /> All logged masses ({masses.length})
+        </p>
         <div className="flex flex-wrap gap-2">
           {masses.map((m) => (
-            <span key={m.id} className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${
-              isPaymentMass(m.category) ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-50 text-slate-600 border-slate-200'
-            }`}>
+            <span
+              key={m.id}
+              className={`rounded-full px-2.5 py-1 text-[12px] font-medium ${
+                isPaymentMass(m.category)
+                  ? 'bg-[rgba(245,194,76,0.18)] text-[#8a6a10]'
+                  : 'bg-black/[0.05] text-[#3a3a3c]'
+              }`}
+            >
               {m.name} · {m.date}
             </span>
           ))}
@@ -60,70 +69,133 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
       </div>
     )}
 
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-left">
-        <thead>
-          <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-bold uppercase">
-            <th className="py-2.5">Sponsor / Party</th>
-            <th className="py-2.5">Solemn Rite</th>
-            <th className="py-2.5 text-right">Proposed</th>
-            <th className="py-2.5 text-right">Pending</th>
-            <th className="py-2.5 text-center">Status</th>
-            <th className="py-2.5 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50 text-xs">
-          {payments.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="py-8 text-center text-slate-400 text-sm">
-                No special mass payments logged yet. Select Special Mass / Death Mass above to add one.
-              </td>
-            </tr>
-          ) : payments.map((p) => {
-            const locked   = !!lockedCalcs[p.id];
-            const pending  = locked ? 0 : p.pendingAmount;
+    {payments.length === 0 ? (
+      <div className="apple-empty py-8">
+        <p>No special mass payments logged yet. Select Special Mass / Death Mass to add one.</p>
+      </div>
+    ) : (
+      <>
+        {/* Mobile card list */}
+        <div className="apple-grouped lg:hidden">
+          {payments.map((p) => {
+            const locked = !!lockedCalcs[p.id];
+            const pending = locked ? 0 : p.pendingAmount;
             const received = p.status === 'Received' || locked;
+            const selected = selectedPaymentId === p.id;
             return (
-              <tr key={p.id} className="hover:bg-slate-50 transition">
-                <td className="py-3">
-                  <p className="font-bold text-slate-800">{p.partyName}</p>
-                  <p className="text-[10px] text-slate-400 font-mono">{p.mobile}</p>
-                </td>
-                <td className="py-3">
-                  <p className="font-semibold text-slate-700">{p.massType}</p>
-                  <p className="text-[10px] text-slate-400">{p.massDate} · {p.massTime}</p>
-                </td>
-                <td className="py-3 text-right font-bold font-mono">{formatINR(p.promisedAmount)}</td>
-                <td className={`py-3 text-right font-bold font-mono ${pending > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
-                  {formatINR(pending)}
-                </td>
-                <td className="py-3 text-center">
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${
-                    received ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : 'bg-amber-50 text-amber-800 border-amber-100'
-                  }`}>
+              <div key={p.id} className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">{p.partyName}</p>
+                    <p className="mt-0.5 text-[13px] text-[#86868b]">{p.mobile}</p>
+                    <p className="mt-1 text-[14px] font-medium text-[#3a3a3c]">{p.massType}</p>
+                    <p className="text-[12px] text-[#86868b]">{p.massDate} · {p.massTime}</p>
+                  </div>
+                  <span className={received ? 'apple-badge-forest' : 'apple-badge-gold'}>
                     {received ? 'Received' : 'Pending'}
                   </span>
-                </td>
-                <td className="py-3">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {!received && (
-                      <button onClick={() => onSendReminder(p)}
-                        className="p-1 text-amber-700 hover:text-amber-900 bg-amber-50 border border-amber-200 rounded text-[9px] font-bold flex items-center gap-0.5 transition">
-                        <Bell className="w-3 h-3" /> Remind
-                      </button>
-                    )}
-                    <button onClick={() => onSelectPayment(p.id)}
-                      className={`p-1.5 rounded text-[10px] font-bold flex items-center gap-1 transition ${
-                        selectedPaymentId === p.id ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                      Calculate <ArrowUpRight className="w-3 h-3" />
+                </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#86868b]">Proposed</span>
+                  <span className="font-semibold tabular-nums text-[#1d1d1f]">{formatINR(p.promisedAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#86868b]">Pending</span>
+                  <span className={`font-semibold tabular-nums ${pending > 0 ? 'text-[#d70015]' : 'text-[#86868b]'}`}>
+                    {formatINR(pending)}
+                  </span>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  {!received && (
+                    <button
+                      type="button"
+                      onClick={() => onSendReminder(p)}
+                      className="btn-pill btn-pill-secondary btn-pill-sm flex-1 !min-h-[44px] !text-[14px]"
+                    >
+                      <Bell className="h-4 w-4" /> Remind
                     </button>
-                  </div>
-                </td>
-              </tr>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onSelectPayment(p.id)}
+                    className={`btn-pill btn-pill-sm flex-1 !min-h-[44px] !text-[14px] ${
+                      selected ? 'btn-pill-primary' : 'btn-pill-secondary'
+                    }`}
+                  >
+                    Calculate <ArrowUpRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
-    </div>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto lg:block">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-black/[0.06] text-[12px] font-medium text-[#86868b]">
+                <th className="py-2.5 font-medium">Sponsor / Party</th>
+                <th className="py-2.5 font-medium">Solemn Rite</th>
+                <th className="py-2.5 text-right font-medium">Proposed</th>
+                <th className="py-2.5 text-right font-medium">Pending</th>
+                <th className="py-2.5 text-center font-medium">Status</th>
+                <th className="py-2.5 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/[0.04] text-[14px]">
+              {payments.map((p) => {
+                const locked = !!lockedCalcs[p.id];
+                const pending = locked ? 0 : p.pendingAmount;
+                const received = p.status === 'Received' || locked;
+                return (
+                  <tr key={p.id} className="transition hover:bg-black/[0.02]">
+                    <td className="py-3">
+                      <p className="font-semibold text-[#1d1d1f]">{p.partyName}</p>
+                      <p className="text-[12px] text-[#86868b]">{p.mobile}</p>
+                    </td>
+                    <td className="py-3">
+                      <p className="font-medium text-[#3a3a3c]">{p.massType}</p>
+                      <p className="text-[12px] text-[#86868b]">{p.massDate} · {p.massTime}</p>
+                    </td>
+                    <td className="py-3 text-right font-semibold tabular-nums">{formatINR(p.promisedAmount)}</td>
+                    <td className={`py-3 text-right font-semibold tabular-nums ${pending > 0 ? 'text-[#d70015]' : 'text-[#86868b]'}`}>
+                      {formatINR(pending)}
+                    </td>
+                    <td className="py-3 text-center">
+                      <span className={received ? 'apple-badge-forest' : 'apple-badge-gold'}>
+                        {received ? 'Received' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        {!received && (
+                          <button
+                            type="button"
+                            onClick={() => onSendReminder(p)}
+                            className="btn-pill btn-pill-secondary btn-pill-sm !min-h-[36px]"
+                          >
+                            <Bell className="h-3.5 w-3.5" /> Remind
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSelectPayment(p.id)}
+                          className={`btn-pill btn-pill-sm !min-h-[36px] ${
+                            selectedPaymentId === p.id ? 'btn-pill-primary' : 'btn-pill-secondary'
+                          }`}
+                        >
+                          Calculate <ArrowUpRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
   </div>
 );
