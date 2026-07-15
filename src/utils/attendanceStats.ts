@@ -2,9 +2,12 @@ import {
   ActivityKind,
   AttendanceRecord,
   AttendanceStatus,
+  Mass,
   Member,
+  Payment,
 } from '../types';
-import { isActiveMember } from './choirStats';
+import { isActiveMember, calculatePaymentShares } from './choirStats';
+import { isMassActivityKind } from './attendanceActivity';
 
 /** Present-only for raw spreadsheet %. */
 export function countsAsPresentRaw(status: AttendanceStatus): boolean {
@@ -29,9 +32,21 @@ export interface MemberAttendanceStats {
   late: number;
   absent: number;
   excused: number;
+  /** Final attended count across all activity kinds */
+  finalAttended: number;
+  /** Mass sessions logged (Sunday + Saturday + Special) */
+  massLogged: number;
+  /** Mass sessions attended (final rules) */
+  massAttended: number;
   rawPercent: number;
   finalPercent: number;
+  totalShareINR: number;
   byKind: Record<ActivityKind, { logged: number; finalPercent: number }>;
+}
+
+export interface MemberRosterStats extends MemberAttendanceStats {
+  memberType?: string;
+  voiceType?: string;
 }
 
 export interface ParishAttendanceStats {
@@ -42,11 +57,18 @@ export interface ParishAttendanceStats {
   needsAttention: MemberAttendanceStats[];
   totalSessions: number;
   memberStats: MemberAttendanceStats[];
+  rosterStats: MemberRosterStats[];
+  totalShareINR: number;
+  parishMassLogged: number;
+  parishMassAttended: number;
+  parishLate: number;
+  parishAbsent: number;
 }
 
 function emptyKindBreakdown(): Record<ActivityKind, { logged: number; finalPercent: number }> {
   return {
     sunday_mass: { logged: 0, finalPercent: 0 },
+    saturday_mass: { logged: 0, finalPercent: 0 },
     practice: { logged: 0, finalPercent: 0 },
     special_mass: { logged: 0, finalPercent: 0 },
   };
@@ -55,7 +77,9 @@ function emptyKindBreakdown(): Record<ActivityKind, { logged: number; finalPerce
 function resolveKind(record: AttendanceRecord): ActivityKind {
   if (record.activityKind) return record.activityKind;
   if (record.entityType === 'Rehearsal') return 'practice';
-  if (record.entityName.toLowerCase().includes('special')) return 'special_mass';
+  const name = record.entityName.toLowerCase();
+  if (name.includes('special')) return 'special_mass';
+  if (name.includes('saturday') || name.includes('sat mass')) return 'saturday_mass';
   return 'sunday_mass';
 }
 
@@ -70,6 +94,54 @@ function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[
     map.set(key, record);
   }
   return [...map.values()];
+}
+
+/** Per-member payment share totals from special-mass attendance. */
+export function computeMemberShareTotals(
+  members: Member[],
+  masses: Mass[],
+  payments: Payment[],
+): Map<string, number> {
+  const totals = new Map<string, number>();
+
+  for (const payment of payments) {
+    if (!payment.massId) continue;
+    const mass = masses.find((m) => m.id === payment.massId);
+    if (!mass?.attendingMemberIds?.length) continue;
+
+    const attendees = members.filter((m) => mass.attendingMemberIds!.includes(m.id));
+    const singers = attendees.filter((m) => m.memberType === 'Singer' || m.memberType === 'Other').length;
+    const instrumentalists = attendees.filter((m) => !['Singer', 'Other'].includes(m.memberType)).length;
+    const calc = calculatePaymentShares(payment.promisedAmount, singers, instrumentalists);
+
+    for (const member of attendees) {
+      const share = member.memberType === 'Singer' || member.memberType === 'Other'
+        ? calc.singerShare
+        : calc.instrumentalistShare;
+      totals.set(member.id, (totals.get(member.id) ?? 0) + share);
+    }
+  }
+
+  return totals;
+}
+
+function emptyMemberStats(member: Member): MemberAttendanceStats {
+  return {
+    memberId: member.id,
+    memberName: memberDisplayName(member),
+    logged: 0,
+    present: 0,
+    late: 0,
+    absent: 0,
+    excused: 0,
+    finalAttended: 0,
+    massLogged: 0,
+    massAttended: 0,
+    rawPercent: 0,
+    finalPercent: 0,
+    totalShareINR: 0,
+    byKind: emptyKindBreakdown(),
+  };
 }
 
 /** Aggregate attendance records into per-member stats. */
@@ -94,8 +166,12 @@ export function computeMemberStats(
         late: 0,
         absent: 0,
         excused: 0,
+        finalAttended: 0,
+        massLogged: 0,
+        massAttended: 0,
         rawPercent: 0,
         finalPercent: 0,
+        totalShareINR: 0,
         byKind: emptyKindBreakdown(),
       };
       buckets.set(record.memberId, stats);
@@ -112,14 +188,17 @@ export function computeMemberStats(
   }
 
   for (const stats of buckets.values()) {
+    const memberRecords = uniqueRecords.filter((r) => r.memberId === stats.memberId);
     const rawHits = stats.present;
     stats.rawPercent = stats.logged > 0 ? Math.round((rawHits / stats.logged) * 100) : 0;
 
-    let finalHits = 0;
-    for (const record of uniqueRecords.filter((r) => r.memberId === stats.memberId)) {
-      if (countsAsPresentFinal(record.status, resolveKind(record))) finalHits += 1;
-    }
+    const finalHits = memberRecords.filter((r) => countsAsPresentFinal(r.status, resolveKind(r))).length;
+    stats.finalAttended = finalHits;
     stats.finalPercent = stats.logged > 0 ? Math.round((finalHits / stats.logged) * 100) : 0;
+
+    const massRecords = memberRecords.filter((r) => isMassActivityKind(resolveKind(r)));
+    stats.massLogged = massRecords.length;
+    stats.massAttended = massRecords.filter((r) => countsAsPresentFinal(r.status, resolveKind(r))).length;
 
     for (const kind of Object.keys(stats.byKind) as ActivityKind[]) {
       const kindRecords = uniqueRecords.filter(
@@ -143,17 +222,46 @@ export function computeMemberStatsForId(
   return computeMemberStats(records, members).find((s) => s.memberId === memberId) ?? null;
 }
 
+/** Full active-member roster with attendance + share totals (includes members with no logs). */
+export function computeMemberRosterStats(
+  records: AttendanceRecord[],
+  members: Member[],
+  masses: Mass[],
+  payments: Payment[],
+): MemberRosterStats[] {
+  const loggedStats = computeMemberStats(records, members);
+  const statsById = new Map(loggedStats.map((s) => [s.memberId, s]));
+  const shareTotals = computeMemberShareTotals(members, masses, payments);
+
+  return members
+    .filter(isActiveMember)
+    .map((member) => {
+      const base = statsById.get(member.id) ?? emptyMemberStats(member);
+      return {
+        ...base,
+        totalShareINR: shareTotals.get(member.id) ?? 0,
+        memberType: member.memberType,
+        voiceType: member.voiceType,
+      };
+    })
+    .sort((a, b) => a.memberName.localeCompare(b.memberName));
+}
+
 /** Parish-wide overview from attendance logs. */
 export function computeParishStats(
   records: AttendanceRecord[],
   members: Member[],
+  masses: Mass[] = [],
+  payments: Payment[] = [],
 ): ParishAttendanceStats {
   const uniqueRecords = dedupeAttendanceRecords(records);
   const memberStats = computeMemberStats(uniqueRecords, members);
+  const rosterStats = computeMemberRosterStats(uniqueRecords, members, masses, payments);
   const activeStats = memberStats.filter((s) => {
     const m = members.find((mem) => mem.id === s.memberId);
     return m && isActiveMember(m);
   });
+  const activeRoster = rosterStats;
 
   const averageFinalPercent = Math.round(
     activeStats.reduce((sum, s) => sum + s.finalPercent, 0) / Math.max(activeStats.length, 1),
@@ -184,6 +292,12 @@ export function computeParishStats(
     needsAttention: [...sorted].reverse().filter((s) => s.finalPercent < 75).slice(0, 3),
     totalSessions: sessionDates.size,
     memberStats,
+    rosterStats: activeRoster,
+    totalShareINR: activeRoster.reduce((sum, s) => sum + s.totalShareINR, 0),
+    parishMassLogged: activeRoster.reduce((sum, s) => sum + s.massLogged, 0),
+    parishMassAttended: activeRoster.reduce((sum, s) => sum + s.massAttended, 0),
+    parishLate: activeRoster.reduce((sum, s) => sum + s.late, 0),
+    parishAbsent: activeRoster.reduce((sum, s) => sum + s.absent, 0),
   };
 }
 

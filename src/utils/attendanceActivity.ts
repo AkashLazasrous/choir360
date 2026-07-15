@@ -9,15 +9,23 @@ import {
 
 export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
   sunday_mass: 'Sunday Mass',
+  saturday_mass: 'Saturday Mass',
   practice: 'Practice',
   special_mass: 'Special Mass',
 };
 
 export const ACTIVITY_KIND_SHORT: Record<ActivityKind, string> = {
   sunday_mass: 'Mass',
+  saturday_mass: 'Sat Mass',
   practice: 'Practice',
   special_mass: 'Special',
 };
+
+export const MASS_ACTIVITY_KINDS: ActivityKind[] = ['sunday_mass', 'saturday_mass', 'special_mass'];
+
+export function isMassActivityKind(kind: ActivityKind): boolean {
+  return MASS_ACTIVITY_KINDS.includes(kind);
+}
 
 export function activityEntityId(kind: ActivityKind, date: string): string {
   const prefix = kind === 'practice' ? 'rehearsal' : 'mass';
@@ -33,7 +41,9 @@ export function kindToEntityType(kind: ActivityKind): AttendanceRecord['entityTy
 }
 
 export function kindToMassCategory(kind: ActivityKind): Mass['category'] {
-  return kind === 'special_mass' ? 'Special Mass' : 'Sunday Mass';
+  if (kind === 'special_mass') return 'Special Mass';
+  if (kind === 'saturday_mass') return 'Saturday Mass';
+  return 'Sunday Mass';
 }
 
 export function defaultEntityName(kind: ActivityKind, date: string): string {
@@ -75,7 +85,7 @@ export function buildMassFromActivity(
     name: title?.trim() || existing?.name || defaultEntityName(kind, date),
     category: kindToMassCategory(kind),
     date,
-    time: existing?.time ?? (kind === 'sunday_mass' ? '07:00' : '10:00'),
+    time: existing?.time ?? (kind === 'sunday_mass' ? '07:00' : kind === 'saturday_mass' ? '18:00' : '10:00'),
     language: existing?.language ?? 'Tamil',
     notes: notes?.trim() || existing?.notes,
     attendingMemberIds,
@@ -225,7 +235,7 @@ export function listActivitySessions(
   const membersBySession = new Map<string, Set<string>>();
 
   for (const record of records) {
-    const recordKind = record.activityKind ?? (record.entityType === 'Rehearsal' ? 'practice' : 'sunday_mass');
+    const recordKind = record.activityKind ?? (record.entityType === 'Rehearsal' ? 'practice' : record.entityName.toLowerCase().includes('special') ? 'special_mass' : record.entityName.toLowerCase().includes('saturday') ? 'saturday_mass' : 'sunday_mass');
     if (kind && recordKind !== kind) continue;
     const key = `${recordKind}::${record.date}`;
     const members = membersBySession.get(key) ?? new Set<string>();

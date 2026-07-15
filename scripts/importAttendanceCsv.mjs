@@ -24,7 +24,8 @@ const NOW = new Date().toISOString();
 const KIND_FROM_FILE = [
   { test: (name) => /practis|practice/i.test(name), kind: 'practice' },
   { test: (name) => /special/i.test(name), kind: 'special_mass' },
-  { test: (name) => /mass/i.test(name), kind: 'sunday_mass' },
+  { test: (name) => /saturday|sat mass|sat-/i.test(name), kind: 'saturday_mass' },
+  { test: (name) => /mass|sunday/i.test(name), kind: 'sunday_mass' },
 ];
 
 function parseSheetDate(header) {
@@ -187,7 +188,9 @@ async function main() {
         ? `Practice · ${session.date}`
         : session.kind === 'special_mass'
           ? `Special Mass · ${session.date}`
-          : `Sunday Mass · ${session.date}`;
+          : session.kind === 'saturday_mass'
+            ? `Saturday Mass · ${session.date}`
+            : `Sunday Mass · ${session.date}`;
 
       const attendingIds = [...session.marks.entries()]
         .filter(([, mark]) => mark.status === 'Present' || mark.status === 'Late')
@@ -211,9 +214,9 @@ async function main() {
         batch.set(db.collection('masses').doc(entityId), {
           id: entityId,
           name: entityName,
-          category: session.kind === 'special_mass' ? 'Special Mass' : 'Sunday Mass',
+          category: session.kind === 'special_mass' ? 'Special Mass' : session.kind === 'saturday_mass' ? 'Saturday Mass' : 'Sunday Mass',
           date: session.date,
-          time: session.kind === 'special_mass' ? '10:00' : '07:00',
+          time: session.kind === 'special_mass' ? '10:00' : session.kind === 'saturday_mass' ? '18:00' : '07:00',
           language: 'Tamil',
           attendingMemberIds: attendingIds,
           activityKind: session.kind,

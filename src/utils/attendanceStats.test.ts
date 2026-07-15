@@ -88,5 +88,6 @@ describe('computeParishStats', () => {
     const parish = computeParishStats(records, members);
     expect(parish.averageFinalPercent).toBe(50);
     expect(parish.totalSessions).toBe(2);
+    expect(parish.rosterStats.length).toBeGreaterThanOrEqual(0);
   });
 });

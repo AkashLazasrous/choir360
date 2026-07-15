@@ -30,7 +30,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const { selectedParish } = useParish();
 
   const activeMembers    = members.filter(isActiveMember);
-  const parishAttendance = computeParishStats(attendanceRecords, members);
+  const parishAttendance = computeParishStats(attendanceRecords, members, masses, payments);
   const { pendingCount } = calculateChoirHealth(members);
   const avgAttendance = attendanceRecords.length > 0
     ? parishAttendance.averageFinalPercent
@@ -216,6 +216,57 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ── Member roster stats ─────────────────────────────────────────────── */}
+      {parishAttendance.rosterStats.length > 0 && (
+        <div className="apple-card overflow-hidden p-0">
+          <div className="flex items-center justify-between border-b border-[rgba(0,0,0,0.08)] px-6 py-4">
+            <div>
+              <h3 className="apple-title text-sm">Choir Member Stats</h3>
+              <p className="apple-caption mt-0.5">
+                Masses {parishAttendance.parishMassAttended}/{parishAttendance.parishMassLogged} attended parish-wide
+                · Late {parishAttendance.parishLate} · Absent {parishAttendance.parishAbsent}
+                · Shares {formatINR(parishAttendance.totalShareINR)}
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left text-[13px]">
+              <thead className="bg-[#f5f5f7] text-[11px] font-semibold uppercase tracking-wide text-[#86868b]">
+                <tr>
+                  <th className="px-4 py-2.5">Member</th>
+                  <th className="px-4 py-2.5">Role</th>
+                  <th className="px-4 py-2.5">Masses</th>
+                  <th className="px-4 py-2.5">Present</th>
+                  <th className="px-4 py-2.5">Late</th>
+                  <th className="px-4 py-2.5">Absent</th>
+                  <th className="px-4 py-2.5">Excused</th>
+                  <th className="px-4 py-2.5">Final %</th>
+                  <th className="px-4 py-2.5">Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parishAttendance.rosterStats.map((row) => (
+                  <tr key={row.memberId} className="border-t border-black/[0.04]">
+                    <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
+                    <td className="px-4 py-3 text-[#86868b]">{row.memberType} · {row.voiceType}</td>
+                    <td className="px-4 py-3 tabular-nums">
+                      <span className="font-semibold text-[#18392f]">{row.massAttended}</span>
+                      <span className="text-[#86868b]"> / {row.massLogged}</span>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">{row.present}</td>
+                    <td className="px-4 py-3 tabular-nums text-[#8a6a10]">{row.late}</td>
+                    <td className="px-4 py-3 tabular-nums text-[#d70015]">{row.absent}</td>
+                    <td className="px-4 py-3 tabular-nums">{row.excused}</td>
+                    <td className="px-4 py-3 tabular-nums font-semibold text-[#18392f]">{row.finalPercent}%</td>
+                    <td className="px-4 py-3 tabular-nums font-medium">{formatINR(row.totalShareINR)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ── Liturgy log table ────────────────────────────────────────────────── */}
       {masses.length > 0 && (

@@ -88,7 +88,8 @@ export function kindFromFilename(filename: string): ActivityKind | null {
   const lower = filename.toLowerCase();
   if (lower.includes('practis') || lower.includes('practice')) return 'practice';
   if (lower.includes('special')) return 'special_mass';
-  if (lower.includes('mass')) return 'sunday_mass';
+  if (lower.includes('saturday') || lower.includes('sat mass') || lower.includes('sat-')) return 'saturday_mass';
+  if (lower.includes('mass') || lower.includes('sunday')) return 'sunday_mass';
   return null;
 }
 

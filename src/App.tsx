@@ -757,7 +757,7 @@ function AppInner() {
               guard.canAccess('choir_member') ? (
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
-                    members={members} events={events} masses={masses} attendanceRecords={attendanceRecords}
+                    members={members} events={events} masses={masses} payments={payments} attendanceRecords={attendanceRecords}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert({ ...updated, ...createRecordMetadata(authState.user?.uid ?? updated.id, updated.status, tenantContext) }, authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);
@@ -807,6 +807,7 @@ function AppInner() {
                 <ActivityAttendance
                   members={members}
                   masses={masses}
+                  payments={payments}
                   rehearsals={rehearsals}
                   attendanceRecords={attendanceRecords}
                   isAdmin={guard.isAdmin}

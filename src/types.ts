@@ -139,6 +139,7 @@ export interface Member {
 
 export type MassCategory =
   | 'Sunday Mass'
+  | 'Saturday Mass'
   | 'Weekday Mass'
   | 'Special Mass'
   | 'Wedding'
@@ -244,7 +245,7 @@ export interface ShareCalculation {
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
 
 /** Choir activity kinds aligned with the Ambattur OT spreadsheet tabs. */
-export type ActivityKind = 'sunday_mass' | 'practice' | 'special_mass';
+export type ActivityKind = 'sunday_mass' | 'saturday_mass' | 'practice' | 'special_mass';
 
 export interface AttendanceRecord {
   id: string;

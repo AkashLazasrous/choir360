@@ -1,7 +1,7 @@
 import { MassCategory, isPaymentMassCategory } from '../../types';
 
 export const ALL_MASS_CATEGORIES: MassCategory[] = [
-  'Sunday Mass', 'Weekday Mass', 'Special Mass', 'Wedding', 'Funeral',
+  'Sunday Mass', 'Saturday Mass', 'Weekday Mass', 'Special Mass', 'Wedding', 'Funeral',
   'Death Mass', 'Death Anniversary Mass', 'Feast Day', 'Ordination',
   'First Holy Communion', 'Confirmation', 'Novena',
 ];

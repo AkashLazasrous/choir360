@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass, AttendanceRecord } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -8,7 +8,8 @@ import { BadgesCard } from '../features/memberDashboard/BadgesCard';
 import { EarningsAndEvents } from '../features/memberDashboard/EarningsAndEvents';
 import { PracticeConsole } from '../features/memberDashboard/PracticeConsole';
 import { PrayerWall } from '../features/memberDashboard/PrayerWall';
-import { computeMemberStatsForId } from '../utils/attendanceStats';
+import { computeMemberRosterStats } from '../utils/attendanceStats';
+import { formatINR } from '../utils/currency';
 
 interface DashboardMemberProps {
   currentLang: Language;
@@ -16,6 +17,7 @@ interface DashboardMemberProps {
   members: Member[];
   events: ChoirEvent[];
   masses: Mass[];
+  payments?: Payment[];
   attendanceRecords?: AttendanceRecord[];
   onUpdateMemberDetails: (updated: Member) => void;
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
@@ -30,12 +32,15 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   memberId,
   members,
   events,
+  masses,
+  payments = [],
   attendanceRecords = [],
   onUpdateMemberDetails,
   onUpdateEventRsvp
 }) => {
   const member = members.find(m => m.id === memberId) || members[0];
-  const liveStats = computeMemberStatsForId(attendanceRecords, members, member?.id ?? memberId);
+  const liveStats = computeMemberRosterStats(attendanceRecords, members, masses, payments)
+    .find((s) => s.memberId === (member?.id ?? memberId));
 
   const [dashTab, setDashTab] = useState<'overview' | 'id_card'>('overview');
   const [hasRequestedChange, setHasRequestedChange] = useState(false);
@@ -110,9 +115,9 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
             <p className="text-[12px] font-medium text-[#86868b]">Attendance (final)</p>
           </div>
           <div className="space-y-0.5 border-l border-black/10 pl-3 text-[13px] text-[#3a3a3c]">
-            <p>Present: <span className="font-semibold text-[#18392f]">{liveStats?.present ?? 0}</span></p>
-            <p>Late: <span className="font-semibold text-[#8a6a10]">{liveStats?.late ?? 0}</span></p>
-            <p>Absent: <span className="font-semibold text-[#d70015]">{liveStats?.absent ?? 0}</span></p>
+            <p>Masses: <span className="font-semibold text-[#18392f]">{liveStats?.massAttended ?? 0} / {liveStats?.massLogged ?? 0}</span></p>
+            <p>Present: <span className="font-semibold text-[#18392f]">{liveStats?.present ?? 0}</span> · Late: <span className="font-semibold text-[#8a6a10]">{liveStats?.late ?? 0}</span></p>
+            <p>Absent: <span className="font-semibold text-[#d70015]">{liveStats?.absent ?? 0}</span> · Share: <span className="font-semibold text-[#18392f]">{formatINR(liveStats?.totalShareINR ?? 0)}</span></p>
           </div>
         </div>
       </div>

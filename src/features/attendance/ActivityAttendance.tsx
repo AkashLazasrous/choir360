@@ -9,8 +9,10 @@ import {
   AttendanceStatus,
   Mass,
   Member,
+  Payment,
   Rehearsal,
 } from '../../types';
+import { formatINR } from '../../utils/currency';
 import {
   ACTIVITY_KIND_LABELS,
   activityEntityId,
@@ -20,7 +22,6 @@ import {
   marksFromRecords,
 } from '../../utils/attendanceActivity';
 import {
-  computeMemberStatsForId,
   computeParishStats,
 } from '../../utils/attendanceStats';
 import {
@@ -71,6 +72,7 @@ export interface ActivityAttendanceImportPayload {
 interface ActivityAttendanceProps {
   members: Member[];
   masses: Mass[];
+  payments: Payment[];
   rehearsals: Rehearsal[];
   attendanceRecords: AttendanceRecord[];
   isAdmin: boolean;
@@ -82,6 +84,7 @@ interface ActivityAttendanceProps {
 export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   members,
   masses,
+  payments,
   rehearsals,
   attendanceRecords,
   isAdmin,
@@ -124,12 +127,16 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   }, [activeMembers, marks, existingMarks]);
 
   const parishStats = useMemo(
-    () => computeParishStats(attendanceRecords, members),
-    [attendanceRecords, members],
+    () => computeParishStats(attendanceRecords, members, masses, payments),
+    [attendanceRecords, members, masses, payments],
   );
 
+  const rosterRows = isAdmin
+    ? parishStats.rosterStats
+    : parishStats.rosterStats.filter((s) => s.memberId === viewerMemberId);
+
   const viewerStats = viewerMemberId
-    ? computeMemberStatsForId(attendanceRecords, members, viewerMemberId)
+    ? parishStats.rosterStats.find((s) => s.memberId === viewerMemberId) ?? null
     : null;
 
   const history = useMemo(
@@ -282,8 +289,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <p className="mt-1 text-[28px] font-semibold text-[#18392f]">{parishStats.trendLast30Days}%</p>
             </div>
             <div className="apple-card p-4 text-center">
-              <p className="text-[12px] font-medium text-[#86868b]">Sessions logged</p>
-              <p className="mt-1 text-[28px] font-semibold text-[#18392f]">{parishStats.totalSessions}</p>
+              <p className="text-[12px] font-medium text-[#86868b]">Masses attended</p>
+              <p className="mt-1 text-[28px] font-semibold text-[#18392f]">
+                {parishStats.parishMassAttended}<span className="text-[16px] text-[#86868b]">/{parishStats.parishMassLogged}</span>
+              </p>
+            </div>
+            <div className="apple-card p-4 text-center">
+              <p className="text-[12px] font-medium text-[#86868b]">Total shares</p>
+              <p className="mt-1 text-[22px] font-semibold text-[#18392f]">{formatINR(parishStats.totalShareINR)}</p>
             </div>
           </div>
 
@@ -296,10 +309,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   <p className="text-[12px] text-[#86868b]">Final rate</p>
                 </div>
                 <div className="text-[13px] text-[#3a3a3c]">
-                  <p>Present: <strong>{viewerStats.present}</strong></p>
-                  <p>Late: <strong>{viewerStats.late}</strong></p>
-                  <p>Absent: <strong>{viewerStats.absent}</strong></p>
-                  <p>Excused: <strong>{viewerStats.excused}</strong></p>
+                  <p>Masses: <strong>{viewerStats.massAttended} / {viewerStats.massLogged}</strong> attended</p>
+                  <p>Present: <strong>{viewerStats.present}</strong> · Late: <strong>{viewerStats.late}</strong></p>
+                  <p>Absent: <strong>{viewerStats.absent}</strong> · Excused: <strong>{viewerStats.excused}</strong></p>
+                  <p>Share total: <strong>{formatINR(viewerStats.totalShareINR)}</strong></p>
                 </div>
               </div>
             </div>
@@ -310,31 +323,33 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <h3 className="text-[17px] font-semibold text-[#1d1d1f]">Member attendance</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-[13px]">
+              <table className="w-full min-w-[900px] text-left text-[13px]">
                 <thead className="bg-[#f5f5f7] text-[11px] font-semibold uppercase tracking-wide text-[#86868b]">
                   <tr>
                     <th className="px-4 py-2.5">Member</th>
-                    <th className="px-4 py-2.5">Logged</th>
+                    <th className="px-4 py-2.5">Masses</th>
                     <th className="px-4 py-2.5">Present</th>
                     <th className="px-4 py-2.5">Late</th>
                     <th className="px-4 py-2.5">Absent</th>
-                    <th className="px-4 py-2.5">Raw %</th>
+                    <th className="px-4 py-2.5">Excused</th>
                     <th className="px-4 py-2.5">Final %</th>
+                    <th className="px-4 py-2.5">Share</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(isAdmin
-                    ? parishStats.memberStats
-                    : parishStats.memberStats.filter((s) => s.memberId === viewerMemberId)
-                  ).map((row) => (
+                  {rosterRows.map((row) => (
                     <tr key={row.memberId} className="border-t border-black/[0.04]">
                       <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.logged}</td>
+                      <td className="px-4 py-3 tabular-nums">
+                        <span className="font-semibold text-[#18392f]">{row.massAttended}</span>
+                        <span className="text-[#86868b]"> / {row.massLogged}</span>
+                      </td>
                       <td className="px-4 py-3 tabular-nums">{row.present}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.late}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.absent}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.rawPercent}%</td>
+                      <td className="px-4 py-3 tabular-nums text-[#8a6a10]">{row.late}</td>
+                      <td className="px-4 py-3 tabular-nums text-[#d70015]">{row.absent}</td>
+                      <td className="px-4 py-3 tabular-nums">{row.excused}</td>
                       <td className="px-4 py-3 tabular-nums font-semibold text-[#18392f]">{row.finalPercent}%</td>
+                      <td className="px-4 py-3 tabular-nums font-medium">{formatINR(row.totalShareINR)}</td>
                     </tr>
                   ))}
                 </tbody>
