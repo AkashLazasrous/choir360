@@ -10,49 +10,49 @@ interface ApprovalDeskProps {
 
 /** Admin approval desk: applicant cards with status badges and approval actions. */
 export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({ members, onUpdateMemberStatus }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5" id="admin-dashboard-view">
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+  <div className="apple-card font-apple space-y-5 p-6" id="admin-dashboard-view">
+    <div className="flex flex-col items-start justify-between gap-3 border-b border-black/[0.06] pb-4 sm:flex-row sm:items-center">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#18392f]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#18392f]">
           <ClipboardCheck className="h-5 w-5 text-amber-300" />
         </div>
         <div>
-          <h3 className="font-bold text-slate-900 text-sm">Choral Registrar Verification</h3>
-          <p className="text-[11px] text-slate-400">Approve, reject or request corrections for applicants</p>
+          <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Choral Registrar Verification</h3>
+          <p className="text-[12px] text-[#86868b]">Approve, reject or request corrections for applicants</p>
         </div>
       </div>
-      <div className="flex gap-2 flex-wrap text-[10px] font-bold">
-        <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
+      <div className="flex flex-wrap gap-2">
+        <span className="apple-badge-gold">
           {members.filter(m=>m.status==='Pending').length} Pending
         </span>
-        <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <span className="apple-badge-forest">
           {members.filter(m=>m.status==='Active Member'||m.status==='Admin').length} Active
         </span>
-        <span className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-800 border border-rose-200">
+        <span className="apple-badge-danger">
           {members.filter(m=>m.status==='Rejected').length} Rejected
         </span>
       </div>
     </div>
 
     {members.length === 0 ? (
-      <div className="py-12 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 mx-auto mb-3">
-          <UserPlus className="h-6 w-6 text-slate-400" />
+      <div className="apple-empty">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.06]">
+          <UserPlus className="h-6 w-6 text-[#86868b]" />
         </div>
-        <p className="text-sm font-bold text-slate-500">No applications yet</p>
-        <p className="text-xs text-slate-400 mt-1">Register a new member using the form tab</p>
+        <h3>No applications yet</h3>
+        <p>Register a new member using the form tab</p>
       </div>
     ) : (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {members.map((m) => {
           const statusCfg = {
-            'Active Member': { bg: 'bg-emerald-50', border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500' },
-            'Admin':         { bg: 'bg-violet-50',  border: 'border-violet-200',  badge: 'bg-violet-100 text-violet-800 border-violet-200',   dot: 'bg-violet-500'  },
-            'Pending':       { bg: 'bg-amber-50',   border: 'border-amber-200',   badge: 'bg-amber-100 text-amber-800 border-amber-200',       dot: 'bg-amber-500'   },
-            'Rejected':      { bg: 'bg-rose-50',    border: 'border-rose-200',    badge: 'bg-rose-100 text-rose-800 border-rose-200',           dot: 'bg-rose-500'    },
-            'Correction Requested': { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-800 border-orange-200', dot: 'bg-orange-500' },
-            'Approved':      { bg: 'bg-blue-50',    border: 'border-blue-200',    badge: 'bg-blue-100 text-blue-800 border-blue-200',           dot: 'bg-blue-500'    },
-          }[m.status] ?? { bg: 'bg-slate-50', border: 'border-slate-200', badge: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' };
+            'Active Member': { bg: 'bg-[rgba(24,57,47,0.06)]', border: 'border-[rgba(24,57,47,0.14)]', badge: 'apple-badge-forest', dot: 'bg-[#18392f]' },
+            'Admin':         { bg: 'bg-[rgba(245,194,76,0.12)]', border: 'border-[rgba(245,194,76,0.35)]', badge: 'apple-badge-gold', dot: 'bg-[#f5c24c]' },
+            'Pending':       { bg: 'bg-[rgba(245,194,76,0.1)]', border: 'border-[rgba(245,194,76,0.28)]', badge: 'apple-badge-gold', dot: 'bg-[#e8a820]' },
+            'Rejected':      { bg: 'bg-[rgba(255,59,48,0.06)]', border: 'border-[rgba(255,59,48,0.2)]', badge: 'apple-badge-danger', dot: 'bg-[#d70015]' },
+            'Correction Requested': { bg: 'bg-[rgba(255,149,0,0.08)]', border: 'border-[rgba(255,149,0,0.22)]', badge: 'apple-badge-gold', dot: 'bg-[#ff9500]' },
+            'Approved':      { bg: 'bg-[rgba(41,151,255,0.08)]', border: 'border-[rgba(41,151,255,0.22)]', badge: 'apple-badge-blue', dot: 'bg-[#2997ff]' },
+          }[m.status] ?? { bg: 'bg-[#f5f5f7]', border: 'border-black/[0.06]', badge: 'apple-badge-muted', dot: 'bg-[#86868b]' };
 
           return (
             <div key={m.id} className={`rounded-2xl border ${statusCfg.border} ${statusCfg.bg} p-4 space-y-3 transition hover:shadow-sm`}>
@@ -67,7 +67,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({ members, onUpdateMem
                   <p className="font-bold text-slate-900 text-sm truncate">{m.firstName} {m.lastName}</p>
                   <p className="text-[10px] text-slate-400 font-mono">{m.id} · {m.gender}</p>
                 </div>
-                <span className={`shrink-0 px-2 py-0.5 rounded-lg border text-[9px] font-bold uppercase ${statusCfg.badge}`}>
+                <span className={`shrink-0 ${statusCfg.badge}`}>
                   {m.status}
                 </span>
               </div>

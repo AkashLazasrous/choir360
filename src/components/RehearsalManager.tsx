@@ -15,9 +15,9 @@ const REHEARSAL_TYPES: RehearsalType[] = [
 ];
 
 const STATUS_COLORS: Record<Rehearsal['status'], string> = {
-  Scheduled: 'bg-blue-50 text-blue-700 border-blue-200',
-  Completed:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Cancelled:  'bg-rose-50 text-rose-700 border-rose-200',
+  Scheduled: 'apple-badge-blue',
+  Completed:  'apple-badge-forest',
+  Cancelled:  'apple-badge-danger',
 };
 
 interface RehearsalManagerProps {
@@ -108,17 +108,17 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 font-apple">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Rehearsals</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{rehearsals.length} total · {rehearsals.filter(r=>r.status==='Scheduled').length} scheduled</p>
+          <h2 className="apple-title">Rehearsals</h2>
+          <p className="apple-caption mt-0.5">{rehearsals.length} total · {rehearsals.filter(r=>r.status==='Scheduled').length} scheduled</p>
         </div>
         {isAdmin && (
           <button onClick={() => setShowForm(v => !v)}
-            className="flex items-center gap-2 rounded-xl bg-[#18392f] px-4 py-2.5 text-xs font-bold text-white min-h-[44px]">
-            <Plus className="h-4 w-4 text-amber-300" />
+            className="btn-pill btn-pill-primary flex items-center gap-2">
+            <Plus className="h-4 w-4 text-[#f5c24c]" />
             Schedule Rehearsal
           </button>
         )}
@@ -126,70 +126,71 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
 
       {/* Add form */}
       {showForm && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 space-y-4">
+        <div className="apple-card p-5 space-y-4" style={{ background: 'rgba(24,57,47,0.06)' }}>
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-sm">New Rehearsal</h3>
-            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X className="h-4 w-4"/></button>
+            <h3 className="apple-title text-sm">New Rehearsal</h3>
+            <button onClick={() => setShowForm(false)} className="text-[#86868b] hover:text-[#1d1d1f]"><X className="h-4 w-4"/></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Name</label>
+              <label className="apple-label">Name</label>
               <input value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                className="apple-input text-sm" />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Type</label>
+              <label className="apple-label">Type</label>
               <select value={type} onChange={e => setType(e.target.value as RehearsalType)}
-                className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                className="apple-select text-sm">
                 {REHEARSAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Date</label>
+              <label className="apple-label">Date</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                className="apple-input text-sm" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Start</label>
+                <label className="apple-label">Start</label>
                 <input type="time" value={start} onChange={e => setStart(e.target.value)}
-                  className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                  className="apple-input text-sm" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">End</label>
+                <label className="apple-label">End</label>
                 <input type="time" value={end} onChange={e => setEnd(e.target.value)}
-                  className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                  className="apple-input text-sm" />
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Venue</label>
+              <label className="apple-label">Venue</label>
               <input value={venue} onChange={e => setVenue(e.target.value)}
-                className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                className="apple-input text-sm" />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Conductor</label>
+              <label className="apple-label">Conductor</label>
               <input value={conductor} onChange={e => setConductor(e.target.value)}
                 placeholder="Optional"
-                className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                className="apple-input text-sm" />
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Notes / Songs to Practice</label>
+            <label className="apple-label">Notes / Songs to Practice</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
+              className="apple-textarea text-sm" />
           </div>
           <button onClick={handleAdd} disabled={saving || !name || !date}
-            className="w-full rounded-xl bg-[#18392f] py-2.5 text-sm font-bold text-white disabled:opacity-50 min-h-[44px]">
+            className="btn-pill btn-pill-primary w-full disabled:opacity-50">
             {saving ? 'Saving…' : 'Schedule Rehearsal'}
           </button>
         </div>
       )}
 
       {/* Filter tabs */}
-      <div className="flex gap-2 border-b border-slate-200 pb-1">
+      <div className="apple-segmented">
         {(['upcoming', 'completed', 'all'] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition ${filter === f ? 'bg-[#18392f] text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
+            aria-selected={filter === f}
+            className={`capitalize ${filter === f ? 'is-active' : ''}`}>
             {f}
           </button>
         ))}
@@ -197,10 +198,10 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
 
       {/* Rehearsal cards */}
       {sorted.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <Music2 className="mx-auto h-8 w-8 text-slate-300"/>
-          <p className="mt-3 text-sm font-semibold text-slate-500">No rehearsals found</p>
-          {isAdmin && <p className="text-xs text-slate-400 mt-1">Click "Schedule Rehearsal" to add one.</p>}
+        <div className="apple-empty apple-card">
+          <Music2 className="mx-auto h-8 w-8 text-[#c7c7cc]"/>
+          <p className="text-sm font-medium">No rehearsals found</p>
+          {isAdmin && <p className="text-xs">Click "Schedule Rehearsal" to add one.</p>}
         </div>
       ) : (
         <div className="space-y-3">
@@ -210,16 +211,16 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
             const attendCount = (r.attendingMemberIds ?? []).length;
 
             return (
-              <div key={r.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+              <div key={r.id} className="apple-card overflow-hidden">
                 {/* Card header */}
                 <div className="flex items-start gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
-                    <Music2 className="h-5 w-5 text-emerald-700"/>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[rgba(24,57,47,0.1)]">
+                    <Music2 className="h-5 w-5 text-[#18392f]"/>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-bold text-slate-900 text-sm">{r.name}</p>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_COLORS[r.status]}`}>{r.status}</span>
+                      <p className="font-semibold tracking-tight text-sm">{r.name}</p>
+                      <span className={`apple-badge ${STATUS_COLORS[r.status]}`}>{r.status}</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{r.type}</p>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
@@ -239,8 +240,8 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
                   <div className="border-t border-slate-100 p-4 space-y-3">
                     {r.conductor && <p className="text-xs text-slate-600"><strong>Conductor:</strong> {r.conductor}</p>}
                     {r.notes && (
-                      <div className="rounded-xl bg-amber-50 border border-amber-100 p-3">
-                        <p className="text-xs text-amber-800 flex items-start gap-2">
+                      <div className="apple-badge-gold p-3">
+                        <p className="text-xs flex items-start gap-2">
                           <BookOpen className="h-3.5 w-3.5 shrink-0 mt-0.5"/>
                           {r.notes}
                         </p>
@@ -250,17 +251,17 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
                     {isAdmin && (
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => setAttendanceOpen(showAtt ? null : r.id)}
-                          className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 min-h-[36px]">
+                          className="btn-pill btn-pill-secondary btn-pill-sm flex items-center gap-1.5">
                           <Users className="h-3.5 w-3.5"/> Mark Attendance
                         </button>
                         {r.status === 'Scheduled' && (
                           <button onClick={() => markComplete(r)}
-                            className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 min-h-[36px]">
+                            className="btn-pill btn-pill-primary btn-pill-sm flex items-center gap-1.5">
                             <CheckCircle2 className="h-3.5 w-3.5"/> Mark Completed
                           </button>
                         )}
                         <button onClick={() => onUpdateRehearsal({ ...r, status: 'Cancelled' })}
-                          className="flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 min-h-[36px]">
+                          className="btn-pill btn-pill-sm flex items-center gap-1.5 apple-badge-danger">
                           <XCircle className="h-3.5 w-3.5"/> Cancel
                         </button>
                       </div>
@@ -268,8 +269,8 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
 
                     {/* Attendance panel */}
                     {showAtt && (
-                      <div className="rounded-xl border border-slate-200 overflow-hidden">
-                        <div className="bg-slate-50 px-3 py-2 text-[10px] font-bold uppercase text-slate-500 border-b border-slate-200">
+                      <div className="apple-grouped overflow-hidden">
+                        <div className="apple-list-row apple-label border-b border-[rgba(0,0,0,0.08)]">
                           Attendance — {r.date}
                         </div>
                         <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
@@ -282,7 +283,7 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
                                   <p className="text-[10px] text-slate-400">{m.voiceType} · {m.memberType}</p>
                                 </div>
                                 <button onClick={() => toggleAttend(r.id, m.id, `${m.firstName} ${m.lastName}`, !attending)}
-                                  className={`rounded-full px-3 py-1 text-[10px] font-bold transition min-h-[32px] ${attending ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                  className={`btn-pill btn-pill-xs ${attending ? 'apple-badge-forest' : 'apple-badge-muted'}`}>
                                   {attending ? '✓ Present' : '✗ Absent'}
                                 </button>
                               </div>

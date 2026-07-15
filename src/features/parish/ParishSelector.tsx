@@ -33,36 +33,36 @@ export const ParishOnboardingModal: React.FC = () => {
   if (!needsParishSelection) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden">
+    <div className="apple-modal-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="apple-modal w-full max-w-md overflow-hidden font-apple">
         {/* Header */}
-        <div className="bg-[#18392f] px-6 py-7 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300 text-[#18392f]">
+        <div className="apple-hero-soft px-6 py-7">
+          <div className="relative flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5c24c] text-[#18392f]">
               <Church className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-200/70">
+              <p className="apple-caption text-[#a1a1a6]">
                 {ARCHDIOCESE_NAME}
               </p>
-              <h2 className="text-lg font-bold leading-tight">Select your Parish</h2>
+              <h2 className="apple-title text-[#f5f5f7]">Select your Parish</h2>
             </div>
           </div>
-          <p className="mt-3 text-sm text-emerald-100/70">
+          <p className="relative mt-3 apple-caption text-[#a1a1a6]">
             Choose your parish to personalise your choir management experience.
           </p>
         </div>
 
         {/* Search */}
-        <div className="border-b border-slate-100 px-4 py-3">
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <Search className="h-4 w-4 text-slate-400 shrink-0" />
+        <div className="border-b border-[rgba(0,0,0,0.08)] px-4 py-3">
+          <div className="flex items-center gap-2 apple-input !min-h-[40px] py-2">
+            <Search className="h-4 w-4 text-[#86868b] shrink-0" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by church name or place…"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-[#86868b]"
             />
             {query && (
               <button onClick={() => setQuery('')} className="text-slate-400 hover:text-slate-600">
@@ -82,7 +82,7 @@ export const ParishOnboardingModal: React.FC = () => {
               <button
                 type="button"
                 onClick={() => selectParish(parish.id)}
-                className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-emerald-50 transition-colors"
+                className="apple-list-row w-full text-left"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                   <Church className="h-4 w-4" />

@@ -122,23 +122,24 @@ export const LiturgicalPlanner: React.FC = () => {
   };
 
   const fitColor: Record<string, string> = {
-    Perfect: 'bg-green-100 text-green-700',
-    Good: 'bg-blue-100 text-blue-700',
-    Acceptable: 'bg-amber-100 text-amber-700',
+    Perfect: 'apple-badge-forest',
+    Good: 'apple-badge-blue',
+    Acceptable: 'apple-badge-gold',
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-amber-50/30 p-4">
+    <div className="min-h-screen bg-[#f5f5f7] p-4 font-apple">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="mb-6 rounded-3xl bg-gradient-to-r from-violet-900 via-purple-800 to-indigo-900 p-6 text-white shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
-              <Sparkles className="h-6 w-6" />
+        <div className="apple-hero-soft mb-6 p-6">
+          <div className="choir-hero-ambient" aria-hidden />
+          <div className="relative flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+              <Sparkles className="h-6 w-6 text-amber-300" />
             </div>
             <div>
-              <h1 className="text-xl font-black">AI Liturgical Planner</h1>
-              <p className="text-xs text-violet-200">
+              <h1 className="apple-title text-[#f5f5f7]">AI Liturgical Planner</h1>
+              <p className="apple-caption text-[#a1a1a6]">
                 Auto-suggest Tamil Catholic songs for any Mass feast or season
               </p>
             </div>
@@ -146,15 +147,15 @@ export const LiturgicalPlanner: React.FC = () => {
         </div>
 
         {/* Input Form */}
-        <div className="mb-4 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-black text-slate-900">Plan a Mass</h2>
+        <div className="apple-card mb-4 p-5">
+          <h2 className="apple-title mb-4">Plan a Mass</h2>
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Feast / Occasion</label>
+              <label className="apple-label mb-1 block">Feast / Occasion</label>
               <select
                 value={feast}
                 onChange={(e) => setFeast(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 min-h-[44px] text-sm outline-none focus:border-violet-500"
+                className="apple-select text-sm"
               >
                 {FEAST_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>{f.label}</option>
@@ -163,31 +164,31 @@ export const LiturgicalPlanner: React.FC = () => {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">
+              <label className="apple-label mb-1 block">
                 Custom Feast Name (optional — overrides above)
               </label>
               <input
                 value={customFeast}
                 onChange={(e) => setCustomFeast(e.target.value)}
                 placeholder="e.g. Feast of St. Thomas (Patron of India)"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 min-h-[44px] text-sm outline-none focus:border-violet-500"
+                className="apple-input text-sm"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-bold text-slate-700">Date of Mass</label>
+              <label className="apple-label mb-1 block">Date of Mass</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 min-h-[44px] text-sm outline-none focus:border-violet-500"
+                className="apple-input text-sm"
               />
             </div>
 
             <button
               onClick={() => void generatePlan()}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-700 to-indigo-700 py-3 min-h-[44px] text-sm font-black text-white shadow-lg disabled:opacity-60"
+              className="btn-pill btn-pill-primary flex w-full items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading ? (
                 <>
@@ -206,7 +207,7 @@ export const LiturgicalPlanner: React.FC = () => {
 
         {/* Error */}
         {error && (
-          <div className="mb-4 rounded-2xl bg-rose-50 p-4 text-sm font-semibold text-rose-700">
+          <div className="apple-badge-danger mb-4 p-4 text-sm font-medium">
             {error}
           </div>
         )}
@@ -215,15 +216,15 @@ export const LiturgicalPlanner: React.FC = () => {
         {plan && (
           <div className="space-y-4">
             {/* Meta */}
-            <div className="rounded-3xl border border-violet-100 bg-gradient-to-r from-violet-50 to-indigo-50 p-5">
+            <div className="apple-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">{plan.feast}</h2>
-                  <p className="text-sm text-slate-600">
+                  <h2 className="apple-title">{plan.feast}</h2>
+                  <p className="apple-caption">
                     {plan.date} · {plan.season}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-sm">
+                <div className="apple-inset flex items-center gap-2 px-3 py-2">
                   <div className={`h-4 w-4 rounded-full border-2 ${
                     plan.vestmentColor.includes('Green') ? 'border-green-600 bg-green-500'
                     : plan.vestmentColor.includes('White') ? 'border-slate-300 bg-white'
@@ -237,58 +238,58 @@ export const LiturgicalPlanner: React.FC = () => {
             </div>
 
             {/* Readings */}
-            <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="mb-3 flex items-center gap-2 font-black text-slate-900">
-                <BookOpen className="h-4 w-4 text-amber-600" />
+            <div className="apple-card p-5">
+              <h3 className="apple-title mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-[#f5c24c]" />
                 Scriptural Readings
               </h3>
               <div className="space-y-2">
                 {plan.readings.map((r, i) => (
-                  <div key={i} className="rounded-xl bg-amber-50 p-3">
-                    <p className="text-xs font-black text-amber-800">{r.ref}</p>
-                    <p className="mt-0.5 text-xs text-slate-600">{r.theme}</p>
+                  <div key={i} className="apple-inset p-3">
+                    <p className="text-xs font-semibold text-[#8a6a10]">{r.ref}</p>
+                    <p className="apple-caption mt-0.5">{r.theme}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 rounded-xl bg-violet-50 p-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-violet-700">Homily Direction</p>
-                <p className="mt-1 text-xs text-slate-700">{plan.homilySuggestion}</p>
+              <div className="apple-inset mt-3 p-3">
+                <p className="apple-label text-[#18392f]">Homily Direction</p>
+                <p className="apple-body mt-1 text-sm">{plan.homilySuggestion}</p>
               </div>
             </div>
 
             {/* Song Suggestions */}
-            <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-              <h3 className="mb-3 flex items-center gap-2 font-black text-slate-900">
-                <Music2 className="h-4 w-4 text-emerald-600" />
+            <div className="apple-card p-5">
+              <h3 className="apple-title mb-3 flex items-center gap-2">
+                <Music2 className="h-4 w-4 text-[#18392f]" />
                 Suggested Song Program
               </h3>
               <div className="space-y-3">
                 {plan.songs.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
-                    No song suggestions are prefilled. Select real songs from the imported PDF Music Library.
+                  <div className="apple-empty border border-dashed border-[rgba(0,0,0,0.08)]">
+                    <p className="text-sm">No song suggestions are prefilled. Select real songs from the imported PDF Music Library.</p>
                   </div>
                 )}
                 {plan.songs.map((s, i) => (
-                  <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <div key={i} className="apple-inset p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                        <p className="apple-label">
                           {s.position}
                         </p>
-                        <p className="mt-0.5 text-sm font-black text-slate-900">{s.tamilTitle}</p>
-                        <p className="text-xs text-slate-600">{s.englishTitle}</p>
-                        <p className="text-[11px] text-slate-500">by {s.composer}</p>
-                        <p className="mt-1.5 text-xs text-slate-600">{s.rationale}</p>
+                        <p className="mt-0.5 text-sm font-semibold tracking-tight">{s.tamilTitle}</p>
+                        <p className="apple-caption">{s.englishTitle}</p>
+                        <p className="apple-caption">by {s.composer}</p>
+                        <p className="apple-body mt-1.5 text-xs">{s.rationale}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${fitColor[s.liturgicalFit]}`}>
+                        <span className={`apple-badge ${fitColor[s.liturgicalFit]}`}>
                           {s.liturgicalFit}
                         </span>
                         <button
                           onClick={() =>
                             copyToClipboard(`${s.position}: ${s.tamilTitle} (${s.englishTitle}) by ${s.composer}`, i)
                           }
-                          className="flex min-h-[36px] items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500"
+                          className="btn-pill btn-pill-secondary btn-pill-xs flex items-center gap-1"
                         >
                           {copiedIdx === i ? (
                             <CheckCircle className="h-3 w-3 text-green-500" />
@@ -305,12 +306,12 @@ export const LiturgicalPlanner: React.FC = () => {
             </div>
 
             {/* Choir Notes */}
-            <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-5">
-              <h3 className="mb-2 flex items-center gap-2 font-black text-emerald-900">
+            <div className="apple-card p-5" style={{ background: 'rgba(24,57,47,0.06)' }}>
+              <h3 className="apple-title mb-2 flex items-center gap-2 text-[#18392f]">
                 <CalendarDays className="h-4 w-4" />
                 Choir Director Notes
               </h3>
-              <p className="text-sm leading-relaxed text-emerald-800">{plan.choirNotes}</p>
+              <p className="apple-body text-sm leading-relaxed text-[#18392f]">{plan.choirNotes}</p>
             </div>
           </div>
         )}

@@ -78,36 +78,35 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
       {dashTab === 'overview' && <>
 
       {/* Header Summary */}
-      <div className="flex flex-col md:flex-row items-center md:items-start justify-between bg-white p-6 rounded-2xl border border-slate-100 shadow-xs gap-6" id="dashboard-member-header">
-        <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
+      <div className="apple-card font-apple flex flex-col items-center justify-between gap-6 p-6 md:flex-row md:items-start" id="dashboard-member-header">
+        <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
           <img
             src={member.photoUrl}
             alt={member.firstName}
             referrerPolicy="no-referrer"
-            className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-md"
+            className="h-16 w-16 rounded-full object-cover ring-2 ring-[#18392f]/20"
           />
           <div>
-            <h3 className="font-sans font-bold text-slate-800 text-lg flex items-center justify-center md:justify-start gap-1.5">
+            <h3 className="flex items-center justify-center gap-2 text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f] md:justify-start">
               {member.firstName} {member.lastName}
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase border border-emerald-200">
+              <span className="apple-badge-forest">
                 {member.status}
               </span>
             </h3>
-            <p className="text-xs text-slate-500">{member.memberType} Choralist • Vocal voice: <strong className="text-emerald-700">{member.voiceType}</strong></p>
-            <p className="text-[10px] font-mono text-slate-400">ID: {member.id} • Registered under {member.parish}</p>
+            <p className="mt-1 text-[13px] text-[#86868b]">{member.memberType} · Voice: <strong className="font-medium text-[#18392f]">{member.voiceType}</strong></p>
+            <p className="mt-0.5 text-[12px] text-[#86868b]">ID: {member.id} · {member.parish}</p>
           </div>
         </div>
 
-        {/* Attendance Percentage Circle */}
-        <div className="flex items-center gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100/60 shrink-0">
+        <div className="flex shrink-0 items-center gap-4 rounded-2xl bg-[rgba(24,57,47,0.06)] p-4">
           <div className="text-center">
-            <p className="text-2xl font-extrabold text-emerald-800 tracking-tight">{member.attendanceRate || 92}%</p>
-            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Attendance %</p>
+            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#18392f]">{member.attendanceRate || 92}%</p>
+            <p className="text-[12px] font-medium text-[#86868b]">Attendance</p>
           </div>
-          <div className="text-xs text-slate-600 border-l border-emerald-200 pl-3 space-y-0.5">
-            <p>Present: <span className="font-semibold text-emerald-800">12 Masses</span></p>
-            <p>Late: <span className="font-semibold text-amber-700">2 Masses</span></p>
-            <p>Absent: <span className="font-semibold text-rose-700">1 Mass</span></p>
+          <div className="space-y-0.5 border-l border-black/10 pl-3 text-[13px] text-[#3a3a3c]">
+            <p>Present: <span className="font-semibold text-[#18392f]">12 Masses</span></p>
+            <p>Late: <span className="font-semibold text-[#8a6a10]">2 Masses</span></p>
+            <p>Absent: <span className="font-semibold text-[#d70015]">1 Mass</span></p>
           </div>
         </div>
       </div>

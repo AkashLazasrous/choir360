@@ -217,31 +217,33 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
   ];
 
   return (
-    <div className="space-y-5 text-slate-800">
+    <div className="space-y-5 font-apple text-[#1d1d1f]">
       {/* Header */}
-      <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-emerald-50 p-5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400/30">
-            <Sparkles className="h-5 w-5 text-amber-700" />
+      <div className="apple-hero-soft p-5">
+        <div className="choir-hero-ambient" aria-hidden />
+        <div className="relative flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5c24c]/25">
+            <Sparkles className="h-5 w-5 text-[#f5c24c]" />
           </div>
           <div>
-            <h2 className="font-bold text-slate-900">AI Choir Assistant</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h2 className="apple-title text-[#f5f5f7]">AI Choir Assistant</h2>
+            <p className="apple-caption mt-0.5 text-[#a1a1a6]">
               Rule-based liturgical intelligence — works 100% offline, no paid API required.
               Optional: connect a local Ollama model for enhanced generation.
             </p>
           </div>
-          <span className="ml-auto shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700">
+          <span className="ml-auto shrink-0 apple-badge-gold">
             FREE
           </span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1">
+      <div className="apple-segmented w-full overflow-x-auto">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-bold whitespace-nowrap transition min-h-[40px] ${activeTab === t.id ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+            aria-selected={activeTab === t.id}
+            className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap ${activeTab === t.id ? 'is-active' : ''}`}>
             <t.icon className="h-3.5 w-3.5" />
             {t.label}
           </button>
@@ -251,41 +253,41 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
       {/* ── Tab 1: Song Recommender ── */}
       {activeTab === 'recommender' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Music className="h-4 w-4 text-emerald-600" /> Liturgical Song Recommender
+          <div className="apple-card p-5 space-y-4">
+            <h3 className="apple-title flex items-center gap-2 text-sm">
+              <Music className="h-4 w-4 text-[#18392f]" /> Liturgical Song Recommender
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Mass Type</label>
+                <label className="apple-label">Mass Type</label>
                 <select value={recMassType}
                   onChange={e => setRecMassType(e.target.value as MassCategory)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                  className="apple-select text-sm">
                   {MASS_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Liturgical Season (auto-detected)</label>
+                <label className="apple-label">Liturgical Season (auto-detected)</label>
                 <input readOnly value={getLiturgicalSeason()}
-                  className="w-full rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 text-sm text-slate-600 min-h-[44px]" />
+                  className="apple-input text-sm text-[#86868b]" />
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Special Notes (optional)</label>
+              <label className="apple-label">Special Notes (optional)</label>
               <textarea value={recCustom} onChange={e => setRecCustom(e.target.value)} rows={2}
                 placeholder="e.g. Bride requested Ave Maria, youth choir, Tamil only…"
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                className="apple-textarea text-sm" />
             </div>
             <button onClick={handleRecommend} disabled={recLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#18392f] py-2.5 text-sm font-bold text-white min-h-[44px] disabled:opacity-60">
-              <Sparkles className="h-4 w-4 text-amber-300" />
+              className="btn-pill btn-pill-primary flex w-full items-center justify-center gap-2 disabled:opacity-60">
+              <Sparkles className="h-4 w-4 text-[#f5c24c]" />
               {recLoading ? 'Generating…' : 'Get Song Plan'}
             </button>
           </div>
 
           {recResult.length > 0 && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-              <h4 className="text-xs font-bold uppercase text-emerald-700 mb-3 flex items-center gap-1.5">
+            <div className="apple-card p-5" style={{ background: 'rgba(24,57,47,0.06)' }}>
+              <h4 className="apple-label mb-3 flex items-center gap-1.5 text-[#18392f]">
                 <CheckCircle className="h-3.5 w-3.5" /> Recommended Song Plan
               </h4>
               <div className="space-y-1">
@@ -303,17 +305,17 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
       {/* ── Tab 2: Schedule Optimiser ── */}
       {activeTab === 'optimizer' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Sliders className="h-4 w-4 text-emerald-600" /> Choir Schedule Optimiser
+          <div className="apple-card p-5 space-y-4">
+            <h3 className="apple-title flex items-center gap-2 text-sm">
+              <Sliders className="h-4 w-4 text-[#18392f]" /> Choir Schedule Optimiser
             </h3>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-400">Select Mass</label>
+              <label className="apple-label">Select Mass</label>
               {masses.length === 0 ? (
-                <p className="text-xs text-slate-500 py-2">No masses logged yet. Add a mass in Liturgy & Masses first.</p>
+                <p className="apple-caption py-2">No masses logged yet. Add a mass in Liturgy & Masses first.</p>
               ) : (
                 <select value={selMassId} onChange={e => setSelMassId(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                  className="apple-select text-sm">
                   {masses.map(m => (
                     <option key={m.id} value={m.id}>{m.name} — {m.date}</option>
                   ))}
@@ -331,10 +333,10 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
                     { label: 'Instrumentalists',  value: members.filter(m => m.memberType !== 'Singer').length, icon: BookOpen },
                     { label: 'Pending Approval',  value: members.filter(m => m.status === 'Pending').length, icon: Bell },
                   ].map(s => (
-                    <div key={s.label} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                      <s.icon className="h-4 w-4 text-slate-400 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-slate-900">{s.value}</p>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide">{s.label}</p>
+                    <div key={s.label} className="apple-inset p-3 text-center">
+                      <s.icon className="h-4 w-4 text-[#86868b] mx-auto mb-1" />
+                      <p className="text-lg font-semibold tracking-tight">{s.value}</p>
+                      <p className="apple-caption">{s.label}</p>
                     </div>
                   ))}
                 </>
@@ -342,15 +344,15 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
             </div>
 
             <button onClick={handleOptimize} disabled={optLoading || masses.length === 0}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#18392f] py-2.5 text-sm font-bold text-white min-h-[44px] disabled:opacity-60">
-              <CalendarCheck className="h-4 w-4 text-amber-300" />
+              className="btn-pill btn-pill-primary flex w-full items-center justify-center gap-2 disabled:opacity-60">
+              <CalendarCheck className="h-4 w-4 text-[#f5c24c]" />
               {optLoading ? 'Analysing…' : 'Optimise Roster'}
             </button>
           </div>
 
           {optResult.length > 0 && (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-              <h4 className="text-xs font-bold uppercase text-blue-700 mb-3 flex items-center gap-1.5">
+            <div className="apple-card p-5" style={{ background: 'rgba(41,151,255,0.06)' }}>
+              <h4 className="apple-label mb-3 flex items-center gap-1.5 text-[#0071e3]">
                 <CheckCircle className="h-3.5 w-3.5" /> Optimisation Report
               </h4>
               <div className="space-y-1">
@@ -368,42 +370,42 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
       {/* ── Tab 3: Content Generator ── */}
       {activeTab === 'content' && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <FileText className="h-4 w-4 text-emerald-600" /> Choir Content Generator
+          <div className="apple-card p-5 space-y-4">
+            <h3 className="apple-title flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4 text-[#18392f]" /> Choir Content Generator
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Content Type</label>
+                <label className="apple-label">Content Type</label>
                 <select value={genType} onChange={e => setGenType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                  className="apple-select text-sm">
                   {GEN_TYPES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-slate-400">Details / Name</label>
+                <label className="apple-label">Details / Name</label>
                 <input value={genDetails} onChange={e => setGenDetails(e.target.value)}
                   placeholder="e.g. member name, date, amount…"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm min-h-[44px] focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                  className="apple-input text-sm" />
               </div>
             </div>
             <button onClick={handleGenerate} disabled={genLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#18392f] py-2.5 text-sm font-bold text-white min-h-[44px] disabled:opacity-60">
-              <Send className="h-4 w-4 text-amber-300" />
+              className="btn-pill btn-pill-primary flex w-full items-center justify-center gap-2 disabled:opacity-60">
+              <Send className="h-4 w-4 text-[#f5c24c]" />
               {genLoading ? 'Generating…' : 'Generate Content'}
             </button>
           </div>
 
           {genResult && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3">
+            <div className="apple-card p-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase text-slate-500">Generated Content</h4>
+                <h4 className="apple-label">Generated Content</h4>
                 <button onClick={handleCopy}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50 min-h-[32px]">
+                  className="btn-pill btn-pill-secondary btn-pill-sm">
                   {copied ? '✓ Copied' : 'Copy'}
                 </button>
               </div>
-              <pre className="whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm text-slate-700 font-sans leading-relaxed border border-slate-100">
+              <pre className="apple-inset whitespace-pre-wrap p-4 text-sm font-sans leading-relaxed">
                 {genResult}
               </pre>
             </div>

@@ -48,26 +48,26 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+        <div className="apple-segmented font-apple">
           <button
+            type="button"
             onClick={() => setActiveTab('form')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition duration-200 cursor-pointer ${
-              activeTab === 'form' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
+            aria-selected={activeTab === 'form'}
+            className={activeTab === 'form' ? 'is-active' : ''}
             id="tab-reg-form"
           >
-            Registration Form (Public)
+            Registration Form
           </button>
 
           {isAdmin && (
             <button
+              type="button"
               onClick={() => setActiveTab('admin_dashboard')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition duration-200 cursor-pointer flex items-center gap-1 ${
-                activeTab === 'admin_dashboard' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              aria-selected={activeTab === 'admin_dashboard'}
+              className={`inline-flex items-center gap-1 ${activeTab === 'admin_dashboard' ? 'is-active' : ''}`}
               id="tab-approval-desk"
             >
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="h-3.5 w-3.5" />
               {dict.registrationAudit}
             </button>
           )}

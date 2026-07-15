@@ -118,7 +118,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="registration-form-view">
       {/* Form */}
-      <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6" id="member-form">
+      <form onSubmit={handleSubmit} className="lg:col-span-2 apple-card font-apple p-6 space-y-6" id="member-form">
         <h3 className="font-sans font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">Contact & Background details</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

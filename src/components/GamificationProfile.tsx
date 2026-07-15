@@ -20,21 +20,21 @@ const LeaderboardRow: React.FC<{ profile: GamificationProfile; isCurrentUser: bo
   const colors = LEVEL_COLORS[profile.level];
   return (
     <div
-      className={`flex items-center gap-3 rounded-2xl p-3 ${
-        isCurrentUser ? 'bg-emerald-50 border-2 border-emerald-300' : 'bg-slate-50'
+      className={`apple-list-row rounded-xl ${
+        isCurrentUser ? 'ring-2 ring-[#18392f] bg-[rgba(24,57,47,0.06)]' : 'apple-inset'
       }`}
     >
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-slate-200 text-sm font-black text-slate-600">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-[rgba(120,120,128,0.12)] text-sm font-semibold text-[#86868b]">
         #{profile.rank ?? '—'}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-slate-900">{profile.displayName}</p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-sm font-semibold tracking-tight">{profile.displayName}</p>
+        <p className="apple-caption">
           {colors.emoji} {profile.level} · {profile.totalXP.toLocaleString()} XP
         </p>
       </div>
       {isCurrentUser && (
-        <span className="rounded-lg bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">YOU</span>
+        <span className="apple-badge-forest">You</span>
       )}
     </div>
   );
@@ -59,39 +59,38 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
   const unearnedBadges = myProfile.badges.filter((b) => !b.earned);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-apple">
       {/* Level Card */}
-      <div
-        className={`rounded-3xl bg-gradient-to-br ${colors.bg} p-6 text-white shadow-xl`}
-      >
-        <div className="flex items-start justify-between">
+      <div className="apple-hero-soft p-6">
+        <div className="choir-hero-ambient" aria-hidden />
+        <div className="relative flex items-start justify-between">
           <div>
-            <p className={`text-xs font-bold uppercase tracking-widest ${colors.text} opacity-80`}>
+            <p className="apple-caption text-[#a1a1a6]">
               Current Level
             </p>
             <div className="mt-1 flex items-center gap-2">
               <span className="text-4xl">{colors.emoji}</span>
-              <span className="text-3xl font-black">{myProfile.level}</span>
+              <span className="text-3xl font-semibold tracking-tight text-[#f5f5f7]">{myProfile.level}</span>
             </div>
             {myProfile.rank && (
-              <p className={`mt-1 text-xs ${colors.text} opacity-80`}>
+              <p className="apple-caption mt-1 text-[#a1a1a6]">
                 Choir Rank #{myProfile.rank}
               </p>
             )}
           </div>
           <div className="text-right">
-            <p className="text-3xl font-black">{myProfile.totalXP.toLocaleString()}</p>
-            <p className={`text-xs font-semibold ${colors.text} opacity-80`}>Total XP</p>
-            <div className="mt-2 flex items-center gap-1">
-              <Flame className="h-3.5 w-3.5 text-orange-300" />
-              <span className="text-sm font-bold">{myProfile.streak}mo streak</span>
+            <p className="text-3xl font-semibold tracking-tight text-[#f5f5f7]">{myProfile.totalXP.toLocaleString()}</p>
+            <p className="apple-caption text-[#a1a1a6]">Total XP</p>
+            <div className="mt-2 flex items-center gap-1 justify-end">
+              <Flame className="h-3.5 w-3.5 text-[#f5c24c]" />
+              <span className="text-sm font-semibold text-[#f5f5f7]">{myProfile.streak}mo streak</span>
             </div>
           </div>
         </div>
 
         {/* Progress bar */}
         {myProfile.level !== 'Legend' && (
-          <div className="mt-4">
+          <div className="relative mt-4">
             <div className="mb-1 flex justify-between text-xs font-semibold opacity-80">
               <span>{myProfile.levelXP.toLocaleString()} XP</span>
               <span>{myProfile.nextLevelXP.toLocaleString()} XP to next</span>
@@ -111,9 +110,9 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
       </div>
 
       {/* Level Roadmap */}
-      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h3 className="mb-3 flex items-center gap-2 font-black text-slate-900">
-          <TrendingUp className="h-4 w-4 text-violet-600" />
+      <div className="apple-card p-5">
+        <h3 className="apple-title mb-3 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-[#18392f]" />
           Level Roadmap
         </h3>
         <div className="space-y-2">
@@ -125,17 +124,17 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
               <div
                 key={lvl}
                 className={`flex items-center gap-3 rounded-xl p-2 ${
-                  isCurrentLevel ? 'bg-violet-50 ring-2 ring-violet-300' : ''
+                  isCurrentLevel ? 'ring-2 ring-[#18392f] bg-[rgba(24,57,47,0.06)]' : ''
                 }`}
               >
                 <span className="text-lg">{c.emoji}</span>
                 <div className="flex-1">
-                  <p className={`text-sm font-bold ${isCurrentLevel ? 'text-violet-800' : 'text-slate-700'}`}>
+                  <p className={`text-sm font-semibold tracking-tight ${isCurrentLevel ? 'text-[#18392f]' : ''}`}>
                     {lvl} {isCurrentLevel && '← You are here'}
                   </p>
-                  <p className="text-xs text-slate-500">{LEVEL_THRESHOLDS[lvl].toLocaleString()} XP</p>
+                  <p className="apple-caption">{LEVEL_THRESHOLDS[lvl].toLocaleString()} XP</p>
                 </div>
-                {isPast && <span className="text-[11px] font-bold text-green-600">✓ Reached</span>}
+                {isPast && <span className="apple-badge-forest text-[11px]">✓ Reached</span>}
               </div>
             );
           })}
@@ -143,15 +142,15 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
       </div>
 
       {/* Badges */}
-      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="apple-card p-5">
         <button
           onClick={() => setShowBadges(!showBadges)}
           className="flex w-full items-center justify-between min-h-[44px]"
         >
-          <h3 className="flex items-center gap-2 font-black text-slate-900">
-            <Award className="h-4 w-4 text-amber-600" />
+          <h3 className="apple-title flex items-center gap-2">
+            <Award className="h-4 w-4 text-[#f5c24c]" />
             Achievement Badges
-            <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+            <span className="ml-1 apple-badge-gold">
               {earnedBadges.length}/{myProfile.badges.length}
             </span>
           </h3>
@@ -163,19 +162,19 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
             {/* Earned */}
             {earnedBadges.length > 0 && (
               <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-green-700">
+                <p className="apple-label mb-2 text-[#18392f]">
                   Earned ({earnedBadges.length})
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {earnedBadges.map((badge) => (
                     <div
                       key={badge.id}
-                      className="flex items-center gap-2 rounded-xl bg-green-50 p-3 border border-green-100"
+                      className="apple-badge-forest flex items-center gap-2 p-3"
                     >
                       <span className="text-2xl">{badge.emoji}</span>
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-slate-800">{badge.name}</p>
-                        <p className="text-[10px] text-slate-500">+{badge.xpReward} XP</p>
+                        <p className="text-xs font-semibold tracking-tight">{badge.name}</p>
+                        <p className="apple-caption">+{badge.xpReward} XP</p>
                       </div>
                     </div>
                   ))}
@@ -186,14 +185,14 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
             {/* Unearned */}
             {unearnedBadges.length > 0 && (
               <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                <p className="apple-label mb-2">
                   Locked ({unearnedBadges.length})
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {unearnedBadges.map((badge) => (
                     <div
                       key={badge.id}
-                      className="flex items-center gap-2 rounded-xl bg-slate-100 p-3 opacity-50"
+                      className="apple-inset flex items-center gap-2 p-3 opacity-50"
                     >
                       <span className="text-2xl grayscale">{badge.emoji}</span>
                       <div className="min-w-0">
@@ -210,13 +209,13 @@ export const GamificationProfileView: React.FC<GamificationProfileProps> = ({
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+      <div className="apple-card p-5">
         <button
           onClick={() => setShowLeaderboard(!showLeaderboard)}
           className="flex w-full items-center justify-between min-h-[44px]"
         >
-          <h3 className="flex items-center gap-2 font-black text-slate-900">
-            <Trophy className="h-4 w-4 text-amber-500" />
+          <h3 className="apple-title flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-[#f5c24c]" />
             Choir Leaderboard
           </h3>
           {showLeaderboard ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}

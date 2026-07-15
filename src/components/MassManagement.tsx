@@ -75,26 +75,20 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   return (
     <div className="space-y-8">
       {/* ── Brand hero header ─────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-[#18392f] px-8 py-7 text-white shadow-xl mb-2">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-emerald-700/30 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full bg-amber-400/15 blur-2xl" />
-          <svg viewBox="0 0 24 24" fill="currentColor" className="absolute right-8 top-4 h-20 w-20 text-amber-300/15">
-            <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-          </svg>
-        </div>
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <section className="apple-hero-soft mb-2 px-8 py-7 font-apple">
+        <div className="choir-hero-ambient" aria-hidden />
+        <div className="relative flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-300/15 px-3 py-1">
               <BookOpen className="h-3.5 w-3.5 text-amber-300" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-200">Liturgy & Accounts</span>
+              <span className="text-[13px] font-medium text-amber-200">Liturgy & Accounts</span>
             </div>
-            <h2 className="font-serif text-3xl font-bold">Masses & Accounts Desk</h2>
-            <p className="mt-1 text-sm text-emerald-100/70">Log rites · manage payments · calculate choral shares</p>
+            <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">Masses & Accounts Desk</h2>
+            <p className="mt-1 text-[15px] text-[#a1a1a6]">Log rites · manage payments · calculate choral shares</p>
           </div>
-          <div className="shrink-0 rounded-2xl border border-white/10 bg-white/8 px-5 py-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/60">Share Weights</p>
-            <p className="mt-1 text-sm font-bold text-amber-300">Singer ×1 · Musician ×2</p>
+          <div className="shrink-0 rounded-2xl bg-white/10 px-5 py-3 text-center">
+            <p className="text-[12px] font-medium text-[#86868b]">Share weights</p>
+            <p className="mt-1 text-[15px] font-semibold text-amber-300">Singer ×1 · Musician ×2</p>
           </div>
         </div>
       </section>

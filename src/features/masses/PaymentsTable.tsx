@@ -22,7 +22,7 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
   onSelectPayment,
   onSendReminder,
 }) => (
-  <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+  <div className="lg:col-span-2 apple-card font-apple p-6 space-y-4">
     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 border border-amber-200">

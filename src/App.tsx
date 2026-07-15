@@ -18,6 +18,7 @@ import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from
 import { ARCHDIOCESE_ID, findParishById } from './data/madrasMylaporeParishes';
 import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
 import { ToastProvider, useToast } from './components/feedback/ToastProvider';
+import { PageTransition } from './components/interactions/PageTransition';
 import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
@@ -83,22 +84,20 @@ const languages: { id: Language; label: string }[] = [
 const ModuleSkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3].map((i) => (
-      <div key={i} className="animate-pulse rounded-3xl border border-slate-200 bg-white p-6">
-        <div className="h-4 w-1/3 rounded-full bg-slate-200" />
-        <div className="mt-3 h-3 w-2/3 rounded-full bg-slate-100" />
-        <div className="mt-2 h-3 w-1/2 rounded-full bg-slate-100" />
+      <div key={i} className="animate-pulse rounded-3xl border border-[#18392f]/08 bg-white/70 p-6">
+        <div className="h-4 w-1/3 rounded-full bg-[#18392f]/10" />
+        <div className="mt-3 h-3 w-2/3 rounded-full bg-[#18392f]/[0.06]" />
+        <div className="mt-2 h-3 w-1/2 rounded-full bg-[#18392f]/[0.06]" />
       </div>
     ))}
   </div>
 );
 
 const NoMemberProfile = () => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-    <UsersRound className="mx-auto h-10 w-10 text-slate-300" />
-    <h2 className="mt-4 text-lg font-bold text-slate-900">No member profile yet</h2>
-    <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-      Create or approve a real choir member profile to unlock the member dashboard.
-    </p>
+  <div className="apple-empty apple-card font-apple">
+    <UsersRound className="h-10 w-10 text-[#c7c7cc]" />
+    <h3>No member profile yet</h3>
+    <p>Create or approve a real choir member profile to unlock the member dashboard.</p>
   </div>
 );
 
@@ -107,7 +106,7 @@ const BreadcrumbParishLabel: React.FC = () => {
   const { selectedParish } = useParish();
   const name = selectedParish ? selectedParish.parishName : 'Archdiocese of Madras-Mylapore';
   return (
-    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+    <p className="apple-caption text-[#86868b]">
       {name} / Choir
     </p>
   );
@@ -327,40 +326,40 @@ function AppInner() {
   return (
     <>
     <ParishOnboardingModal />
-    <div className="min-h-[100dvh] overflow-x-hidden bg-[#f6f7f5] text-slate-800">
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#102d26] text-white">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
+    <div className="apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
+      {/* HEADER — Apple liquid-glass bar */}
+      <header className="glass-panel-dark sticky top-0 z-50 border-b border-white/10 text-[#f5f5f7]">
+        <div className="mx-auto flex h-12 max-w-[1600px] items-center gap-4 px-4 sm:h-14 sm:px-6">
           <button
             onClick={() => setMobileNavOpen((o) => !o)}
-            className="min-h-[44px] min-w-[44px] rounded-lg p-2 lg:hidden"
+            className="min-h-[44px] min-w-[44px] rounded-full p-2 transition hover:bg-white/10 lg:hidden"
             aria-label="Toggle navigation"
           >
             {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          <button onClick={() => navigate('landing')} className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-300 text-[#153a30]">
-              <Music2 className="h-5 w-5" />
+          <button onClick={() => navigate('landing')} className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-300 text-[#0f2b22]">
+              <Music2 className="h-4 w-4" />
             </div>
             <div className="text-left">
-              <p className="font-serif text-lg font-bold leading-none tracking-wide">CHOIR360 X</p>
-              <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-200/60">Catholic Music Ecosystem</p>
+              <p className="text-[17px] font-semibold leading-none tracking-[-0.02em]">Choir360</p>
+              <p className="mt-0.5 hidden text-[10px] font-normal text-[#a1a1a6] sm:block">Catholic Music Ecosystem</p>
             </div>
           </button>
 
           <div ref={searchContainerRef} className="relative ml-auto hidden max-w-md flex-1 lg:block">
-            <div className="flex items-center rounded-xl border border-white/10 bg-white/8 px-3">
-              <Search className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center rounded-full border border-white/10 bg-white/[0.08] px-3.5 transition focus-within:border-white/25 focus-within:bg-white/12">
+              <Search className="h-3.5 w-3.5 text-[#86868b]" />
               <input
                 value={globalSearchQuery}
                 onChange={(e) => { setGlobalSearchQuery(e.target.value); setIsSearchResultsOpen(true); }}
                 onFocus={() => setIsSearchResultsOpen(true)}
-                className="w-full bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400"
-                placeholder="Search people, songs, masses..."
+                className="w-full bg-transparent px-2.5 py-2 text-[13px] outline-none placeholder:text-[#86868b]"
+                placeholder="Search"
                 aria-label="Global search"
               />
-              <Command className="h-3.5 w-3.5 text-slate-500" />
+              <Command className="h-3 w-3 text-[#636366]" />
             </div>
 
             {isSearchResultsOpen && globalSearchQuery.trim().length >= 2 && (
@@ -378,7 +377,7 @@ function AppInner() {
                         >
                           <span className="flex w-full items-center justify-between gap-2">
                             <span className="truncate text-sm font-bold text-slate-900">{result.title}</span>
-                            <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700">
+                            <span className="apple-badge-forest shrink-0">
                               {result.category}
                             </span>
                           </span>
@@ -392,36 +391,44 @@ function AppInner() {
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <div className="hidden items-center rounded-xl border border-white/10 bg-white/8 p-1 md:flex">
+          <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
+            <div className="hidden items-center rounded-full bg-white/[0.08] p-0.5 md:flex">
               {languages.map((language) => (
                 <button key={language.id} onClick={() => setCurrentLang(language.id)}
-                  className={"rounded-lg px-2 py-1.5 text-[10px] font-bold " + (currentLang === language.id ? 'bg-white text-[#153a30]' : 'text-slate-300')}>
+                  className={"rounded-full px-2.5 py-1 text-[11px] font-medium transition " + (currentLang === language.id ? 'bg-white text-[#1d1d1f]' : 'text-[#a1a1a6] hover:text-white')}>
                   {language.label}
                 </button>
               ))}
             </div>
-            <button className="relative min-h-[44px] min-w-[44px] rounded-xl border border-white/10 bg-white/8 p-2.5" aria-label="Notifications">
+            <button className="relative min-h-[40px] min-w-[40px] rounded-full p-2.5 transition hover:bg-white/10" aria-label="Notifications">
               <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-300" />
+              <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
             </button>
             {!authState.isConfigured && (
               <RoleSelector currentRole={demoRole} setRole={handleDemoRoleChange} />
             )}
             {authState.isConfigured && authState.user && (
-              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/8 px-3 py-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300">
-                  {effectiveRole.replace('_', ' ')}
-                </span>
+              <div className="btn-pill btn-pill-gold !min-h-[28px] !px-3 !py-1 !text-[11px]">
+                {effectiveRole.replace('_', ' ')}
               </div>
             )}
           </div>
         </div>
       </header>
 
+      {/* Mobile drawer backdrop */}
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-30 bg-[#0f2b22]/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       <div className="mx-auto flex max-w-[1600px]">
         {/* SIDEBAR */}
-        <aside className={(mobileNavOpen ? 'fixed inset-x-0 top-16 z-40 flex' : 'hidden') + ' min-h-[calc(100dvh-4rem)] w-64 flex-col border-r border-slate-200/80 bg-white p-4 lg:sticky lg:top-16 lg:flex'}>
+        <aside className={(mobileNavOpen ? 'fixed inset-x-0 top-12 z-40 flex sm:top-14' : 'hidden') + ' min-h-[calc(100dvh-3.5rem)] w-64 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:sticky lg:top-14 lg:flex'}>
           <ParishSidebarCard
             songCount={0}
             syncStatus={
@@ -464,18 +471,18 @@ function AppInner() {
                 const accessible = guard.canAccess(item.minRole);
                 const isActive = activeTab === item.id;
                 return (
-                  <button key={item.id} onClick={() => { if (accessible) navigate(item.id); }} disabled={!accessible}
+                  <button key={item.id} onClick={() => { if (accessible) { navigate(item.id); setMobileNavOpen(false); } }} disabled={!accessible}
                     aria-current={isActive ? 'page' : undefined}
-                    className={'relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ' +
-                      (isActive ? 'text-white' : accessible ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' : 'cursor-not-allowed text-slate-300')}>
+                    className={'relative flex min-h-[40px] w-full items-center gap-3 rounded-full px-3.5 py-2 text-[13px] font-medium tracking-[-0.01em] transition ' +
+                      (isActive ? 'text-white' : accessible ? 'text-[#1d1d1f] hover:bg-black/[0.04]' : 'cursor-not-allowed text-[#d2d2d7]')}>
                     {isActive && (
                       <motion.span
                         layoutId="sidebar-active-pill"
-                        className="absolute inset-0 rounded-xl bg-[#18392f] shadow-sm"
-                        transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                        className="absolute inset-0 rounded-full bg-[#18392f]"
+                        transition={{ type: 'spring', stiffness: 420, damping: 36 }}
                       />
                     )}
-                    <item.icon className={'relative h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-slate-400' : 'text-slate-300')} />
+                    <item.icon className={'relative h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-[#86868b]' : 'text-[#d2d2d7]')} />
                     <span className="relative">{item.label}</span>
                     {item.id === 'registration' && pendingCount > 0 && (
                       <span className="relative ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">{pendingCount}</span>
@@ -491,19 +498,22 @@ function AppInner() {
 
         {/* MAIN CONTENT */}
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <BreadcrumbParishLabel />
-              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{activeLabel}</h1>
+          {!(activeTab === 'landing' && !authState.user) && (
+            <div className="mb-7 flex items-center justify-between">
+              <div>
+                <BreadcrumbParishLabel />
+                <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">{activeLabel}</h1>
+              </div>
+              {guard.isAdmin && (
+                <button onClick={() => navigate('registration')}
+                  className="btn-pill btn-pill-primary hidden !text-[13px] sm:inline-flex">
+                  <UserPlus className="h-3.5 w-3.5 text-amber-300" /> Add member
+                </button>
+              )}
             </div>
-            {guard.isAdmin && (
-              <button onClick={() => navigate('registration')}
-                className="hidden min-h-[44px] items-center gap-2 rounded-xl bg-[#18392f] px-4 py-2.5 text-xs font-bold text-white shadow-sm sm:flex">
-                <UserPlus className="h-4 w-4 text-amber-300" /> Add member
-              </button>
-            )}
-          </div>
+          )}
 
+          <PageTransition pageKey={activeTab}>
           <Suspense fallback={<ModuleSkeleton />}>
             {/* Signed-out visitors get the marketing page; members get the ops dashboard. */}
             {activeTab === 'landing' && (
@@ -627,15 +637,16 @@ function AppInner() {
               ) : <AccessDenied requiredRole="choir_member" />
             )}
           </Suspense>
+          </PageTransition>
         </main>
       </div>
 
       {/* Mobile bottom nav — 5 primary tabs + More drawer */}
       {mobileMoreOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileMoreOpen(false)}>
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-[#0f2b22]/35 backdrop-blur-sm" />
           <div
-            className="absolute bottom-[calc(56px+env(safe-area-inset-bottom))] left-0 right-0 rounded-t-2xl border-t border-slate-200 bg-white shadow-xl"
+            className="absolute bottom-[calc(56px+env(safe-area-inset-bottom))] left-0 right-0 rounded-t-2xl border-t border-[#18392f]/10 bg-white/95 shadow-xl backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
@@ -670,7 +681,7 @@ function AppInner() {
           </div>
         </div>
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-slate-200 bg-white lg:hidden"
+      <nav className="glass-panel fixed bottom-0 left-0 right-0 z-40 flex border-t border-black/5 lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {([
           { id: 'landing' as Tab,      Icon: LayoutDashboard, label: 'Home' },
@@ -684,25 +695,24 @@ function AppInner() {
             const isActive = activeTab === id;
             return (
               <button key={id} onClick={() => navigate(id)}
-                className="relative flex flex-1 flex-col items-center justify-center gap-0.5 py-3 min-h-[56px]"
+                className="relative flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5"
                 aria-current={isActive ? 'page' : undefined}>
                 {isActive && (
                   <motion.span
                     layoutId="bottomnav-active-bar"
-                    className="absolute top-0 h-0.5 w-10 rounded-full bg-[#18392f]"
+                    className="absolute top-0 h-[2px] w-8 rounded-full bg-[#18392f]"
                     transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                   />
                 )}
-                <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-slate-400')} />
-                <span className={'text-[9px] font-bold ' + (isActive ? 'text-[#18392f]' : 'text-slate-400')}>{label}</span>
+                <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')} />
+                <span className={'text-[10px] font-medium ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
               </button>
             );
           })}
-        {/* More button */}
         <button onClick={() => setMobileMoreOpen((o) => !o)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 min-h-[56px]">
-          <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-slate-400')} />
-          <span className={'text-[9px] font-bold ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-slate-400')}>More</span>
+          className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5">
+          <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')} />
+          <span className={'text-[10px] font-medium ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')}>More</span>
         </button>
       </nav>
       <div className="h-[calc(56px+env(safe-area-inset-bottom))] lg:hidden" aria-hidden="true" />

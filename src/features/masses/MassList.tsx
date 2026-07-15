@@ -77,7 +77,7 @@ export const MassList: React.FC<MassListProps> = ({
   if (masses.length === 0) return null;
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="apple-card font-apple p-6 space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#18392f]">
           <BookOpen className="h-3.5 w-3.5 text-amber-300" />

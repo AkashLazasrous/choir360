@@ -37,7 +37,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4" id="member-profile-card">
+    <div className="apple-card font-apple p-6 rounded-2xl space-y-4" id="member-profile-card">
       <div className="flex justify-between items-center pb-2 border-b border-slate-100">
         <h4 className="font-sans font-bold text-slate-800 text-sm flex items-center gap-2">
           <User className="w-4 h-4 text-emerald-600" />
@@ -87,7 +87,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
           <button
             type="submit"
             id="save-profile-request-btn"
-            className="w-full py-3 min-h-[44px] bg-emerald-600 hover:bg-emerald-500 font-bold text-white text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            className="btn-pill btn-pill-primary w-full"
           >
             <Save className="w-3.5 h-3.5" /> Submit Edit for Admin Approval
           </button>

@@ -70,7 +70,7 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
 
   if (!isConfigured) {
     return (
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+      <div className="apple-card font-apple p-4 text-[13px] text-[#8a6a10]" style={{ background: 'rgba(245,194,76,0.14)' }}>
         Live sign in is not configured. The app is running in local demo mode.
       </div>
     );
@@ -78,21 +78,22 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
 
   if (user && !user.isAnonymous) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+      <div className="apple-card font-apple p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(24,57,47,0.1)] text-[#18392f]">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-slate-900">{user.displayName || user.email}</p>
-            <p className="text-[10px] font-semibold text-emerald-700">
-              {effectiveRole.replace(/_/g, ' ')} &middot; live sync active
+            <p className="truncate text-[15px] font-semibold text-[#1d1d1f]">{user.displayName || user.email}</p>
+            <p className="text-[12px] text-[#86868b]">
+              {effectiveRole.replace(/_/g, ' ')} · live sync active
             </p>
           </div>
         </div>
         <button
+          type="button"
           onClick={() => void onLogout()}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 min-h-[44px] text-xs font-bold text-slate-700"
+          className="btn-pill btn-pill-secondary mt-3 w-full !text-[13px]"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
@@ -102,18 +103,20 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
+    <form onSubmit={handleSubmit} className="apple-card font-apple p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-slate-900">{mode === 'signin' ? 'Sign in' : 'Create account'}</p>
-          <p className="text-[10px] text-slate-500">
+          <p className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+            {mode === 'signin' ? 'Sign in' : 'Create account'}
+          </p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">
             {mode === 'signin' ? 'Use your registered choir email' : 'Create login, then complete member form'}
           </p>
         </div>
         <button
           type="button"
           onClick={switchMode}
-          className="text-[10px] font-bold text-emerald-700 min-h-[44px] flex items-center px-2"
+          className="btn-pill-link !text-[13px]"
         >
           {mode === 'signin' ? 'Create account' : 'Sign in'}
         </button>
@@ -125,7 +128,7 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             onChange={(event) => setFirstName(event.target.value)}
             placeholder="First name"
             autoComplete="given-name"
-            className="w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+            className="apple-input !text-[15px]"
             required
           />
           <input
@@ -133,7 +136,7 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             onChange={(event) => setLastName(event.target.value)}
             placeholder="Last name"
             autoComplete="family-name"
-            className="w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+            className="apple-input !text-[15px]"
             required
           />
         </div>
@@ -144,7 +147,7 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
         onChange={(event) => setEmail(event.target.value)}
         placeholder="Registered email address"
         autoComplete="email"
-        className="mb-2 w-full rounded-xl border border-slate-200 px-3 py-3 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+        className="apple-input mb-2 !text-[15px]"
         required
       />
       <div className="relative mb-2">
@@ -155,17 +158,17 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
           placeholder="Password"
           autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           minLength={mode === 'create' ? 8 : undefined}
-          className="w-full rounded-xl border border-slate-200 py-3 pl-3 pr-14 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+          className="apple-input !pr-12 !text-[15px]"
           required
         />
         <button
           type="button"
           onClick={() => setShowPassword((value) => !value)}
-          className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-[#18392f] shadow-sm ring-1 ring-slate-200 hover:bg-emerald-50"
+          className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#18392f] hover:bg-black/[0.04]"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
           title={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? <EyeOff className="h-4 w-4 stroke-[2.4]" /> : <Eye className="h-4 w-4 stroke-[2.4]" />}
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
       {mode === 'create' && (
@@ -177,29 +180,29 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             placeholder="Confirm password"
             autoComplete="new-password"
             minLength={8}
-            className="w-full rounded-xl border border-slate-200 py-3 pl-3 pr-14 min-h-[44px] text-xs outline-none focus:border-emerald-500"
+            className="apple-input !pr-12 !text-[15px]"
             required
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((value) => !value)}
-            className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white text-[#18392f] shadow-sm ring-1 ring-slate-200 hover:bg-emerald-50"
+            className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#18392f] hover:bg-black/[0.04]"
             aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
             title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
           >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4 stroke-[2.4]" /> : <Eye className="h-4 w-4 stroke-[2.4]" />}
+            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       )}
       {(localError || authError) && (
-        <p className="mb-2 text-[10px] font-semibold text-rose-600">{localError || authError}</p>
+        <p className="mb-2 text-[13px] font-medium text-[#d70015]">{localError || authError}</p>
       )}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#18392f] px-3 py-3 min-h-[44px] text-xs font-bold text-white disabled:opacity-60"
+        className="btn-pill btn-pill-primary mt-1 w-full !text-[15px]"
       >
-        {mode === 'signin' ? <LogIn className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
+        {mode === 'signin' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
         {isSubmitting ? 'Working...' : mode === 'signin' ? 'Sign in' : 'Create account'}
       </button>
     </form>

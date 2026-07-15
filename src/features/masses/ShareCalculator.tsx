@@ -31,10 +31,10 @@ export const ShareCalculator: React.FC<ShareCalculatorProps> = ({
   onLock,
   onUnlock,
 }) => (
-  <div className="bg-slate-900 text-slate-100 p-6 md:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-700 pb-4 gap-4">
+  <div className="apple-hero-soft p-6 md:p-8 space-y-6 font-apple">
+    <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/10 pb-4 gap-4">
       <div className="flex items-center gap-3">
-        <div className="bg-emerald-950 border border-emerald-800 text-emerald-400 p-2 rounded-xl">
+        <div className="rounded-xl border border-[#f5c24c]/30 bg-[#f5c24c]/15 text-[#f5c24c] p-2">
           <Calculator className="w-6 h-6" />
         </div>
         <div>

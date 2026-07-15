@@ -47,7 +47,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({ member: m, m
           {/* Approve as Member */}
           <button
             onClick={handleAproveMember}
-            className="w-full px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded text-[10px] flex items-center justify-center gap-1 transition"
+            className="btn-pill btn-pill-primary btn-pill-xs w-full !text-[11px]"
           >
             <UserCheck className="w-3 h-3" /> Approve Member
           </button>
@@ -56,10 +56,10 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({ member: m, m
           <button
             onClick={handleApproveAdmin}
             title={parishAdminExists ? 'Parish already has an admin' : 'Approve as parish admin'}
-            className={`w-full px-2 py-1.5 font-semibold rounded text-[10px] flex items-center justify-center gap-1 transition border ${
+            className={`btn-pill btn-pill-xs w-full !text-[11px] ${
               parishAdminExists
-                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-                : 'bg-violet-50 hover:bg-violet-100 text-violet-800 border-violet-200'
+                ? 'btn-pill-secondary cursor-not-allowed opacity-60'
+                : 'btn-pill-gold'
             }`}
           >
             <ShieldCheck className="w-3 h-3" /> Approve Admin
@@ -68,7 +68,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({ member: m, m
           {/* Request Correction */}
           <button
             onClick={handleRequestCorrection}
-            className="w-full px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded text-[10px] flex items-center justify-center gap-1 transition border border-amber-200"
+            className="btn-pill btn-pill-secondary btn-pill-xs w-full !text-[11px]"
           >
             <FileEdit className="w-3 h-3" /> Correction
           </button>
@@ -76,7 +76,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({ member: m, m
           {/* Reject */}
           <button
             onClick={handleReject}
-            className="w-full px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded text-[10px] flex items-center justify-center gap-1 transition border border-rose-200"
+            className="btn-pill btn-pill-xs w-full !text-[11px] !bg-[rgba(255,59,48,0.12)] !text-[#d70015]"
           >
             <UserX className="w-3 h-3" /> Reject
           </button>
@@ -86,7 +86,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({ member: m, m
       {isActive && (
         <>
           {m.status === 'Admin' && (
-            <span className="px-2 py-0.5 bg-violet-100 text-violet-800 border border-violet-200 rounded text-[9px] font-bold uppercase flex items-center gap-0.5 mb-1">
+            <span className="apple-badge-gold mb-1 flex items-center gap-0.5">
               <Shield className="w-2.5 h-2.5" /> Parish Admin
             </span>
           )}

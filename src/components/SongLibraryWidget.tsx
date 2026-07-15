@@ -219,10 +219,10 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
 
   if (!selectedSong) {
     return (
-      <div className="rounded-2xl border border-slate-100 bg-white p-10 text-center text-slate-500">
-        <BookOpen className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-        <h3 className="text-base font-black text-slate-900">No songs imported</h3>
-        <p className="mt-1 text-sm">Import the song PDF to populate the Music Library.</p>
+      <div className="apple-empty apple-card">
+        <BookOpen className="mx-auto mb-3 h-10 w-10 text-[#c7c7cc]" />
+        <h3>No songs imported</h3>
+        <p>Import the song PDF to populate the Music Library.</p>
       </div>
     );
   }
@@ -230,17 +230,17 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
   const isPdfSong = Boolean(selectedSong.sourcePdfUrl && selectedSong.sourcePageNumber);
 
   return (
-    <div className="space-y-8 animate-fade-in text-slate-800" id="songs-library-container">
-      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm" id="search-controls-card">
-        <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8 animate-fade-in font-apple text-[#1d1d1f]" id="songs-library-container">
+      <div className="apple-card p-6" id="search-controls-card">
+        <div className="flex flex-col gap-3 border-b border-[rgba(0,0,0,0.08)] pb-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Music className="h-5 w-5 text-emerald-600" />
+            <Music className="h-5 w-5 text-[#18392f]" />
             <div>
-              <h3 className="font-sans text-md font-bold text-slate-850">Imported PDF Song Library</h3>
-              <p className="text-[11px] text-slate-500">Only the provided Jebathotta Jeyageethangal PDF is loaded.</p>
+              <h3 className="apple-title text-base">Imported PDF Song Library</h3>
+              <p className="apple-caption">Only the provided Jebathotta Jeyageethangal PDF is loaded.</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-100">
+          <div className="apple-badge-forest flex items-center gap-1">
             <Check className="h-3.5 w-3.5" />
             {songs.length} PDF pages
           </div>
@@ -249,7 +249,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="relative flex items-center gap-2 md:col-span-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-[#86868b]" />
               <input
                 type="text"
                 value={searchQuery}
@@ -263,7 +263,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                   }
                 }}
                 placeholder={dict.songSearchPlaceholder || 'Search imported songbook'}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-9 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="apple-input py-3 pl-9 pr-4 text-xs"
                 id="song-search-box"
               />
             </div>
@@ -271,7 +271,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
               type="button"
               onClick={triggerAiSmartSearch}
               disabled={isAiSearching}
-              className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold text-white shadow transition hover:bg-emerald-500 disabled:opacity-60"
+              className="btn-pill btn-pill-primary btn-pill-sm flex cursor-pointer items-center gap-1.5 disabled:opacity-60"
               id="ai-translit-search-btn"
             >
               {isAiSearching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -280,11 +280,11 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase text-slate-400">Language</label>
+            <label className="apple-label">Language</label>
             <select
               value={selectedLanguage}
               onChange={(event) => setSelectedLanguage(event.target.value as 'All' | 'Tamil' | 'English')}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs outline-none"
+              className="apple-select text-xs"
             >
               <option value="All">All Languages</option>
               <option value="Tamil">Tamil</option>
@@ -293,11 +293,11 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase text-slate-400">Category</label>
+            <label className="apple-label">Category</label>
             <select
               value={selectedCategory}
               onChange={(event) => setSelectedCategory(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs outline-none"
+              className="apple-select text-xs"
             >
               {categoriesList.map((category) => (
                 <option key={category} value={category}>{category}</option>
@@ -307,8 +307,8 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         </div>
 
         {aiExplainText && (
-          <div className="mt-4 flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[10px] font-medium text-amber-900 shadow-xs">
-            <Sparkles className="h-4 w-4 shrink-0 text-emerald-600" />
+          <div className="mt-4 flex items-center gap-1.5 apple-badge-gold p-3 text-[10px] font-medium">
+            <Sparkles className="h-4 w-4 shrink-0 text-[#18392f]" />
             <span>{aiExplainText}</span>
           </div>
         )}
@@ -335,21 +335,21 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3" id="song-split-panel">
         <div className="song-index-scroll space-y-3 overflow-y-auto pr-1 lg:h-[620px]" id="songs-sidebar-list">
-          <div className="sticky top-0 z-10 rounded-2xl border border-slate-100 bg-white/95 p-4 shadow-sm backdrop-blur">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">Song Index</p>
-            <h3 className="mt-1 text-lg font-black text-slate-950">Jebathotta Jeyageethangal</h3>
-            <p className="mt-1 text-xs font-semibold text-slate-500">
+          <div className="sticky top-0 z-10 glass-panel p-4">
+            <p className="apple-label text-[#18392f]">Song Index</p>
+            <h3 className="apple-title mt-1">Jebathotta Jeyageethangal</h3>
+            <p className="apple-caption mt-1">
               {indexedSongs.length} songs • alphabetical • hyperlink navigation
             </p>
             {(recentSongs.length > 0 || favoriteSongItems.length > 0) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {favoriteSongItems.slice(0, 4).map((song) => (
-                  <button key={`fav-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-800">
+                  <button key={`fav-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="apple-badge-gold">
                     ★ {getDisplayTitle(song)}
                   </button>
                 ))}
                 {recentSongs.slice(0, 4).map((song) => (
-                  <button key={`recent-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-700">
+                  <button key={`recent-${song.id}`} type="button" onClick={() => handleSelectSong(song)} className="apple-badge">
                     {getDisplayTitle(song)}
                   </button>
                 ))}
@@ -357,7 +357,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
             )}
           </div>
           {indexedSongs.length === 0 ? (
-            <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center text-slate-400">
+            <div className="apple-empty apple-card py-8">
               <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-55" />
               <p className="text-xs">No imported song pages match this search.</p>
             </div>
@@ -371,14 +371,14 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
                   id={`song-index-${song.id}`}
                   href={`#song-${encodeURIComponent(song.id)}`}
                   onClick={(event) => { event.preventDefault(); handleSelectSong(song); }}
-                  className={`song-index-link flex min-h-[86px] flex-col justify-between rounded-xl border p-4 transition ${
+                  className={`song-index-link apple-card flex min-h-[86px] flex-col justify-between p-4 transition ${
                     isSelected
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900 shadow-xs'
-                      : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'ring-2 ring-[#18392f] bg-[rgba(24,57,47,0.06)]'
+                      : 'hover:bg-[rgba(120,120,128,0.06)]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">
+                    <span className="apple-badge-muted text-[9px]">
                       {song.category}
                     </span>
                     <span

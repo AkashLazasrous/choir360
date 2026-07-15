@@ -23,9 +23,9 @@ const ToastContext = createContext<ShowToast>(() => {});
 export const useToast = () => useContext(ToastContext);
 
 const TONE_STYLES: Record<ToastRecord['tone'], { icon: React.ElementType; iconClass: string }> = {
-  success: { icon: CheckCircle2, iconClass: 'text-emerald-300' },
-  error: { icon: AlertTriangle, iconClass: 'text-rose-300' },
-  info: { icon: Info, iconClass: 'text-amber-300' },
+  success: { icon: CheckCircle2, iconClass: 'text-[#30d158]' },
+  error: { icon: AlertTriangle, iconClass: 'text-[#ff453a]' },
+  info: { icon: Info, iconClass: 'text-[#f5c24c]' },
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,7 +63,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <div
               key={toast.id}
               role="status"
-              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl bg-[#102d26] px-4 py-3 text-sm text-white shadow-xl ring-1 ring-white/10 animate-toast-in"
+              className="apple-toast pointer-events-auto w-full max-w-sm animate-toast-in font-apple"
             >
               <Icon className={`h-4 w-4 shrink-0 ${iconClass}`} />
               <span className="min-w-0 flex-1 leading-snug">{toast.message}</span>
@@ -71,7 +71,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 <button
                   type="button"
                   onClick={() => { toast.onUndo?.(); dismiss(toast.id); }}
-                  className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-300/15 px-2.5 py-1.5 text-xs font-bold text-amber-300 transition hover:bg-amber-300/25"
+                  className="btn-pill btn-pill-gold btn-pill-xs !min-h-[28px]"
                 >
                   <Undo2 className="h-3 w-3" /> Undo
                 </button>
@@ -80,7 +80,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 type="button"
                 onClick={() => dismiss(toast.id)}
                 aria-label="Dismiss notification"
-                className="shrink-0 rounded-lg p-1 text-white/50 transition hover:bg-white/10 hover:text-white"
+                className="shrink-0 rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

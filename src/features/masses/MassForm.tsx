@@ -95,41 +95,41 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-      <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+    <div className="apple-card font-apple p-6 space-y-4">
+      <div className="flex items-center gap-2 pb-3 border-b border-[rgba(0,0,0,0.08)]">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18392f]">
-          <BookOpen className="w-4 h-4 text-amber-300" />
+          <BookOpen className="w-4 h-4 text-[#f5c24c]" />
         </div>
         <div>
-          <h3 className="font-bold text-slate-900 text-sm">Log Liturgy</h3>
-          <p className="text-[10px] text-slate-400">Setup upcoming rites & payments</p>
+          <h3 className="apple-title text-sm">Log Liturgy</h3>
+          <p className="apple-caption">Setup upcoming rites & payments</p>
         </div>
       </div>
 
       {massSuccess && (
-        <p className="text-xs p-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded font-medium">{massSuccess}</p>
+        <p className="apple-badge-forest text-xs p-2 font-medium">{massSuccess}</p>
       )}
       {massSaveError && (
-        <p className="text-xs p-2 bg-rose-50 text-rose-800 border border-rose-200 rounded font-medium">{massSaveError}</p>
+        <p className="apple-badge-danger text-xs p-2 font-medium">{massSaveError}</p>
       )}
 
       {!isAdmin ? (
-        <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-xs font-medium leading-5 text-amber-900">
+        <div className="apple-badge-gold p-3 text-xs font-medium leading-5">
           Sign in with the parish admin email to log, edit, or delete liturgy entries.
         </div>
       ) : (
       <form onSubmit={handleAddMass} className="space-y-3 text-xs">
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">Mass Name / Description</label>
+          <label className="apple-label">Mass Name / Description</label>
           <input required value={massName} onChange={(e) => setMassName(e.target.value)}
             placeholder="e.g. Wedding Solemn Mass of Dr. Joseph"
-            className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            className="apple-input text-sm" />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-bold text-slate-400 uppercase">Liturgical Rite Category</label>
+          <label className="apple-label">Liturgical Rite Category</label>
           <select value={massCategory} onChange={(e) => setMassCategory(e.target.value as MassCategory)}
-            className="w-full px-3 py-2.5 min-h-[44px] rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400">
+            className="apple-select text-sm">
             {ALL_MASS_CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
@@ -140,19 +140,19 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">Date</label>
             <input type="date" value={massDate} onChange={(e) => setMassDate(e.target.value)}
-              className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+              className="apple-input text-sm" />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">Start Time</label>
             <input value={massTime} onChange={(e) => setMassTime(e.target.value)} placeholder="06:30 AM"
-              className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+              className="apple-input text-sm" />
           </div>
         </div>
 
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-slate-400 uppercase">Principal Language</label>
           <select value={massLang} onChange={(e) => setMassLang(e.target.value)}
-            className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400">
+            className="apple-select text-sm">
             {['Tamil','English','Malayalam','Telugu','Hindi'].map((l) => <option key={l}>{l}</option>)}
           </select>
         </div>
@@ -167,14 +167,14 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Sponsor / Party Name</label>
               <input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="e.g. Joseph Family"
-                className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                className="apple-input text-sm" />
             </div>
 
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Proposed (₹)</label>
               <input type="number" min={0} value={amountProposed || ''} onChange={(e) => setAmountProposed(Number(e.target.value))}
                 placeholder="0"
-                className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                className="apple-input text-sm" />
             </div>
 
             <div className="space-y-1">
@@ -197,18 +197,18 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Received (₹)</label>
                   <input type="number" min={0} value={receivedAmount || ''} onChange={(e) => setReceivedAmount(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                    className="apple-input text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Date Received</label>
                     <input type="date" value={dateReceived} onChange={(e) => setDateReceived(e.target.value)}
-                      className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                      className="apple-input text-sm" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Mode</label>
                     <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}
-                      className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                      className="apple-select text-sm">
                       {['Cash','UPI','Bank Transfer','Cheque','DD'].map((m) => <option key={m}>{m}</option>)}
                     </select>
                   </div>
@@ -216,12 +216,12 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Who Paid</label>
                   <input value={whoPaid} onChange={(e) => setWhoPaid(e.target.value)} placeholder="Payer name"
-                    className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                    className="apple-input text-sm" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Receipt No. (optional)</label>
                   <input value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)}
-                    className="w-full px-3 py-2.5 min-h-[44px] border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+                    className="apple-input text-sm" />
                 </div>
               </>
             )}
@@ -240,7 +240,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
         )}
 
         <button type="submit"
-          className="w-full py-3 min-h-[44px] bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
+          className="btn-pill btn-pill-primary w-full">
           Log Liturgy Mass
         </button>
       </form>

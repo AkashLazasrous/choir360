@@ -59,7 +59,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'veteran',
       label: 'Veteran Choralist',
       icon: '🎖️',
-      color: 'bg-amber-100 text-amber-800 border-amber-200',
+      color: 'apple-badge-gold',
       earned: experienceYears >= 5,
       description: '5+ years of dedicated service',
     },
@@ -67,7 +67,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'perfect_attendance',
       label: 'Perfect Attendance',
       icon: '✅',
-      color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      color: 'apple-badge-forest',
       earned: attendanceRate >= 95,
       description: '95%+ attendance rate',
     },
@@ -75,7 +75,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'active',
       label: 'Active Member',
       icon: '⭐',
-      color: 'bg-sky-100 text-sky-800 border-sky-200',
+      color: 'apple-badge-blue',
       earned: isActive,
       description: 'Fully approved & active',
     },
@@ -83,7 +83,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'decade',
       label: 'Decade Champion',
       icon: '🏆',
-      color: 'bg-purple-100 text-purple-800 border-purple-200',
+      color: 'apple-badge-gold',
       earned: experienceYears >= 10,
       description: '10+ years of faithful service',
     },
@@ -91,7 +91,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'high_attendance',
       label: 'Star Attendee',
       icon: '🌟',
-      color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      color: 'apple-badge-gold',
       earned: attendanceRate >= 80,
       description: '80%+ attendance rate',
     },
@@ -99,7 +99,7 @@ function deriveAchievements(member: Member): Achievement[] {
       id: 'early_bird',
       label: 'Founding Member',
       icon: '🕊️',
-      color: 'bg-rose-100 text-rose-800 border-rose-200',
+      color: 'apple-badge-danger',
       earned: member.joiningDate ? new Date(member.joiningDate).getFullYear() <= 2020 : false,
       description: 'Joined before 2021',
     },
@@ -167,10 +167,10 @@ function drawQrCanvas(canvas: HTMLCanvasElement, data: string): void {
 
 const VOICE_COLOR: Record<string, string> = {
   Soprano: 'bg-pink-500',
-  Alto:    'bg-purple-500',
+  Alto:    'bg-[#18392f]',
   Tenor:   'bg-sky-500',
   Bass:    'bg-slate-700',
-  None:    'bg-emerald-600',
+  None:    'bg-[#18392f]',
 };
 
 export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
@@ -222,14 +222,15 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
   const voiceBadge = VOICE_COLOR[member.voiceType] ?? 'bg-emerald-600';
 
   return (
-    <div className="space-y-6" id="digital-choir-id-root">
+    <div className="space-y-6 font-apple" id="digital-choir-id-root">
 
       {/* ── Card ──────────────────────────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 p-6 shadow-2xl text-white select-none"
+        className="apple-hero-soft relative overflow-hidden p-6 select-none"
         id="choir-id-card"
         style={{ maxWidth: 380, margin: '0 auto' }}
       >
+        <div className="choir-hero-ambient" aria-hidden />
         {/* Background pattern */}
         <div className="pointer-events-none absolute inset-0 opacity-5"
           style={{ backgroundImage: 'repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)', backgroundSize: '12px 12px' }}
@@ -238,12 +239,12 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         {/* Header */}
         <div className="relative mb-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase">Choir360 Digital ID</p>
-            <p className="text-[9px] text-slate-400 font-mono">{member.choirName}</p>
+            <p className="apple-caption font-mono text-[#f5c24c]">Choir360 Digital ID</p>
+            <p className="apple-caption font-mono">{member.choirName}</p>
           </div>
-          <div className="flex items-center gap-1 rounded-full bg-emerald-900/60 border border-emerald-700 px-2 py-1">
-            <Shield className="w-3 h-3 text-emerald-400" />
-            <span className="text-[9px] font-bold text-emerald-300 uppercase tracking-wide">Verified</span>
+          <div className="apple-badge-forest flex items-center gap-1 px-2 py-1">
+            <Shield className="w-3 h-3" />
+            <span className="text-[9px] font-medium">Verified</span>
           </div>
         </div>
 
@@ -253,7 +254,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
             <img
               src={member.photoUrl}
               alt={member.firstName}
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-lg"
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-[#f5c24c]"
               referrerPolicy="no-referrer"
             />
             <span className={`absolute -bottom-1 -right-1 text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full ${voiceBadge}`}>
@@ -262,21 +263,21 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-lg font-extrabold tracking-tight leading-tight">
+            <h2 className="text-lg font-semibold tracking-tight leading-tight text-[#f5f5f7]">
               {member.firstName} {member.lastName}
             </h2>
-            <p className="text-xs text-slate-300">{member.memberType} • {member.voiceType}</p>
-            <p className="font-mono text-[10px] text-emerald-400 mt-1">{member.id}</p>
+            <p className="apple-caption text-[#a1a1a6]">{member.memberType} • {member.voiceType}</p>
+            <p className="font-mono apple-caption text-[#f5c24c] mt-1">{member.id}</p>
             <div className="mt-1 flex flex-wrap gap-1">
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+              <span className={`apple-badge text-[9px] ${
                 member.status === 'Active Member'
-                  ? 'bg-emerald-900 text-emerald-300 border-emerald-700'
-                  : 'bg-amber-900 text-amber-300 border-amber-700'
+                  ? 'apple-badge-forest'
+                  : 'apple-badge-gold'
               }`}>
                 {member.status}
               </span>
               {member.experience > 0 && (
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+                <span className="apple-badge-muted text-[9px]">
                   {member.experience}y exp
                 </span>
               )}
@@ -285,12 +286,12 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         </div>
 
         {/* QR Code */}
-        <div className="flex items-center gap-4 rounded-2xl bg-white/5 border border-white/10 p-4 mb-4">
-          <div className="rounded-xl bg-white p-1.5 shrink-0 shadow">
+        <div className="flex items-center gap-4 rounded-2xl border border-white/10 p-4 mb-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl bg-white p-1.5 shrink-0">
             <canvas ref={canvasRef} className="block rounded" style={{ width: 72, height: 72 }} />
           </div>
-          <div className="min-w-0 text-xs text-slate-300 space-y-1">
-            <p className="font-bold text-white text-sm">Scan to Check-in</p>
+          <div className="min-w-0 text-xs text-[#a1a1a6] space-y-1">
+            <p className="font-semibold text-[#f5f5f7] text-sm">Scan to Check-in</p>
             <p className="text-[10px] text-slate-400 font-mono break-all leading-relaxed">
               {qrPayload.slice(0, 48)}…
             </p>
@@ -309,7 +310,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
       <div className="grid grid-cols-2 gap-3" style={{ maxWidth: 380, margin: '0 auto' }}>
         <button
           onClick={generateQr}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-h-[44px] text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh QR
@@ -317,10 +318,10 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         <button
           onClick={handleCheckIn}
           disabled={checkedIn}
-          className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 min-h-[44px] text-xs font-bold transition shadow ${
+          className={`btn-pill flex items-center justify-center gap-2 text-xs ${
             checkedIn
-              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-              : 'bg-slate-900 text-white hover:bg-slate-800'
+              ? 'apple-badge-forest'
+              : 'btn-pill-primary'
           }`}
         >
           {checkedIn ? <CheckCircle className="w-4 h-4" /> : <QrCode className="w-4 h-4" />}
@@ -328,9 +329,9 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         </button>
         <button
           onClick={handleCopyId}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-h-[44px] text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
         >
-          {copied ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Camera className="w-4 h-4" />}
+          {copied ? <CheckCircle className="w-4 h-4 text-[#18392f]" /> : <Camera className="w-4 h-4" />}
           {copied ? 'Copied!' : 'Copy ID Link'}
         </button>
         <button
@@ -341,7 +342,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
               window.print();
             }
           }}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-h-[44px] text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
         >
           <Download className="w-4 h-4" />
           Print / Save
@@ -349,11 +350,11 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
       </div>
 
       {/* ── Achievement Badges ────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm" style={{ maxWidth: 380, margin: '0 auto' }}>
-        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800 mb-4">
-          <Award className="w-4 h-4 text-amber-500" />
+      <div className="apple-card p-5" style={{ maxWidth: 380, margin: '0 auto' }}>
+        <h3 className="apple-title flex items-center gap-2 text-sm mb-4">
+          <Award className="w-4 h-4 text-[#f5c24c]" />
           Achievements
-          <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+          <span className="ml-auto apple-badge-forest text-[10px]">
             {earned.length}/{achievements.length} earned
           </span>
         </h3>
@@ -363,7 +364,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
             <div
               key={a.id}
               className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 transition ${
-                a.earned ? a.color : 'bg-slate-50 text-slate-300 border-slate-100'
+                a.earned ? a.color : 'apple-inset opacity-50'
               }`}
             >
               <span className={`text-lg leading-none ${a.earned ? '' : 'grayscale opacity-30'}`}>

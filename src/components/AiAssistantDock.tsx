@@ -139,16 +139,16 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs" id="chat-messages-scroll">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
-              m.role === 'user' ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white'
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+              m.role === 'user' ? 'bg-[#1c1c1e] text-white' : 'bg-[#18392f] text-amber-300'
             }`}>
               {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
 
-            <div className={`p-3.5 rounded-2xl relative ${
+            <div className={`relative rounded-2xl p-3.5 ${
               m.role === 'user'
-                ? 'bg-slate-100 text-slate-800 rounded-tr-none'
-                : 'bg-emerald-50 text-emerald-950 rounded-tl-none border border-emerald-100/60'
+                ? 'rounded-tr-none bg-black/[0.06] text-[#1d1d1f]'
+                : 'rounded-tl-none border border-[rgba(24,57,47,0.12)] bg-[rgba(24,57,47,0.06)] text-[#1d1d1f]'
             }`}>
               {m.simulated && (
                 <span className="absolute right-2 top-2 text-[8px] font-bold tracking-wider font-mono bg-sky-200 text-sky-900 px-1 py-0.2 rounded">
@@ -197,11 +197,11 @@ export const AiAssistantDock: React.FC<AiAssistantDockProps> = ({
           value={inputMsg}
           onChange={e => setInputMsg(e.target.value)}
           placeholder={dict.assistantPlace || "Ask me about choral structures..."}
-          className="flex-1 p-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-sans"
+          className="apple-input flex-1 !min-h-[40px] !py-2 !text-[13px]"
         />
         <button
           type="submit"
-          className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow cursor-pointer transition flex items-center justify-center shrink-0"
+          className="btn-pill btn-pill-primary !min-h-[40px] !px-3"
         >
           <Send className="w-4 h-4" />
         </button>

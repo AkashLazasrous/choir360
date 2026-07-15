@@ -1,264 +1,283 @@
 import React, { useState } from 'react';
 import {
-  ArrowUpRight, BarChart3, BookOpen, CalendarDays, ChevronDown, Church,
-  Command, IndianRupee, Mic2, Music2, ShieldCheck, Sparkles, Star,
-  Trophy, UsersRound,
+  BarChart3, BookOpen, CalendarDays, ChevronDown, Church,
+  Command, Music2, ShieldCheck, Trophy, UsersRound,
 } from 'lucide-react';
 import { Tab } from '../../types';
 import { Reveal } from '../interactions/Reveal';
 import { CountUp } from '../interactions/CountUp';
-import { MagneticButton } from '../interactions/MagneticButton';
+import { ProductSubnav } from '../interactions/ProductSubnav';
+import { AppleButton } from '../interactions/AppleButton';
+import { SpotlightCard } from '../interactions/SpotlightCard';
 
 interface MarketingLandingProps {
   onNavigate: (tab: Tab) => void;
   parishName?: string;
 }
 
+const SUBNAV_LINKS = [
+  { id: 'design', label: 'Design' },
+  { id: 'modules', label: 'Modules' },
+  { id: 'how-it-works', label: 'How it works' },
+  { id: 'pricing', label: 'Pricing' },
+  { id: 'faq', label: 'FAQ' },
+];
+
 const FEATURES = [
-  { icon: Church, title: 'Masses & Accounts', body: 'Log every liturgy, propose payment shares between singers and instrumentalists, and track collections to the rupee.' },
-  { icon: Music2, title: 'Song Library', body: 'A searchable Tamil hymn library with lyrics, page references, and category filters — including Jebathotta Jeyageethangal.' },
-  { icon: UsersRound, title: 'Member Management', body: 'Self-service registration with admin approval, voice-part rosters, and private contact details kept private.' },
-  { icon: CalendarDays, title: 'Unified Calendar', body: 'Masses, rehearsals, and parish events in one calendar so nobody misses a call time.' },
-  { icon: Trophy, title: 'Attendance & Achievements', body: 'Mark attendance in one tap and celebrate consistency with streaks and badges.' },
-  { icon: Command, title: 'AI Hub', body: 'Draft announcements, suggest hymns for the liturgical season, and answer choir questions with AI assistance.' },
-  { icon: BookOpen, title: 'Daily Readings & Catholic Hub', body: 'Daily gospel readings, Tamil prayers, saints of the day, and the liturgical year at a glance.' },
-  { icon: BarChart3, title: 'Insights', body: 'Choir health scores, attendance trends, and financial summaries for parish reporting.' },
+  { icon: Church, title: 'Masses & Accounts', body: 'Log every liturgy, propose payment shares, and track collections to the rupee.' },
+  { icon: Music2, title: 'Song Library', body: 'Searchable Tamil hymns with lyrics and categories — including Jebathotta Jeyageethangal.' },
+  { icon: UsersRound, title: 'Member Management', body: 'Self-service registration, voice-part rosters, private contacts kept private.' },
+  { icon: CalendarDays, title: 'Unified Calendar', body: 'Masses, rehearsals, and parish events so nobody misses a call time.' },
+  { icon: Trophy, title: 'Attendance', body: 'Mark attendance in one tap. Celebrate consistency with streaks and badges.' },
+  { icon: Command, title: 'AI Hub', body: 'Draft announcements, suggest hymns, answer choir questions.' },
+  { icon: BookOpen, title: 'Catholic Hub', body: 'Daily gospel, Tamil prayers, saints, and the liturgical year.' },
+  { icon: BarChart3, title: 'Insights', body: 'Choir health, attendance trends, and financial summaries.' },
 ];
 
 const STEPS = [
-  { n: '01', title: 'Register your details', body: 'Fill in the member form with your voice part and parish. It takes under two minutes on any phone.' },
-  { n: '02', title: 'Get approved', body: 'Your choir admin reviews and approves your application — you are notified the moment it happens.' },
-  { n: '03', title: 'Sing with everything in one place', body: 'See upcoming masses, rehearsal times, hymn lyrics, and your attendance record from a single dashboard.' },
+  { n: '01', title: 'Register', body: 'Voice part and parish in under two minutes on any phone.' },
+  { n: '02', title: 'Get approved', body: 'Your choir admin reviews — you are notified the moment it happens.' },
+  { n: '03', title: 'Sing', body: 'Masses, rehearsals, lyrics, and attendance from one calm desk.' },
 ];
 
 const FAQS = [
-  { q: 'Is Choir360 free for our parish?', a: 'Yes. Choir360 is free for parish choirs. There are no subscriptions, seat limits, or locked features.' },
-  { q: 'Who can see my personal details?', a: 'Only you and your choir administrators. Contact details are stored separately from the public roster and protected by per-parish security rules.' },
-  { q: 'Does it work on mobile?', a: 'Yes — the whole app is designed mobile-first, with bottom navigation, large touch targets, and offline-friendly song lyrics.' },
-  { q: 'Can we manage money for special masses?', a: 'Yes. Admins can propose amounts for special masses, split shares between singers and instrumentalists, and track what has been received.' },
-  { q: 'What if our choir sings in Tamil and English?', a: 'The song library, prayers, and daily readings support Tamil and English side by side, with phonetic search (type "anbe" to find அன்பே).' },
+  { q: 'Is Choir360 free for our parish?', a: 'Yes. Free for parish choirs — no subscriptions, seat limits, or locked features.' },
+  { q: 'Who can see my personal details?', a: 'Only you and your choir administrators. Contact details are stored separately and protected by per-parish security rules.' },
+  { q: 'Does it work on mobile?', a: 'Yes — mobile-first, with bottom navigation, large touch targets, and offline-friendly lyrics.' },
+  { q: 'Can we manage money for special masses?', a: 'Yes. Propose amounts, split singer and instrumentalist shares, and track what has been received.' },
+  { q: 'Tamil and English together?', a: 'Song library, prayers, and readings support both — with phonetic search (type “anbe” to find அன்பே).' },
 ];
 
 export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, parishName }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
-    <div className="space-y-16 pb-16 animate-fade-in">
+    <div className="font-apple -mx-4 animate-fade-in bg-[#f5f5f7] text-[#1d1d1f] sm:-mx-6 lg:-mx-8">
+      <ProductSubnav
+        title="Choir360"
+        links={SUBNAV_LINKS}
+        ctaLabel="Join"
+        onCta={() => onNavigate('registration')}
+      />
 
-      {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0f2b22] via-[#18392f] to-[#1e4035] text-white shadow-2xl">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
-          <div className="absolute -bottom-32 -right-16 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-200">
-            <Sparkles className="h-3 w-3" /> For parish choirs
-          </span>
-          <h1 className="mt-6 font-serif text-4xl font-bold leading-tight sm:text-5xl">
-            Your choir&apos;s ministry,
-            <br />
-            <span className="text-amber-300">beautifully organised.</span>
+      {/* Hero — Apple: huge product name, short subcopy, pill Buy */}
+      <section className="relative overflow-hidden bg-[#0f2b22] text-[#f5f5f7]">
+        <div className="choir-hero-ambient" aria-hidden />
+        <div className="apple-content relative flex min-h-[min(86svh,780px)] flex-col items-center justify-center px-6 py-20 text-center">
+          <p className="text-[17px] font-semibold tracking-[-0.01em] text-amber-300">Choir360</p>
+          <h1 className="mt-3 max-w-3xl text-[clamp(2.75rem,8vw,5rem)] font-semibold leading-[1.05] tracking-[-0.035em]">
+            Your choir&apos;s ministry.<br className="hidden sm:block" /> Beautifully organised.
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-emerald-100/80">
-            Choir360 brings masses, rehearsals, hymn lyrics, attendance, and accounts
-            into one place — so your choir spends less time coordinating and more time singing.
+          <p className="mx-auto mt-5 max-w-xl text-[19px] font-normal leading-snug tracking-[-0.01em] text-[#a1a1a6]">
+            Masses, rehearsals, hymns, attendance, and accounts —
+            so your parish choir spends less time coordinating and more time singing.
           </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <MagneticButton
-              onClick={() => onNavigate('registration')}
-              className="group flex items-center gap-2 rounded-2xl bg-amber-300 px-7 py-4 text-sm font-bold text-[#18392f] shadow-[0_4px_24px_rgba(251,191,36,0.4)] transition hover:bg-amber-200 hover:shadow-[0_4px_32px_rgba(251,191,36,0.55)] active:scale-95"
-            >
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+            <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
               Join your choir
-              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </MagneticButton>
-            <button
-              onClick={() => onNavigate('song_library')}
-              className="rounded-2xl border border-white/15 bg-white/8 px-7 py-4 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/14 active:scale-95"
-            >
-              Browse the song library
-            </button>
-          </div>
-
-          {/* Hero stats */}
-          <div className="mx-auto mt-12 grid max-w-lg grid-cols-3 gap-4 border-t border-white/10 pt-8">
-            {[
-              { val: 1000, suffix: '+', label: 'Hymns & Songs' },
-              { val: 12, suffix: '', label: 'Ministry Modules' },
-              { val: 5, suffix: '', label: 'Languages' },
-            ].map(({ val, suffix, label }) => (
-              <div key={label}>
-                <p className="font-mono text-2xl font-extrabold text-amber-300">
-                  <CountUp value={val} />{suffix}
-                </p>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-200/60">{label}</p>
-              </div>
-            ))}
+            </AppleButton>
+            <AppleButton variant="link" onClick={() => onNavigate('song_library')} className="!text-[#2997ff]">
+              Browse songs ›
+            </AppleButton>
           </div>
         </div>
       </section>
 
-      {/* ── TRUST STRIP ─────────────────────────────────────────────────────── */}
+      {/* Trust strip */}
       <Reveal>
-        <section className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
-          <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            Per-parish data isolation with Firebase security rules
-          </p>
-          <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-            <Star className="h-4 w-4 text-amber-500" />
-            Built with the Archdiocese of Madras–Mylapore parishes
-          </p>
-          {parishName && (
-            <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <Church className="h-4 w-4 text-emerald-600" />
-              Serving {parishName}
-            </p>
-          )}
-        </section>
-      </Reveal>
-
-      {/* ── PROBLEM → SOLUTION ──────────────────────────────────────────────── */}
-      <Reveal>
-        <section className="mx-auto max-w-5xl">
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Why Choir360</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900">From WhatsApp chaos to one calm desk</h2>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {[
-              { before: 'Mass times buried in group chats', after: 'A calendar every member can check, with the next liturgy always on top.' },
-              { before: 'Photocopied lyric sheets going missing', after: 'A searchable library with lyrics that work on any phone, even mid-mass.' },
-              { before: 'Payment splits worked out on paper', after: 'Automatic singer and instrumentalist shares, with received amounts tracked.' },
-            ].map(({ before, after }, i) => (
-              <Reveal key={before} delay={i * 0.08}>
-                <div className="h-full rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm">
-                  <p className="text-xs font-semibold text-rose-500 line-through decoration-rose-300">{before}</p>
-                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-800">{after}</p>
-                </div>
-              </Reveal>
-            ))}
+        <section className="border-b border-black/5 bg-[#fbfbfd] py-6">
+          <div className="apple-content flex flex-wrap items-center justify-center gap-x-10 gap-y-3 px-6 text-center text-[12px] font-normal text-[#86868b]">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#18392f]" />
+              Per-parish data isolation
+            </span>
+            <span>Archdiocese of Madras–Mylapore</span>
+            {parishName && <span>Serving {parishName}</span>}
           </div>
         </section>
       </Reveal>
 
-      {/* ── FEATURE GRID ────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl">
+      {/* Design — one idea, huge type (Apple section model) */}
+      <section id="design" className="apple-section scroll-mt-28">
         <Reveal>
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Everything included</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900">One platform for the whole ministry</h2>
+          <div className="apple-content text-center">
+            <p className="apple-eyebrow text-[#18392f]">Design</p>
+            <h2 className="apple-display mt-2">
+              From WhatsApp chaos<br />to one calm desk.
+            </h2>
+            <p className="apple-subhead mx-auto mt-5 max-w-2xl">
+              Liturgy times, lyric sheets, and payment splits used to live in group chats and paper.
+              Choir360 brings the whole ministry into one place — clear, fast, and built for parish life.
+            </p>
           </div>
         </Reveal>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ icon: Icon, title, body }, i) => (
-            <Reveal key={title} delay={(i % 4) * 0.06}>
-              <article className="group h-full rounded-2xl border border-slate-200/60 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 transition-transform group-hover:scale-105">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-                <p className="mt-1.5 text-xs leading-5 text-slate-500">{body}</p>
-              </article>
+        <div className="apple-content mt-16 grid gap-4 px-0 sm:grid-cols-3">
+          {[
+            { before: 'Mass times buried in chats', after: 'A calendar every member can check, next liturgy on top.' },
+            { before: 'Photocopied sheets going missing', after: 'Searchable lyrics on any phone — even mid-mass.' },
+            { before: 'Payment splits on paper', after: 'Automatic singer and instrumentalist shares, tracked.' },
+          ].map(({ before, after }, i) => (
+            <Reveal key={before} delay={i * 0.06}>
+              <div className="rounded-[28px] bg-white px-7 py-8 text-left shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                <p className="text-[14px] font-normal text-[#86868b] line-through decoration-[#86868b]/50">{before}</p>
+                <p className="mt-3 text-[19px] font-semibold leading-snug tracking-[-0.02em] text-[#1d1d1f]">{after}</p>
+              </div>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ────────────────────────────────────────────────────── */}
+      {/* Stats — Apple battery-style big numbers */}
       <Reveal>
-        <section className="mx-auto max-w-4xl rounded-[2rem] bg-[#18392f] p-8 text-white sm:p-12">
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300/80">How it works</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold">Singing within minutes</h2>
-          </div>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
-            {STEPS.map(({ n, title, body }, i) => (
-              <Reveal key={n} delay={i * 0.1}>
-                <div>
-                  <p className="font-mono text-3xl font-extrabold text-amber-300/40">{n}</p>
-                  <h3 className="mt-2 text-sm font-bold">{title}</h3>
-                  <p className="mt-1.5 text-xs leading-5 text-emerald-100/70">{body}</p>
+        <section className="apple-section apple-section-dark">
+          <div className="apple-content text-center">
+            <p className="text-[17px] font-semibold text-amber-300">Built for ministry scale</p>
+            <h2 className="apple-headline mt-2">Everything you need. Nothing you don&apos;t.</h2>
+            <div className="mt-16 grid grid-cols-3 gap-6">
+              {[
+                { val: 1000, suffix: '+', label: 'Hymns & songs' },
+                { val: 12, suffix: '', label: 'Ministry modules' },
+                { val: 5, suffix: '', label: 'Languages' },
+              ].map(({ val, suffix, label }) => (
+                <div key={label}>
+                  <p className="text-[clamp(2.5rem,6vw,4rem)] font-semibold tracking-[-0.04em] text-[#f5f5f7]">
+                    <CountUp value={val} />{suffix}
+                  </p>
+                  <p className="mt-2 text-[14px] text-[#a1a1a6]">{label}</p>
                 </div>
-              </Reveal>
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => onNavigate('registration')}
-              className="rounded-2xl bg-amber-300 px-6 py-3 text-sm font-bold text-[#18392f] transition hover:bg-amber-200 active:scale-95"
-            >
-              Start your registration
-            </button>
+              ))}
+            </div>
           </div>
         </section>
       </Reveal>
 
-      {/* ── PRICING (free) ──────────────────────────────────────────────────── */}
-      <Reveal>
-        <section className="mx-auto max-w-2xl rounded-2xl border-2 border-emerald-100 bg-emerald-50/50 p-8 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Pricing</p>
-          <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900">
-            Free. <span className="text-emerald-700">For every parish.</span>
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
-            Choir360 is a ministry tool, not a product. Every module — masses, songs,
-            accounts, AI hub, insights — is included for every choir at no cost.
-          </p>
-          <p className="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500">
-            <IndianRupee className="h-3.5 w-3.5" /> 0 per month, forever
-          </p>
-        </section>
-      </Reveal>
-
-      {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <Reveal>
-        <section className="mx-auto max-w-2xl">
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Questions</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold text-slate-900">Frequently asked</h2>
+      {/* Modules grid */}
+      <section id="modules" className="apple-section scroll-mt-28">
+        <Reveal>
+          <div className="apple-content text-center">
+            <p className="apple-eyebrow text-[#18392f]">Modules</p>
+            <h2 className="apple-headline mt-2">One platform for the whole choir.</h2>
+            <p className="apple-subhead mx-auto mt-4 max-w-xl">
+              Every capability included — free for every parish.
+            </p>
           </div>
-          <div className="mt-8 space-y-2">
-            {FAQS.map(({ q, a }, i) => (
-              <div key={q} className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  aria-expanded={openFaq === i}
-                  className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left text-sm font-bold text-slate-800 transition hover:bg-slate-50"
-                >
-                  {q}
-                  <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === i && (
-                  <p className="border-t border-slate-100 px-5 py-4 text-sm leading-6 text-slate-600">{a}</p>
-                )}
+        </Reveal>
+        <div className="apple-content mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map(({ icon: Icon, title, body }, i) => (
+            <Reveal key={title} delay={(i % 4) * 0.04}>
+              <SpotlightCard className="h-full rounded-[22px] bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-[#18392f]/[0.08] text-[#18392f]">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-[17px] font-semibold tracking-[-0.015em]">{title}</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-[#86868b]">{body}</p>
+              </SpotlightCard>
+            </Reveal>
+          ))}
+        </div>
+        <div className="mt-10 text-center">
+          <AppleButton variant="link" onClick={() => onNavigate('catholic_hub')} className="!text-[#2997ff]">
+            Explore Catholic Hub ›
+          </AppleButton>
+        </div>
+      </section>
+
+      {/* How it works — dark cinematic */}
+      <section id="how-it-works" className="apple-section apple-section-dark scroll-mt-28">
+        <Reveal>
+          <div className="apple-content text-center">
+            <p className="text-[17px] font-semibold text-amber-300">How it works</p>
+            <h2 className="apple-headline mt-2">Singing within minutes.</h2>
+          </div>
+        </Reveal>
+        <div className="apple-content mt-16 grid gap-12 sm:grid-cols-3">
+          {STEPS.map(({ n, title, body }, i) => (
+            <Reveal key={n} delay={i * 0.08}>
+              <div className="text-left sm:text-center">
+                <p className="text-[40px] font-semibold tracking-[-0.04em] text-[#424245]">{n}</p>
+                <h3 className="mt-2 text-[21px] font-semibold tracking-[-0.02em]">{title}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#a1a1a6]">{body}</p>
               </div>
-            ))}
-          </div>
-        </section>
-      </Reveal>
+            </Reveal>
+          ))}
+        </div>
+        <div className="mt-14 text-center">
+          <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
+            Start registration
+          </AppleButton>
+        </div>
+      </section>
 
-      {/* ── FINAL CTA ───────────────────────────────────────────────────────── */}
+      {/* Pricing — Apple "Worth the upgrade? 100%." tone */}
+      <section id="pricing" className="apple-section scroll-mt-28">
+        <Reveal>
+          <div className="apple-content text-center">
+            <p className="apple-eyebrow text-[#18392f]">Pricing</p>
+            <h2 className="apple-display mt-2">
+              Free.<br />For every parish.
+            </h2>
+            <p className="apple-subhead mx-auto mt-5 max-w-lg">
+              A ministry tool, not a product. Masses, songs, accounts, AI hub, insights —
+              included for every choir at no cost.
+            </p>
+            <p className="mt-8 text-[40px] font-semibold tracking-[-0.04em] text-[#1d1d1f]">₹0</p>
+            <p className="mt-1 text-[14px] text-[#86868b]">per month, forever</p>
+            <div className="mt-8">
+              <AppleButton variant="primary" onClick={() => onNavigate('registration')}>
+                Get started
+              </AppleButton>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* FAQ — accordion cards (interaction containers) */}
+      <section id="faq" className="apple-section scroll-mt-28 !pt-0">
+        <Reveal>
+          <div className="apple-content">
+            <div className="text-center">
+              <h2 className="apple-headline">Questions. Answered.</h2>
+            </div>
+            <div className="mx-auto mt-12 max-w-2xl space-y-2">
+              {FAQS.map(({ q, a }, i) => (
+                <div key={q} className="overflow-hidden rounded-[18px] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    aria-expanded={openFaq === i}
+                    className="flex min-h-[56px] w-full items-center justify-between gap-4 px-6 py-4 text-left text-[17px] font-semibold tracking-[-0.015em] text-[#1d1d1f]"
+                  >
+                    {q}
+                    <ChevronDown className={`h-4 w-4 shrink-0 text-[#86868b] transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openFaq === i && (
+                    <p className="border-t border-black/5 px-6 py-4 text-[15px] leading-relaxed text-[#86868b]">{a}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Final CTA band */}
       <Reveal>
-        <section className="mx-auto max-w-4xl rounded-[2rem] bg-gradient-to-br from-amber-300 to-amber-400 p-10 text-center text-[#18392f] shadow-xl">
-          <Mic2 className="mx-auto h-8 w-8" />
-          <h2 className="mt-4 font-serif text-3xl font-bold">Ready to lift your voice?</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[#18392f]/80">
-            Join your parish choir on Choir360 today — registration takes two minutes.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => onNavigate('registration')}
-              className="rounded-2xl bg-[#18392f] px-7 py-3.5 text-sm font-bold text-amber-300 shadow-lg transition hover:bg-[#0f2b22] active:scale-95"
-            >
-              Register as a member
-            </button>
-            <button
-              onClick={() => onNavigate('calendar')}
-              className="rounded-2xl border-2 border-[#18392f]/20 px-7 py-3.5 text-sm font-bold transition hover:bg-[#18392f]/5 active:scale-95"
-            >
-              See the parish calendar
-            </button>
+        <section className="px-6 pb-24">
+          <div className="apple-content overflow-hidden rounded-[28px] bg-[#18392f] px-8 py-16 text-center text-[#f5f5f7] sm:px-12">
+            <h2 className="text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.03em]">
+              Ready to lift your voice?
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-[17px] text-[#a1a1a6]">
+              Join your parish choir on Choir360 — registration takes two minutes.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
+                Register as a member
+              </AppleButton>
+              <AppleButton variant="link" onClick={() => onNavigate('calendar')} className="!text-[#2997ff]">
+                See the calendar ›
+              </AppleButton>
+            </div>
           </div>
         </section>
       </Reveal>

@@ -21,13 +21,13 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({ currentRole, setRole
   const Icon = current.icon;
 
   return (
-    <label className="relative flex items-center gap-2 rounded-xl border border-white/10 bg-white/8 px-3 py-2 text-sm text-white transition hover:bg-white/12">
-      <Icon className="h-4 w-4 text-amber-300" />
+    <label className="relative flex items-center gap-2 rounded-full bg-white/[0.08] px-3 py-1.5 text-[13px] text-[#f5f5f7] transition hover:bg-white/12">
+      <Icon className="h-3.5 w-3.5 text-amber-300" />
       <span className="hidden text-left sm:block">
-        <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">View as</span>
-        <span className="block font-semibold leading-tight">{current.name}</span>
+        <span className="block text-[11px] font-medium text-[#86868b]">View as</span>
+        <span className="block text-[13px] font-semibold leading-tight tracking-[-0.01em]">{current.name}</span>
       </span>
-      <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+      <ChevronDown className="h-3.5 w-3.5 text-[#86868b]" />
       <select
         aria-label="Select active role"
         value={currentRole}
