@@ -26,15 +26,26 @@ interface CloudinaryUploadResponse {
   format?: string;
   resource_type?: 'image' | 'video' | 'raw';
   created_at?: string;
-  /** Pixel dimensions — returned for image uploads */
   width?: number;
   height?: number;
+}
+
+interface SignaturePayload {
+  apiKey: string;
+  timestamp: string | number;
+  signature: string;
+  folder: string;
+  tags: string;
+  context: string;
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const uploadFolder = import.meta.env.VITE_CLOUDINARY_UPLOAD_FOLDER || 'choir360';
+/** Unsigned preset for public registration photos (no Firebase Auth required). */
+const unsignedPreset =
+  import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'choir360_members_unsigned';
 
 // ── URL builder ───────────────────────────────────────────────────────────────
 
@@ -43,37 +54,150 @@ export function buildCloudinaryImageUrl(publicId: string, transformation: string
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transformation}/${publicId}`;
 }
 
-// ---------------------------------------------------------------------------
-// CLIENT-SIDE UPLOAD VALIDATION
-// Re-exported from imageValidation.ts for backward compat — callers that
-// imported validateMediaFile directly from this module continue to work.
-// ---------------------------------------------------------------------------
 export { validateImageFile as validateMediaFile } from '../utils/imageValidation';
 
 function friendlyUploadError(err: unknown): Error {
   const raw = err instanceof Error ? err.message : String(err);
   if (
     raw.includes('auth/admin-restricted-operation') ||
-    raw.includes('auth/operation-not-allowed')
+    raw.includes('auth/operation-not-allowed') ||
+    raw.includes('Missing Firebase ID token')
   ) {
     return new Error(
-      'Photo upload could not start. Sign in if you have an account, or try again in a moment.',
+      'Photo upload is temporarily unavailable. Please try again in a moment, or submit without a custom photo.',
     );
   }
   return err instanceof Error ? err : new Error(raw || 'Upload failed.');
 }
 
-// ── Main upload function ──────────────────────────────────────────────────────
+function toMediaRecord(
+  uploaded: CloudinaryUploadResponse,
+  context: CloudinaryUploadContext,
+): CloudinaryMediaRecord {
+  const uploadedAt = uploaded.created_at || new Date().toISOString();
+  return {
+    id: uploaded.public_id.replace(/[/.]/g, '_'),
+    publicId: uploaded.public_id,
+    secureUrl: uploaded.secure_url,
+    thumbnailUrl: buildCloudinaryImageUrl(
+      uploaded.public_id,
+      'c_fill,w_240,h_240,q_auto,f_auto',
+    ),
+    optimizedUrl: buildCloudinaryImageUrl(uploaded.public_id, 'q_auto,f_auto'),
+    uploadedAt,
+    uploadedByUserId: context.uploadedByUserId,
+    moduleName: context.moduleName,
+    relatedRecordId: context.relatedRecordId,
+    bytes: uploaded.bytes,
+    format: uploaded.format,
+    resourceType: uploaded.resource_type || 'auto',
+    width: uploaded.width,
+    height: uploaded.height,
+    originalFileName: context.originalFileName,
+    mimeType: context.mimeType,
+    sizeBytes: context.sizeBytes ?? uploaded.bytes,
+    ...createRecordMetadata(context.uploadedByUserId, 'active'),
+  };
+}
+
+async function uploadWithSignature(
+  file: File,
+  sig: SignaturePayload,
+): Promise<CloudinaryUploadResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('api_key', sig.apiKey);
+  formData.append('timestamp', String(sig.timestamp));
+  formData.append('signature', sig.signature);
+  formData.append('folder', sig.folder);
+  formData.append('tags', sig.tags);
+  formData.append('context', sig.context);
+
+  const uploadResponse = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+    { method: 'POST', body: formData },
+  );
+
+  if (!uploadResponse.ok) {
+    const errBody = await uploadResponse.json().catch(() => ({}));
+    throw new Error(errBody?.error?.message || 'Cloudinary upload failed.');
+  }
+
+  return (await uploadResponse.json()) as CloudinaryUploadResponse;
+}
 
 /**
- * Uploads a file to Cloudinary using a server-side signed request, then
- * writes the resulting metadata to Firestore when the user is signed in.
+ * Direct Cloudinary upload using an unsigned preset.
+ * Used for public registration when the backend signature API still requires auth
+ * (e.g. Render has not redeployed yet) or Firebase Anonymous Auth is disabled.
+ */
+async function uploadWithUnsignedPreset(
+  file: File,
+  context: CloudinaryUploadContext,
+): Promise<CloudinaryUploadResponse> {
+  if (context.moduleName !== 'members') {
+    throw new Error('Unsigned upload is only available for member profile photos.');
+  }
+
+  // Preset already scopes folder + allowed formats. Only send file + preset
+  // (+ optional tags) so we don't conflict with locked preset settings.
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', unsignedPreset);
+  formData.append('tags', `choir360,members,${context.relatedRecordId}`);
+
+  const uploadResponse = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    { method: 'POST', body: formData },
+  );
+
+  if (!uploadResponse.ok) {
+    const errBody = await uploadResponse.json().catch(() => ({}));
+    throw new Error(
+      errBody?.error?.message ||
+        'Unsigned Cloudinary upload failed. Create preset "choir360_members_unsigned" or redeploy the backend.',
+    );
+  }
+
+  return (await uploadResponse.json()) as CloudinaryUploadResponse;
+}
+
+async function requestSignature(
+  context: CloudinaryUploadContext,
+): Promise<{ ok: true; sig: SignaturePayload } | { ok: false; status: number; error: string }> {
+  const signatureResponse = await apiFetch('/api/cloudinary/signature', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      folder: `${uploadFolder}/${context.moduleName}`,
+      tags: ['choir360', context.moduleName, context.relatedRecordId],
+      context: {
+        moduleName: context.moduleName,
+        relatedRecordId: context.relatedRecordId,
+        uploadedByUserId: context.uploadedByUserId,
+      },
+    }),
+  });
+
+  if (!signatureResponse.ok) {
+    const errorBody = await signatureResponse.json().catch(() => ({}));
+    return {
+      ok: false,
+      status: signatureResponse.status,
+      error: errorBody?.error || 'Could not create a secure Cloudinary upload signature.',
+    };
+  }
+
+  return { ok: true, sig: (await signatureResponse.json()) as SignaturePayload };
+}
+
+/**
+ * Uploads a file to Cloudinary.
  *
- * Public registration uploads do NOT use Firebase Anonymous Auth (disabled /
- * restricted in this project). The signature API allows unauthenticated
- * requests only for the `choir360/members` folder, rate-limited on the server.
- *
- * Firestore write is best-effort for signed-in users with tenant claims.
+ * 1. Prefer signed upload via backend (authenticated or public members folder).
+ * 2. If signature is rejected (old backend requiring Firebase token), fall back
+ *    to unsigned preset for member photos — no Anonymous Auth needed.
+ * 3. Firestore metadata write is best-effort for signed-in non-anonymous users.
  */
 export async function uploadMediaToCloudinary(
   file: File,
@@ -86,82 +210,29 @@ export async function uploadMediaToCloudinary(
   }
 
   try {
-    // ── 1. Get signed upload parameters from the backend ────────────────────
-    // apiFetch attaches a Bearer token when the user is already signed in.
-    // Unauthenticated registration users get a public signature for members/*.
-    const signatureResponse = await apiFetch('/api/cloudinary/signature', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        folder: `${uploadFolder}/${context.moduleName}`,
-        tags: ['choir360', context.moduleName, context.relatedRecordId],
-        context: {
-          moduleName: context.moduleName,
-          relatedRecordId: context.relatedRecordId,
-          uploadedByUserId: context.uploadedByUserId,
-        },
-      }),
-    });
+    let uploaded: CloudinaryUploadResponse | null = null;
 
-    if (!signatureResponse.ok) {
-      const errorBody = await signatureResponse.json().catch(() => ({}));
-      throw new Error(
-        errorBody?.error || 'Could not create a secure Cloudinary upload signature.',
-      );
+    const signed = await requestSignature(context);
+    if (signed.ok) {
+      uploaded = await uploadWithSignature(file, signed.sig);
+    } else {
+      const needsPublicFallback =
+        context.moduleName === 'members' &&
+        (signed.status === 401 ||
+          signed.status === 403 ||
+          /firebase|token|auth/i.test(signed.error));
+
+      if (!needsPublicFallback) {
+        throw new Error(signed.error);
+      }
+
+      // Old Render builds still require a Firebase ID token. Anonymous Auth is
+      // disabled in this project, so use a scoped unsigned Cloudinary preset.
+      uploaded = await uploadWithUnsignedPreset(file, context);
     }
 
-    const sig = await signatureResponse.json();
+    const mediaRecord = toMediaRecord(uploaded, context);
 
-    // ── 2. Upload the file directly to Cloudinary ───────────────────────────
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('api_key', sig.apiKey);
-    formData.append('timestamp', sig.timestamp);
-    formData.append('signature', sig.signature);
-    formData.append('folder', sig.folder);
-    formData.append('tags', sig.tags);
-    formData.append('context', sig.context);
-
-    const uploadResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-      { method: 'POST', body: formData },
-    );
-
-    if (!uploadResponse.ok) {
-      const errBody = await uploadResponse.json().catch(() => ({}));
-      throw new Error(errBody?.error?.message || 'Cloudinary upload failed.');
-    }
-
-    const uploaded = (await uploadResponse.json()) as CloudinaryUploadResponse;
-
-    // ── 3. Build the local media record ─────────────────────────────────────
-    const uploadedAt = uploaded.created_at || new Date().toISOString();
-    const mediaRecord: CloudinaryMediaRecord = {
-      id: uploaded.public_id.replace(/[/.]/g, '_'),
-      publicId: uploaded.public_id,
-      secureUrl: uploaded.secure_url,
-      thumbnailUrl: buildCloudinaryImageUrl(
-        uploaded.public_id,
-        'c_fill,w_240,h_240,q_auto,f_auto',
-      ),
-      optimizedUrl: buildCloudinaryImageUrl(uploaded.public_id, 'q_auto,f_auto'),
-      uploadedAt,
-      uploadedByUserId: context.uploadedByUserId,
-      moduleName: context.moduleName,
-      relatedRecordId: context.relatedRecordId,
-      bytes: uploaded.bytes,
-      format: uploaded.format,
-      resourceType: uploaded.resource_type || 'auto',
-      width: uploaded.width,
-      height: uploaded.height,
-      originalFileName: context.originalFileName,
-      mimeType: context.mimeType,
-      sizeBytes: context.sizeBytes ?? uploaded.bytes,
-      ...createRecordMetadata(context.uploadedByUserId, 'active'),
-    };
-
-    // ── 4. Persist metadata to Firestore (signed-in users only) ─────────────
-    // Skip for public registration — no tenant claims without a real account.
     if (auth?.currentUser && !auth.currentUser.isAnonymous) {
       try {
         await upsertTenantRecord('media', mediaRecord, context.uploadedByUserId);
