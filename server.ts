@@ -204,6 +204,31 @@ async function requireFirebaseAuth(req: express.Request, res: express.Response, 
   }
 }
 
+/**
+ * Attaches `req.user` when a valid Bearer token is present.
+ * Continues without a user when no token is sent (public registration uploads).
+ * Rejects invalid tokens so callers cannot spoof auth.
+ */
+async function optionalFirebaseAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
+
+  if (!token) {
+    return next();
+  }
+
+  if (!admin.apps.length) {
+    return res.status(503).json({ error: "Firebase Admin is not configured on the server." });
+  }
+
+  try {
+    (req as any).user = await admin.auth().verifyIdToken(token);
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Invalid Firebase ID token." });
+  }
+}
+
 function requireAdminRole(req: express.Request, res: express.Response, next: express.NextFunction) {
   const role = (req as any).user?.role;
   if (!["super_admin", "diocese_admin", "parish_admin", "choir_admin"].includes(role)) {
@@ -1699,11 +1724,16 @@ app.get("/api/radio/stream-url", async (_req, res) => {
   return res.json({ streamUrl, artist, title });
 });
 
-app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, res) => {
+app.post(
+  "/api/cloudinary/signature",
+  uploadLimiter,
+  optionalFirebaseAuth,
+  (req, res) => {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   const { folder, tags = [], context = {} } = req.body || {};
+  const authedUser = (req as any).user;
 
   if (!cloudName || !apiKey || !apiSecret) {
     return res.status(501).json({
@@ -1712,8 +1742,21 @@ app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, 
     });
   }
 
-  if (!folder || !(String(folder) === "choir360" || String(folder).startsWith("choir360/"))) {
+  const folderStr = String(folder || "");
+  if (!folderStr || !(folderStr === "choir360" || folderStr.startsWith("choir360/"))) {
     return res.status(400).json({ error: "A scoped choir360 Cloudinary folder is required" });
+  }
+
+  // Public (unauthenticated) uploads are limited to registration member photos.
+  // Signed-in users may request any choir360/* folder.
+  if (!authedUser) {
+    const allowedPublic =
+      folderStr === "choir360/members" || folderStr.startsWith("choir360/members/");
+    if (!allowedPublic) {
+      return res.status(401).json({
+        error: "Sign in to upload media outside member registration photos.",
+      });
+    }
   }
 
   if (!Array.isArray(tags) || tags.length > 12) {
@@ -1729,7 +1772,7 @@ app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, 
 
   const paramsToSign: Record<string, string | number> = {
     context: contextString,
-    folder,
+    folder: folderStr,
     tags: tagString,
     timestamp,
   };
@@ -1748,7 +1791,7 @@ app.post("/api/cloudinary/signature", uploadLimiter, requireFirebaseAuth, (req, 
     cloudName,
     apiKey,
     timestamp,
-    folder,
+    folder: folderStr,
     tags: tagString,
     context: contextString,
     signature,

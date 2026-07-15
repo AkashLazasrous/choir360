@@ -22,6 +22,20 @@ interface RegistrationFormProps {
   onSubmitted: (message: string) => void;
 }
 
+const Field: React.FC<{ label: string; required?: boolean; className?: string; children: React.ReactNode }> = ({
+  label,
+  required,
+  className = '',
+  children,
+}) => (
+  <div className={`space-y-1.5 ${className}`}>
+    <label className="apple-label block">
+      {label}{required ? ' *' : ''}
+    </label>
+    {children}
+  </div>
+);
+
 /** Public member registration form plus the approval-workflow explainer card. */
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   currentLang,
@@ -34,9 +48,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const { selectedParish } = useParish();
   const parishes = activeParishes();
 
-  /** Avatar URL selected from the dropdown — used as fallback if no Cloudinary upload */
   const [photoUrl, setPhotoUrl] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150');
-  /** Set once the ProfilePhotoUpload component completes a successful Cloudinary upload */
   const [cloudinaryRecord, setCloudinaryRecord] = useState<CloudinaryMediaRecord | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -64,8 +76,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
 
     const memberId = `M${String(members.length + 1).padStart(3, '0')}`;
-    // If the user completed a Cloudinary upload via ProfilePhotoUpload, use that URL.
-    // Otherwise fall back to the avatar dropdown selection.
     const finalPhotoUrl =
       cloudinaryRecord?.optimizedUrl ||
       cloudinaryRecord?.secureUrl ||
@@ -101,7 +111,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     onAddMember(newMember);
     onSubmitted(`Success! ${firstName}'s registration is submitted as PENDING. Admins will review it soon.`);
 
-    // Clear form
     setFirstName('');
     setLastName('');
     setMobile('');
@@ -116,139 +125,135 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="registration-form-view">
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="lg:col-span-2 apple-card font-apple p-6 space-y-6" id="member-form">
-        <h3 className="font-sans font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">Contact & Background details</h3>
+    <div className="font-apple grid grid-cols-1 gap-6 lg:grid-cols-3" id="registration-form-view">
+      <form onSubmit={handleSubmit} className="apple-card space-y-7 p-6 lg:col-span-2 lg:p-8" id="member-form">
+        <div>
+          <h3 className="apple-title">Contact & background</h3>
+          <p className="apple-caption mt-1">Tell us how to reach you and where you sing.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">First Name *</label>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Field label="First name" required>
             <input
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="e.g. Antony / Maria"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
               required
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Last Name *</label>
+          <Field label="Last name" required>
             <input
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="e.g. Susairaj"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
               required
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Gender</label>
+          <Field label="Gender">
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-select"
             >
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
             </select>
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Date of Birth</label>
+          <Field label="Date of birth">
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Mobile Number *</label>
+          <Field label="Mobile number" required>
             <input
               type="tel"
               value={mobile}
               onChange={(e) => setMobile(e.target.value)}
               placeholder="e.g. 9876543210"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
               required
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">WhatsApp Number</label>
+          <Field label="WhatsApp number">
             <input
               type="tel"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
               placeholder="Leave empty to use mobile number"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1 md:col-span-2">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Email Address *</label>
+          <Field label="Email address" required className="md:col-span-2">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. antony@gmail.com"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
               required
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1 md:col-span-2">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Postal Address</label>
+          <Field label="Postal address" className="md:col-span-2">
             <textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Your full residence address..."
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 h-16"
+              className="apple-textarea !min-h-[4.5rem]"
             />
-          </div>
+          </Field>
         </div>
 
-        <h3 className="font-sans font-bold text-slate-900 text-sm pt-4 pb-2 border-b border-slate-100">Liturgical Choral Configuration</h3>
+        <hr className="apple-divider" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Parish <span className="text-red-500">*</span></label>
+        <div>
+          <h3 className="apple-title">Choir configuration</h3>
+          <p className="apple-caption mt-1">Parish, role, and voice part.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Field label="Parish" required>
             <select
               value={parish}
               onChange={(e) => setParish(e.target.value)}
               required
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+              className="apple-select"
             >
               <option value="">— Select parish —</option>
               {parishes.map((p) => (
                 <option key={p.id} value={p.displayName}>{p.displayName}</option>
               ))}
             </select>
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Choir Name</label>
+          <Field label="Choir name">
             <input
               type="text"
               value={choirName}
               onChange={(e) => setChoirName(e.target.value)}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Member Primary Role</label>
+          <Field label="Primary role">
             <select
               value={memberType}
               onChange={(e) => setMemberType(e.target.value as MemberType)}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-select"
             >
               <option value="Singer">Singer (Vocalist)</option>
               <option value="Keyboard">Keyboard (Harmonium/Organ)</option>
@@ -260,61 +265,57 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <option value="Drums">Drums & Timpani</option>
               <option value="Other">Other supporting instrument</option>
             </select>
-          </div>
+          </Field>
 
           {memberType === 'Singer' ? (
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase">{dict.voiceType} *</label>
+            <Field label={`${dict.voiceType}`} required>
               <select
                 value={voiceType}
                 onChange={(e) => setVoiceType(e.target.value as VoiceType)}
-                className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-emerald-50 font-bold text-emerald-800"
+                className="apple-select"
               >
                 <option value="Soprano">Soprano (Melodic Alto High)</option>
                 <option value="Alto">Alto (Harmonic Mid Range)</option>
                 <option value="Tenor">Tenor (Male Clear Register)</option>
                 <option value="Bass">Bass (Male Resonant Base)</option>
               </select>
-            </div>
+            </Field>
           ) : (
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-400 uppercase">Voice Register (Not applicable)</label>
+            <Field label="Voice register">
               <input
                 type="text"
                 disabled
-                value="None (Instrumentalist Mode active)"
-                className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-100 bg-slate-50 text-slate-400 cur-not-allowed"
+                value="Not applicable (instrumentalist)"
+                className="apple-input opacity-60"
               />
-            </div>
+            </Field>
           )}
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Years of Music Experience</label>
+          <Field label="Years of experience">
             <input
               type="number"
               min="0"
               value={experience}
               onChange={(e) => setExperience(Number(e.target.value))}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Profile Photo Selection (Mock URL)</label>
+          <Field label="Fallback avatar">
             <select
               value={photoUrl}
               onChange={(e) => setPhotoUrl(e.target.value)}
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="apple-select"
             >
-              <option value="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150">Avatar 1 (Male Secular)</option>
-              <option value="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150">Avatar 2 (Female Solemn)</option>
-              <option value="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150">Avatar 3 (Male Parishioner)</option>
-              <option value="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150">Avatar 4 (Female Cantor)</option>
+              <option value="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150">Avatar 1</option>
+              <option value="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150">Avatar 2</option>
+              <option value="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150">Avatar 3</option>
+              <option value="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150">Avatar 4</option>
             </select>
-          </div>
+          </Field>
 
-          <div className="space-y-1 md:col-span-2 rounded-xl border border-dashed border-emerald-200 bg-emerald-50/40 p-3">
-            <label className="text-[11px] font-bold text-emerald-800 uppercase">Profile Photo Upload</label>
+          <div className="apple-inset space-y-3 p-4 md:col-span-2">
+            <p className="apple-label">Profile photo</p>
             <ProfilePhotoUpload
               memberId={`M${String(members.length + 1).padStart(3, '0')}`}
               uploadedByUserId="public_user"
@@ -323,130 +324,129 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             />
           </div>
 
-          <div className="space-y-1 md:col-span-2">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Special Skills & Talents</label>
+          <Field label="Special skills & talents" className="md:col-span-2">
             <input
               type="text"
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g. sight-reading gregorian chants, tempo moderation"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200"
+              placeholder="e.g. sight-reading, tempo moderation"
+              className="apple-input"
             />
-          </div>
+          </Field>
         </div>
 
-        <h3 className="font-sans font-bold text-slate-900 text-sm pt-4 pb-2 border-b border-slate-100">Emergency Guardianship contact</h3>
+        <hr className="apple-divider" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Full Name</label>
+        <div>
+          <h3 className="apple-title">Emergency contact</h3>
+          <p className="apple-caption mt-1">Someone we can reach if needed.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Field label="Full name">
             <input
               type="text"
               value={emergencyName}
               onChange={(e) => setEmergencyName(e.target.value)}
-              placeholder="Guardian e.g. Susairaj S"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200"
+              placeholder="e.g. Susairaj S"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Relationship</label>
+          <Field label="Relationship">
             <input
               type="text"
               value={emergencyRelation}
               onChange={(e) => setEmergencyRelation(e.target.value)}
               placeholder="e.g. Father / Spouse"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200"
+              className="apple-input"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-500 uppercase">Contact Phone</label>
+          <Field label="Contact phone">
             <input
               type="tel"
               value={emergencyPhone}
               onChange={(e) => setEmergencyPhone(e.target.value)}
               placeholder="e.g. 9444000000"
-              className="w-full text-xs px-3 py-3 min-h-[44px] rounded-lg border border-slate-200"
+              className="apple-input"
             />
-          </div>
+          </Field>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 flex justify-end">
+        <div className="flex justify-end border-t border-black/[0.06] pt-5">
           <button
             type="submit"
             id="submit-registration-btn"
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer transition shadow"
+            className="btn-pill btn-pill-primary !text-[15px]"
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" />
             {dict.submitApproval}
           </button>
         </div>
       </form>
 
-      {/* Workflow Status Roadmap Card (Educational) */}
-      <div className="space-y-6" id="workflow-steps-road">
-        <div className="bg-slate-900 text-slate-100 p-6 rounded-2xl border border-slate-800 space-y-4 shadow-md">
-          <h4 className="font-sans font-bold text-sm text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5" />
-            Choral Approval Workflow
-          </h4>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Our strict liturgical validation process filters and generates secure identities for each active choral vocalist and organist.
-          </p>
+      <div className="space-y-4" id="workflow-steps-road">
+        <div className="apple-hero-soft space-y-4 p-6">
+          <div className="choir-hero-ambient" aria-hidden />
+          <div className="relative">
+            <h4 className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.02em] text-[#f5f5f7]">
+              <ClipboardCheck className="h-5 w-5 text-amber-300" />
+              Approval workflow
+            </h4>
+            <p className="mt-2 text-[13px] leading-relaxed text-[#a1a1a6]">
+              Each application is reviewed before you join the parish choir roster.
+            </p>
 
-          <div className="space-y-4 pt-2">
-            {/* Pending */}
-            <div className="flex items-start gap-3">
-              <div className="bg-amber-950/80 border border-amber-800 text-amber-400 p-1.5 rounded-lg shrink-0 mt-0.5">
-                <Clock className="w-3.5 h-3.5" />
+            <div className="mt-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-300/15 text-amber-300">
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <h5 className="text-[15px] font-semibold text-[#f5f5f7]">1. {dict.pendingApproval}</h5>
+                  <p className="mt-0.5 text-[12px] text-[#86868b]">Submitted and waiting for parish review.</p>
+                </div>
               </div>
-              <div>
-                <h5 className="text-xs font-bold text-white">1. {dict.pendingApproval}</h5>
-                <p className="text-[10px] text-slate-400">Roster details submitted. Pending parish council & choir master details verification.</p>
-              </div>
-            </div>
 
-            {/* Correction requested */}
-            <div className="flex items-start gap-3">
-              <div className="bg-rose-950/80 border border-rose-800 text-rose-400 p-1.5 rounded-lg shrink-0 mt-0.5">
-                <AlertTriangle className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(255,69,58,0.18)] text-[#ff453a]">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <h5 className="text-[15px] font-semibold text-[#f5f5f7]">2. {dict.correctionReq}</h5>
+                  <p className="mt-0.5 text-[12px] text-[#86868b]">Updates needed before approval.</p>
+                </div>
               </div>
-              <div>
-                <h5 className="text-xs font-bold text-white">2. {dict.correctionReq}</h5>
-                <p className="text-[10px] text-slate-400">Requires correction (e.g. blurry ID photo, unclear church parish code, incorrect voice octave register).</p>
-              </div>
-            </div>
 
-            {/* Approved */}
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-950/80 border border-blue-800 text-blue-400 p-1.5 rounded-lg shrink-0 mt-0.5">
-                <CheckCircle className="w-3.5 h-3.5" />
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(41,151,255,0.18)] text-[#2997ff]">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <h5 className="text-[15px] font-semibold text-[#f5f5f7]">3. Approved</h5>
+                  <p className="mt-0.5 text-[12px] text-[#86868b]">Ready for rehearsals and mass scheduling.</p>
+                </div>
               </div>
-              <div>
-                <h5 className="text-xs font-bold text-white">3. Approved & Scheduled</h5>
-                <p className="text-[10px] text-slate-400">Validated by choir director. Ready for official mass share calculations and weekly rehearsals.</p>
-              </div>
-            </div>
 
-            {/* Active Member */}
-            <div className="flex items-start gap-3">
-              <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 p-1.5 rounded-lg shrink-0 mt-0.5">
-                <Award className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <h5 className="text-xs font-bold text-white">4. {dict.activeMember}</h5>
-                <p className="text-[10px] text-slate-400">Active member. Enjoys absolute voting rights, specialized tours, custom uniforms, and digital earnings share.</p>
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-300/15 text-amber-300">
+                  <Award className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <h5 className="text-[15px] font-semibold text-[#f5f5f7]">4. {dict.activeMember}</h5>
+                  <p className="mt-0.5 text-[12px] text-[#86868b]">Full member access on Choir360.</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {isAdmin && (
-          <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-2xl space-y-2">
-            <h5 className="text-xs font-bold text-slate-700">Admin review access</h5>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Use the <strong>Approval Desk</strong> tab to approve, request a correction, reject, or update choir registrations.
+          <div className="apple-card space-y-2 p-5">
+            <h5 className="text-[15px] font-semibold text-[#1d1d1f]">Admin review</h5>
+            <p className="text-[13px] leading-relaxed text-[#86868b]">
+              Use the <strong className="font-medium text-[#1d1d1f]">Approval Desk</strong> tab to approve, request a correction, or reject registrations.
             </p>
           </div>
         )}

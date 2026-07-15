@@ -348,7 +348,7 @@
   width: 100%;
   min-height: 44px;
   padding: 0.7rem 0.95rem;
-  border-radius: var(--choir-radius-md);
+  border-radius: 12px; /* Apple Settings fill — not a stadium pill */
   border: 1px solid transparent;
   background: var(--choir-fill-secondary);
   color: var(--choir-ink);
@@ -358,6 +358,12 @@
   outline: none;
   transition: background-color 0.15s var(--choir-ease), border-color 0.15s var(--choir-ease),
     box-shadow 0.15s var(--choir-ease);
+}
+
+.apple-skin .apple-input,
+.apple-skin .apple-select,
+.apple-skin .apple-textarea {
+  border-radius: 12px !important;
 }
 
 .apple-input::placeholder,
@@ -886,7 +892,7 @@
 .apple-skin input:not([type="checkbox"]):not([type="radio"]),
 .apple-skin select,
 .apple-skin textarea {
-  border-radius: var(--choir-radius-md) !important;
+  border-radius: 12px !important;
 }
 
 .apple-skin input:not([type="checkbox"]):not([type="radio"]):focus,

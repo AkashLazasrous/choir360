@@ -174,9 +174,8 @@ function AppInner() {
   // demoRole only applies when Firebase is NOT configured (pure demo mode).
   const effectiveRole: Role = authState.isConfigured ? authState.effectiveRole : demoRole;
   const guard = useRoleGuard(effectiveRole);
-  // Anonymous users (signed in only for Cloudinary uploads) must NOT trigger
-  // Firestore listeners — they have no tenant JWT claims, so every collection
-  // read returns "Missing or insufficient permissions".
+  // Only real (non-anonymous) accounts get live Firestore sync. Anonymous
+  // sessions are ignored if any leftover ones exist from older clients.
   const syncEnabled = Boolean(authState.user && !authState.user.isAnonymous);
 
   const { records: members, isLive: membersLive, syncError: membersSyncError, actions: memberSync } =
