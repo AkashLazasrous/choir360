@@ -86,7 +86,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     service: "choir360-backend",
     // Bump when Cloudinary public-signature support changes (ops probe).
-    build: "member-register-parish-scope-v2",
+    build: "member-roster-api-v3",
     timestamp: new Date().toISOString(),
   });
 });
@@ -660,6 +660,170 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
     });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to sync role." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: parish member roster (Admin SDK — bypasses client listener/rule races)
+// ---------------------------------------------------------------------------
+app.get("/api/members/roster", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const tokenParishId = String((req as any).user?.parishId || "").trim();
+    const requestedParishId = typeof req.query.parishId === "string" ? req.query.parishId.trim() : "";
+    const parishId = requestedParishId || tokenParishId;
+    if (!parishId || !findParishById(parishId)) {
+      return res.status(400).json({ error: "Valid parishId is required." });
+    }
+
+    // Parish admins may only read their claimed parish; elevated roles can pass parishId.
+    const role = String((req as any).user?.role || "");
+    const elevated = ["super_admin", "diocese_admin"].includes(role);
+    if (!elevated && tokenParishId && parishId !== tokenParishId) {
+      return res.status(403).json({
+        error: "Switch your active parish to view that roster.",
+        parishId: tokenParishId,
+      });
+    }
+
+    const db = admin.firestore();
+    const membersSnap = await db.collection("members").where("parishId", "==", parishId).limit(500).get();
+    const members = await Promise.all(membersSnap.docs.map(async (doc) => {
+      const pub = doc.data() || {};
+      const privSnap = await db.collection("privateMembers").doc(doc.id).get();
+      const priv = privSnap.exists ? privSnap.data() || {} : {};
+      return {
+        id: doc.id,
+        photoUrl: pub.photoUrl || "",
+        firstName: pub.firstName || "",
+        lastName: pub.lastName || "",
+        gender: pub.gender || "",
+        parish: pub.parish || pub.parishName || "",
+        choirName: pub.choirName || "",
+        voiceType: pub.voiceType || "None",
+        memberType: pub.memberType || "Singer",
+        skills: pub.skills || "",
+        experience: Number(pub.experience || 0),
+        status: pub.status || "Pending",
+        joiningDate: pub.joiningDate || "",
+        correctionNote: pub.correctionNote || "",
+        attendanceRate: Number(pub.attendanceRate || 0),
+        dob: priv.dob || "",
+        mobile: priv.mobile || "",
+        mobileNormalized: priv.mobileNormalized || "",
+        whatsapp: priv.whatsapp || "",
+        email: priv.email || "",
+        address: priv.address || "",
+        emergencyContact: priv.emergencyContact || { name: "", relationship: "", phone: "" },
+        archdioceseId: pub.archdioceseId,
+        parishName: pub.parishName,
+        tenantId: pub.tenantId,
+        parishId: pub.parishId,
+        choirId: pub.choirId,
+        createdAt: pub.createdAt,
+        updatedAt: pub.updatedAt,
+      };
+    }));
+
+    const pending = members.filter((m) => m.status === "Pending" || m.status === "Correction Requested").length;
+
+    // Surface Pending apps saved under a different parishId (legacy client fallback).
+    let pendingElsewhere: Array<Record<string, unknown>> = [];
+    try {
+      const elsewhereSnap = await db.collection("members").where("status", "==", "Pending").limit(200).get();
+      pendingElsewhere = await Promise.all(
+        elsewhereSnap.docs
+          .filter((doc) => String(doc.data()?.parishId || "") !== parishId)
+          .map(async (doc) => {
+            const pub = doc.data() || {};
+            const privSnap = await db.collection("privateMembers").doc(doc.id).get();
+            const priv = privSnap.exists ? privSnap.data() || {} : {};
+            return {
+              id: doc.id,
+              firstName: pub.firstName || "",
+              lastName: pub.lastName || "",
+              email: priv.email || "",
+              mobile: priv.mobile || "",
+              parish: pub.parish || pub.parishName || "",
+              parishId: pub.parishId || "",
+              status: pub.status || "Pending",
+              photoUrl: pub.photoUrl || "",
+            };
+          }),
+      );
+    } catch (elsewhereError: any) {
+      console.warn("[Members] pending-elsewhere scan skipped:", elsewhereError?.message || elsewhereError);
+    }
+
+    console.log(`[Members] roster parish=${parishId} total=${members.length} pending=${pending} elsewhere=${pendingElsewhere.length}`);
+    return res.json({
+      ok: true,
+      parishId,
+      members,
+      pending,
+      total: members.length,
+      pendingElsewhere,
+    });
+  } catch (error: any) {
+    console.error("[Members] roster failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Failed to load member roster." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: adopt a Pending member into the admin's active parish
+// ---------------------------------------------------------------------------
+app.post("/api/members/:id/adopt", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const memberId = requireString(req.params.id, "id", 128);
+    const tokenParishId = String((req as any).user?.parishId || "").trim();
+    const parishId = typeof req.body?.parishId === "string" && req.body.parishId.trim()
+      ? req.body.parishId.trim()
+      : tokenParishId;
+    if (!parishId || !findParishById(parishId)) {
+      return res.status(400).json({ error: "Valid parishId is required." });
+    }
+
+    const tenant = tenantFromParishId(parishId);
+    const db = admin.firestore();
+    const memberRef = db.collection("members").doc(memberId);
+    const privateRef = db.collection("privateMembers").doc(memberId);
+    const snap = await memberRef.get();
+    if (!snap.exists) {
+      return res.status(404).json({ error: "Member not found." });
+    }
+
+    const now = new Date().toISOString();
+    const adminUid = (req as any).user.uid as string;
+    const patch = {
+      ...tenant,
+      parish: tenant.parishName,
+      updatedAt: now,
+      updatedBy: adminUid,
+    };
+
+    const batch = db.batch();
+    batch.set(memberRef, patch, { merge: true });
+    batch.set(privateRef, { ...tenant, status: snap.data()?.status || "Pending", updatedAt: now, updatedBy: adminUid }, { merge: true });
+    await batch.commit();
+
+    try {
+      await setMemberClaims(memberId, { role: "public_user", ...tenant });
+    } catch {
+      // Auth user may be missing for legacy M00x ids
+    }
+
+    console.log(`[Members] adopt id=${memberId} → parish=${parishId}`);
+    return res.json({ ok: true, parishId, memberId });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "Failed to adopt member." });
   }
 });
 

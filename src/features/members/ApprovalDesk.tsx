@@ -1,10 +1,25 @@
-import React, { useMemo } from 'react';
-import { ClipboardCheck, MapPin, PhoneCall, UserPlus } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ClipboardCheck, MapPin, PhoneCall, RefreshCw, UserPlus } from 'lucide-react';
 import { Member, MemberStatus } from '../../types';
 import { ApprovalControls } from './ApprovalControls';
+import { apiFetch } from '../../services/apiClient';
+import { auth } from '../../services/firebase';
+
+interface ElsewherePending {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobile: string;
+  parish: string;
+  parishId: string;
+  status: string;
+  photoUrl: string;
+}
 
 interface ApprovalDeskProps {
   members: Member[];
+  parishId?: string;
   parishName?: string;
   onUpdateMemberStatus: (memberId: string, status: MemberStatus, note?: string) => void;
 }
@@ -18,12 +33,54 @@ const STATUS_ORDER: Record<string, number> = {
   Rejected: 5,
 };
 
-/** Admin approval desk: applicant cards with status badges and approval actions. */
+/** Admin approval desk: loads roster from API (reliable) + merges live listener data. */
 export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
-  members,
+  members: liveMembers,
+  parishId,
   parishName,
   onUpdateMemberStatus,
 }) => {
+  const [apiMembers, setApiMembers] = useState<Member[] | null>(null);
+  const [elsewhere, setElsewhere] = useState<ElsewherePending[]>([]);
+  const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [adoptingId, setAdoptingId] = useState('');
+
+  const loadRoster = useCallback(async () => {
+    if (!parishId) return;
+    setLoading(true);
+    setLoadError('');
+    try {
+      const fetchRoster = () => apiFetch(`/api/members/roster?parishId=${encodeURIComponent(parishId)}`);
+      let response = await fetchRoster();
+      if (response.status === 403) {
+        // Align JWT parish with the desk parish, then retry once.
+        await apiFetch('/api/auth/set-parish', {
+          method: 'POST',
+          body: JSON.stringify({ parishId }),
+        });
+        await auth?.currentUser?.getIdToken(true);
+        response = await fetchRoster();
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || `Could not load applications (${response.status}).`);
+      }
+      setApiMembers(Array.isArray(payload.members) ? (payload.members as Member[]) : []);
+      setElsewhere(Array.isArray(payload.pendingElsewhere) ? (payload.pendingElsewhere as ElsewherePending[]) : []);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Could not load applications.');
+    } finally {
+      setLoading(false);
+    }
+  }, [parishId]);
+
+  useEffect(() => {
+    void loadRoster();
+  }, [loadRoster]);
+
+  const members = apiMembers ?? liveMembers;
+
   const sorted = useMemo(
     () =>
       [...members].sort((a, b) => {
@@ -33,6 +90,32 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
       }),
     [members],
   );
+
+  const handleStatus = (memberId: string, status: MemberStatus, note?: string) => {
+    onUpdateMemberStatus(memberId, status, note);
+    window.setTimeout(() => void loadRoster(), 800);
+  };
+
+  const adoptMember = async (memberId: string) => {
+    if (!parishId) return;
+    setAdoptingId(memberId);
+    setLoadError('');
+    try {
+      const response = await apiFetch(`/api/members/${encodeURIComponent(memberId)}/adopt`, {
+        method: 'POST',
+        body: JSON.stringify({ parishId }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Could not move application to this parish.');
+      }
+      await loadRoster();
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Could not move application.');
+    } finally {
+      setAdoptingId('');
+    }
+  };
 
   return (
     <div className="apple-card font-apple space-y-5 p-6" id="admin-dashboard-view">
@@ -52,7 +135,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="apple-badge-gold">
             {members.filter((m) => m.status === 'Pending').length} Pending
           </span>
@@ -62,19 +145,77 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
           <span className="apple-badge-danger">
             {members.filter((m) => m.status === 'Rejected').length} Rejected
           </span>
+          <button
+            type="button"
+            onClick={() => void loadRoster()}
+            disabled={loading || !parishId}
+            className="btn-pill btn-pill-secondary !min-h-[36px] !px-3 !text-[12px]"
+            title="Refresh applications"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
       </div>
 
-      {members.length === 0 ? (
+      {loadError && (
+        <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700">{loadError}</p>
+      )}
+
+      {elsewhere.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+          <p className="text-[14px] font-semibold text-amber-950">
+            Pending applications under another parish ({elsewhere.length})
+          </p>
+          <p className="mt-1 text-[12px] text-amber-900/80">
+            These were saved with a different parish id (often from an earlier bug). Move them into this parish to approve.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {elsewhere.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-white px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-[#1d1d1f]">
+                    {item.firstName} {item.lastName}
+                  </p>
+                  <p className="truncate text-[12px] text-[#86868b]">
+                    {item.email || item.mobile || item.id} · listed as {item.parish || item.parishId || 'unknown parish'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={adoptingId === item.id}
+                  onClick={() => void adoptMember(item.id)}
+                  className="btn-pill btn-pill-primary !min-h-[40px] !px-3 !text-[13px]"
+                >
+                  {adoptingId === item.id ? 'Moving…' : 'Move to this parish'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {loading && apiMembers === null ? (
+        <div className="apple-empty">
+          <RefreshCw className="h-8 w-8 animate-spin text-[#18392f]" />
+          <h3>Loading applications…</h3>
+          <p>Fetching the parish roster from the server.</p>
+        </div>
+      ) : members.length === 0 ? (
         <div className="apple-empty">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.06]">
             <UserPlus className="h-6 w-6 text-[#86868b]" />
           </div>
           <h3>No applications for this parish</h3>
           <p>
-            {parishName
-              ? `Select the same parish in the sidebar that was chosen on the registration form (${parishName}), then reopen Approval Desk.`
-              : 'Select a parish in the sidebar, then open Approval Desk again.'}
+            {elsewhere.length > 0
+              ? 'Use Move to this parish above for pending apps found under another parish id.'
+              : parishName
+                ? `No member records found for ${parishName}. Ask the applicant to confirm the parish on their form, then tap Refresh.`
+                : 'Select a parish in the sidebar, then open Approval Desk again.'}
           </p>
         </div>
       ) : (
@@ -106,7 +247,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
                       {m.firstName} {m.lastName}
                     </p>
                     <p className="font-mono text-[10px] text-slate-400">
-                      {m.id} · {m.gender}
+                      {m.email || m.id} · {m.gender}
                     </p>
                   </div>
                   <span className={`shrink-0 ${statusCfg.badge}`}>{m.status}</span>
@@ -141,7 +282,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
                 )}
 
                 <div className="border-t border-white/60 pt-2">
-                  <ApprovalControls member={m} members={members} onUpdateMemberStatus={onUpdateMemberStatus} />
+                  <ApprovalControls member={m} members={members} onUpdateMemberStatus={handleStatus} />
                 </div>
               </div>
             );

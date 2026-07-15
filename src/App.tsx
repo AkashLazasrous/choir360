@@ -154,17 +154,10 @@ function AppInner() {
     return () => { cancelled = true; };
   }, [authState.user?.uid, authState.claims.parishId, selectedParish?.id, isAdminViewer]);
 
-  // Prefer UI-selected parish for admins (Approval Desk scope). Members keep JWT scope.
+  // Firestore listeners MUST use JWT parish scope. Querying a different parishId
+  // than the token causes "insufficient permissions" and Sync stuck on Connecting.
+  // Admins switch parish via set-parish (above); once claims match, UI + query align.
   const tenantContext: TenantContext = React.useMemo(() => {
-    if (selectedParish && (isAdminViewer || !authState.claims.parishId)) {
-      return {
-        archdioceseId: selectedParish.archdioceseId,
-        parishName: selectedParish.displayName,
-        tenantId: archdioceseId ?? ARCHDIOCESE_ID,
-        parishId: selectedParish.id,
-        choirId: `${selectedParish.id}-choir`,
-      };
-    }
     if (authState.claims.parishId && authState.claims.tenantId && authState.claims.choirId) {
       const claimedParish = findParishById(authState.claims.parishId);
       return {
@@ -175,15 +168,17 @@ function AppInner() {
         choirId: authState.claims.choirId,
       };
     }
-    if (!selectedParish) return DEFAULT_TENANT_CONTEXT;
-    return {
-      archdioceseId: selectedParish.archdioceseId,
-      parishName: selectedParish.displayName,
-      tenantId: archdioceseId ?? ARCHDIOCESE_ID,
-      parishId: selectedParish.id,
-      choirId: `${selectedParish.id}-choir`,
-    };
-  }, [authState.claims, selectedParish, archdioceseId, isAdminViewer]);
+    if (selectedParish) {
+      return {
+        archdioceseId: selectedParish.archdioceseId,
+        parishName: selectedParish.displayName,
+        tenantId: archdioceseId ?? ARCHDIOCESE_ID,
+        parishId: selectedParish.id,
+        choirId: `${selectedParish.id}-choir`,
+      };
+    }
+    return DEFAULT_TENANT_CONTEXT;
+  }, [authState.claims, selectedParish, archdioceseId]);
 
 
   const [currentLang, setCurrentLang] = useState<Language>('en');
@@ -497,8 +492,12 @@ function AppInner() {
                     ? 'Guest mode'
                     : 'Sign in required'}
                 </span>
-                {membersSyncError && !membersSyncError.includes('insufficient permissions') && (
-                  <span className="block truncate text-rose-600">{membersSyncError}</span>
+                {membersSyncError && (
+                  <span className="block truncate text-rose-600" title={membersSyncError}>
+                    {membersSyncError.includes('insufficient permissions')
+                      ? 'Sync blocked — refreshing parish access…'
+                      : membersSyncError}
+                  </span>
                 )}
               </>
             }
@@ -630,6 +629,7 @@ function AppInner() {
             )}
             {activeTab === 'registration' && (
               <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
+                parishId={tenantContext.parishId}
                 parishName={tenantContext.parishName}
                 onPersistMember={async (member) => {
                   // Prefer the parish chosen on the form (display name → id).
