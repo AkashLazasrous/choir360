@@ -126,7 +126,10 @@ service cloud.firestore {
         && request.resource.data.choirId   == resource.data.choirId;
     }
 
-    /** Soft-deleted records are invisible. */
+    /** Soft-deleted records are invisible (use only on get()/single-doc paths).
+     *  Do NOT use on collection list queries unless the query also constrains
+     *  status — otherwise Firestore returns permission-denied and clients
+     *  stick on "Sync: Connecting…". Soft-deletes are filtered in the client. */
     function notDeleted() {
       return resource.data.status != 'deleted';
     }
@@ -136,12 +139,12 @@ service cloud.firestore {
     // =========================================================================
     match /members/{memberId} {
 
-      // Any signed-in user in the same tenant can read non-deleted member records.
-      // Sensitive fields (dob, mobile, address) should be split to privateMembers
-      // in a future migration; for now Firestore rules protect the collection.
+      // Tenant-scoped list/get. Soft-deleted rows (status == 'deleted') are
+      // filtered client-side in listenToTenantCollection — notDeleted() cannot
+      // be used here because member workflow also uses the status field
+      // (Pending / Active Member / …) and list queries do not constrain it.
       allow read: if signedIn()
-        && existingInTenant()
-        && notDeleted();
+        && existingInTenant();
 
       // Public registration: any signed-in user can create their own record.
       // Status is always forced to 'Pending' by the application; Firestore

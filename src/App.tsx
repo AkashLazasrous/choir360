@@ -495,7 +495,7 @@ function AppInner() {
                 {membersSyncError && (
                   <span className="block truncate text-rose-600" title={membersSyncError}>
                     {membersSyncError.includes('insufficient permissions')
-                      ? 'Sync blocked — refreshing parish access…'
+                      ? 'Sync blocked by security rules — redeploy firestore rules or sign out/in'
                       : membersSyncError}
                   </span>
                 )}
