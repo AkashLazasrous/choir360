@@ -9,18 +9,18 @@ import {
   Clock,
   Send,
 } from 'lucide-react';
-import { Member, VoiceType, MemberType, Language } from '../../types';
+import { VoiceType, MemberType, Language } from '../../types';
 import type { CloudinaryMediaRecord } from '../../types';
 import { MULTILINGUAL_DICTIONARY } from '../../data/mockData';
 import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { useParish } from '../parish/ParishContext';
-import { activeParishes } from '../../data/madrasMylaporeParishes';
+import { activeParishes, findParishById } from '../../data/madrasMylaporeParishes';
+import { apiFetch } from '../../services/apiClient';
+import { dobToPassword } from '../../utils/memberAuth';
 
 interface RegistrationFormProps {
   currentLang: Language;
   isAdmin: boolean;
-  members: Member[];
-  onAddMember: (member: Member) => void;
   onSubmitted: (message: string) => void;
 }
 
@@ -50,8 +50,6 @@ const Field: React.FC<{ label: string; required?: boolean; className?: string; c
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   currentLang,
   isAdmin,
-  members,
-  onAddMember,
   onSubmitted,
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
@@ -68,7 +66,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
-  const [parish, setParish] = useState(() => selectedParish?.displayName ?? '');
+  const [parishId, setParishId] = useState(() => selectedParish?.id ?? '');
   const [choirName, setChoirName] = useState(() => selectedParish ? `${selectedParish.parishName} Choir` : '');
   const [voiceType, setVoiceType] = useState<VoiceType>('Soprano');
   const [memberType, setMemberType] = useState<MemberType>('Singer');
@@ -78,62 +76,90 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [emergencyRelation, setEmergencyRelation] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [step, setStep] = useState<RegStep>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const dobPasswordHint = (() => {
+    try {
+      return dobToPassword(dob);
+    } catch {
+      return 'DDMMYYYY';
+    }
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !mobile || !email) {
-      alert("Please fill in all mandatory fields: First Name, Last Name, Mobile, and Email.");
+    setFormError('');
+    if (!firstName || !lastName || !mobile || !email || !parishId || !dob) {
+      setFormError('Please fill in all mandatory fields: name, mobile, email, date of birth, and parish.');
       return;
     }
 
-    const memberId = `M${String(members.length + 1).padStart(3, '0')}`;
+    const parish = findParishById(parishId);
+    if (!parish) {
+      setFormError('Select a valid parish.');
+      return;
+    }
+
     const finalPhotoUrl =
       cloudinaryRecord?.optimizedUrl ||
       cloudinaryRecord?.secureUrl ||
       photoUrl;
 
-    const newMember: Member = {
-      id: memberId,
-      photoUrl: finalPhotoUrl,
-      firstName,
-      lastName,
-      gender,
-      dob,
-      mobile,
-      whatsapp: whatsapp || mobile,
-      email,
-      address,
-      parish,
-      choirName,
-      voiceType: memberType === 'Singer' ? voiceType : 'None',
-      memberType,
-      skills,
-      experience: Number(experience),
-      emergencyContact: {
-        name: emergencyName || 'Guardian',
-        relationship: emergencyRelation || 'Family',
-        phone: emergencyPhone || mobile
-      },
-      status: 'Pending',
-      joiningDate: new Date().toISOString().split('T')[0],
-      attendanceRate: 0
-    };
+    setIsSubmitting(true);
+    try {
+      const response = await apiFetch('/api/members/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          gender,
+          dob,
+          mobile,
+          whatsapp: whatsapp || mobile,
+          email,
+          address,
+          parishId,
+          choirName: choirName || `${parish.parishName} Choir`,
+          voiceType: memberType === 'Singer' ? voiceType : 'None',
+          memberType,
+          skills,
+          experience: Number(experience),
+          photoUrl: finalPhotoUrl,
+          emergencyContact: {
+            name: emergencyName || 'Guardian',
+            relationship: emergencyRelation || 'Family',
+            phone: emergencyPhone || mobile,
+          },
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Registration failed. Please try again.');
+      }
 
-    onAddMember(newMember);
-    onSubmitted(`Success! ${firstName}'s registration is submitted as PENDING. Admins will review it soon.`);
+      onSubmitted(
+        payload?.message
+          || `Success! ${firstName}'s registration is pending parish approval. After approval, sign in with email or mobile and DOB password ${dobPasswordHint}.`,
+      );
 
-    setFirstName('');
-    setLastName('');
-    setMobile('');
-    setWhatsapp('');
-    setEmail('');
-    setAddress('');
-    setSkills('');
-    setCloudinaryRecord(null);
-    setEmergencyName('');
-    setEmergencyRelation('');
-    setEmergencyPhone('');
-    setStep(1);
+      setFirstName('');
+      setLastName('');
+      setMobile('');
+      setWhatsapp('');
+      setEmail('');
+      setAddress('');
+      setSkills('');
+      setCloudinaryRecord(null);
+      setEmergencyName('');
+      setEmergencyRelation('');
+      setEmergencyPhone('');
+      setStep(1);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Registration failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const goNext = () => setStep((s) => (s < 3 ? ((s + 1) as RegStep) : s));
@@ -207,13 +233,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </select>
           </Field>
 
-          <Field label="Date of birth">
+          <Field label="Date of birth" required>
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
               className="apple-input"
+              required
             />
+            <p className="mt-1 text-[12px] text-[#86868b]">
+              After approval, this becomes your login password as <span className="font-semibold text-[#18392f]">{dobPasswordHint}</span> (DDMMYYYY).
+            </p>
           </Field>
 
           <Field label="Mobile number" required>
@@ -270,14 +300,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="Parish" required>
             <select
-              value={parish}
-              onChange={(e) => setParish(e.target.value)}
+              value={parishId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setParishId(nextId);
+                const next = findParishById(nextId);
+                if (next) setChoirName(`${next.parishName} Choir`);
+              }}
               required
               className="apple-select"
             >
               <option value="">— Select parish —</option>
               {parishes.map((p) => (
-                <option key={p.id} value={p.displayName}>{p.displayName}</option>
+                <option key={p.id} value={p.id}>{p.displayName}</option>
               ))}
             </select>
           </Field>
@@ -378,7 +413,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
         <div className="apple-inset space-y-3 p-4">
           <ProfilePhotoUpload
-            memberId={`M${String(members.length + 1).padStart(3, '0')}`}
+            memberId={email.trim() ? `pending-${email.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 'pending-registration'}
             uploadedByUserId="public_user"
             currentPhotoUrl={cloudinaryRecord?.optimizedUrl || cloudinaryRecord?.secureUrl || photoUrl}
             onUploadComplete={(record) => setCloudinaryRecord(record)}
@@ -426,12 +461,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </>
         )}
 
+        {formError && (
+          <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700">{formError}</p>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-5">
           {step > 1 ? (
             <button
               type="button"
               onClick={goBack}
               className="btn-pill btn-pill-secondary !min-h-[44px]"
+              disabled={isSubmitting}
             >
               <ChevronLeft className="h-4 w-4" />
               Back
@@ -453,10 +493,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <button
               type="submit"
               id="submit-registration-btn"
+              disabled={isSubmitting}
               className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
             >
               <Send className="h-4 w-4" />
-              {dict.submitApproval}
+              {isSubmitting ? 'Submitting...' : dict.submitApproval}
             </button>
           )}
         </div>

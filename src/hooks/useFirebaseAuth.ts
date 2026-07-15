@@ -22,7 +22,13 @@ export interface AuthClaims {
 
 export function resolveAuthRole(claims: AuthClaims, user: User | null): Role {
   if (!user) return 'public_user';
-  return claims.role ?? 'choir_member';
+  return claims.role ?? 'public_user';
+}
+
+export interface SignInResult {
+  role?: Role;
+  pendingApproval?: boolean;
+  message?: string;
 }
 
 const ROLE_HIERARCHY: Role[] = [
@@ -101,21 +107,42 @@ export function useFirebaseAuth() {
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identifier: string, password: string): Promise<SignInResult> => {
     if (!auth) throw new Error('Firebase Auth is not configured.');
     setAuthError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Auto-sync role claims: server checks ADMIN_EMAILS and sets choir_admin or choir_member.
-      // Non-fatal — a backend outage should never block sign-in.
+      const resolveRes = await apiFetch('/api/auth/resolve-login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier: identifier.trim() }),
+      });
+      const resolveData = await resolveRes.json().catch(() => ({}));
+      if (!resolveRes.ok || !resolveData?.email) {
+        const message = resolveData?.error || 'No member found for that email or mobile number.';
+        setAuthError(message);
+        throw new Error(message);
+      }
+
+      await signInWithEmailAndPassword(auth, resolveData.email as string, password);
+
+      // Sync claims from member status / admin allow-list. Non-fatal on outage.
       try {
-        await apiFetch('/api/auth/sync-role', { method: 'POST' });
+        const syncRes = await apiFetch('/api/auth/sync-role', { method: 'POST' });
+        const syncData = await syncRes.json().catch(() => ({}));
         await auth.currentUser?.getIdToken(true);
+        if (auth.currentUser) {
+          const token = await auth.currentUser.getIdTokenResult(true);
+          setClaims(token.claims as AuthClaims);
+        }
+        return {
+          role: syncData?.role as Role | undefined,
+          pendingApproval: Boolean(syncData?.pendingApproval),
+          message: typeof syncData?.message === 'string' ? syncData.message : undefined,
+        };
       } catch {
-        // swallow sync errors
+        return {};
       }
     } catch (error) {
-      setAuthError(getFriendlyAuthError(error, 'Sign in failed. Please try again.'));
+      setAuthError((prev) => prev || getFriendlyAuthError(error, 'Sign in failed. Please try again.'));
       throw error;
     }
   };

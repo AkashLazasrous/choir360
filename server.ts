@@ -7,6 +7,8 @@ import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
 import dotenv from "dotenv";
 import { stripSongSiteChrome, isSongChromeLine } from "./src/utils/songLyricsClean";
+import { findParishById } from "./src/data/madrasMylaporeParishes";
+import { dobToPassword, looksLikeEmail, normalizeMobile } from "./src/utils/memberAuth";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -84,7 +86,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     service: "choir360-backend",
     // Bump when Cloudinary public-signature support changes (ops probe).
-    build: "cloudinary-public-signature-v1",
+    build: "member-register-dob-login-v1",
     timestamp: new Date().toISOString(),
   });
 });
@@ -125,6 +127,22 @@ const ensureSyncLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   message: { error: "Category sync rate limit reached. Please try again in a minute." },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 8,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many registration attempts. Please wait a moment." },
+});
+
+const loginResolveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please wait a moment." },
 });
 
 // Per-user AI limiter: prevents a single authenticated account from
@@ -250,6 +268,38 @@ function requireString(value: unknown, field: string, maxLength = 500) {
   return value.trim();
 }
 
+type ParishClaims = {
+  role: string;
+  archdioceseId: string;
+  parishName: string;
+  tenantId: string;
+  parishId: string;
+  choirId: string;
+};
+
+function tenantFromParishId(parishId: string): Omit<ParishClaims, "role"> {
+  const parish = findParishById(parishId);
+  if (!parish) {
+    throw new Error("Unknown parish. Select a parish from the list.");
+  }
+  return {
+    archdioceseId: parish.archdioceseId,
+    parishName: parish.displayName,
+    tenantId: parish.archdioceseId,
+    parishId: parish.id,
+    choirId: `${parish.id}-choir`,
+  };
+}
+
+function isActiveMemberStatus(status: unknown): boolean {
+  return status === "Active Member" || status === "Admin";
+}
+
+async function setMemberClaims(uid: string, claims: ParishClaims) {
+  await admin.auth().setCustomUserClaims(uid, claims);
+  return claims;
+}
+
 // ---------------------------------------------------------------------------
 // ONE-TIME ADMIN BOOTSTRAP
 // Solves the chicken-and-egg problem of granting the very first super_admin:
@@ -297,11 +347,214 @@ app.post("/api/admin/bootstrap-super-admin", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// MEMBER REGISTRATION (public) — creates Auth user + Pending parish records
+// Password is DOB as DDMMYYYY. Portal access is granted only after approval.
+// ---------------------------------------------------------------------------
+app.post("/api/members/register", registerLimiter, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const firstName = requireString(req.body?.firstName, "firstName", 80);
+    const lastName = requireString(req.body?.lastName, "lastName", 80);
+    const gender = requireString(req.body?.gender, "gender", 40);
+    const dob = requireString(req.body?.dob, "dob", 32);
+    const mobileRaw = requireString(req.body?.mobile, "mobile", 20);
+    const email = requireString(req.body?.email, "email", 200).toLowerCase();
+    const parishId = requireString(req.body?.parishId, "parishId", 200);
+    const address = typeof req.body?.address === "string" ? req.body.address.trim().slice(0, 500) : "";
+    const whatsappRaw = typeof req.body?.whatsapp === "string" ? req.body.whatsapp.trim() : "";
+    const choirName = typeof req.body?.choirName === "string" ? req.body.choirName.trim().slice(0, 120) : "";
+    const voiceType = typeof req.body?.voiceType === "string" ? req.body.voiceType.trim().slice(0, 40) : "None";
+    const memberType = typeof req.body?.memberType === "string" ? req.body.memberType.trim().slice(0, 40) : "Singer";
+    const skills = typeof req.body?.skills === "string" ? req.body.skills.trim().slice(0, 300) : "";
+    const photoUrl = typeof req.body?.photoUrl === "string" ? req.body.photoUrl.trim().slice(0, 500) : "";
+    const experience = Number(req.body?.experience ?? 0);
+    const emergencyName = typeof req.body?.emergencyContact?.name === "string"
+      ? req.body.emergencyContact.name.trim().slice(0, 80) : "Guardian";
+    const emergencyRelation = typeof req.body?.emergencyContact?.relationship === "string"
+      ? req.body.emergencyContact.relationship.trim().slice(0, 80) : "Family";
+    const emergencyPhone = typeof req.body?.emergencyContact?.phone === "string"
+      ? req.body.emergencyContact.phone.trim().slice(0, 20) : mobileRaw;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: "Enter a valid email address." });
+    }
+
+    let password: string;
+    try {
+      password = dobToPassword(dob);
+    } catch (error: any) {
+      return res.status(400).json({ error: error?.message || "Invalid date of birth." });
+    }
+
+    const mobile = normalizeMobile(mobileRaw);
+    if (mobile.length < 8 || mobile.length > 15) {
+      return res.status(400).json({ error: "Enter a valid mobile number." });
+    }
+
+    const tenant = tenantFromParishId(parishId);
+    const db = admin.firestore();
+
+    try {
+      await admin.auth().getUserByEmail(email);
+      return res.status(409).json({ error: "An account already exists for this email. Sign in instead." });
+    } catch (error: any) {
+      if (error?.code !== "auth/user-not-found") {
+        throw error;
+      }
+    }
+
+    const mobileDup = await db.collection("privateMembers")
+      .where("mobileNormalized", "==", mobile)
+      .limit(1)
+      .get();
+    if (!mobileDup.empty) {
+      return res.status(409).json({ error: "A member is already registered with this mobile number." });
+    }
+
+    const displayName = `${firstName} ${lastName}`.trim();
+    const userRecord = await admin.auth().createUser({
+      email,
+      password,
+      displayName,
+      emailVerified: false,
+    });
+    const uid = userRecord.uid;
+    const now = new Date().toISOString();
+    const joiningDate = now.slice(0, 10);
+
+    const publicMember = {
+      id: uid,
+      photoUrl: photoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+      firstName,
+      lastName,
+      gender,
+      parish: tenant.parishName,
+      choirName: choirName || `${tenant.parishName} Choir`,
+      voiceType: memberType === "Singer" ? voiceType : "None",
+      memberType,
+      skills,
+      experience: Number.isFinite(experience) ? Math.max(0, Math.min(70, experience)) : 0,
+      status: "Pending",
+      joiningDate,
+      attendanceRate: 0,
+      ...tenant,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: uid,
+      updatedBy: uid,
+      deletedAt: null,
+      deletedBy: null,
+    };
+
+    const privateMember = {
+      id: uid,
+      dob,
+      mobile: mobileRaw.trim(),
+      mobileNormalized: mobile,
+      whatsapp: (whatsappRaw || mobileRaw).trim(),
+      email,
+      address,
+      emergencyContact: {
+        name: emergencyName || "Guardian",
+        relationship: emergencyRelation || "Family",
+        phone: normalizeMobile(emergencyPhone) ? emergencyPhone.trim() : mobileRaw.trim(),
+      },
+      ...tenant,
+      status: "Pending",
+      createdAt: now,
+      updatedAt: now,
+      createdBy: uid,
+      updatedBy: uid,
+      deletedAt: null,
+      deletedBy: null,
+    };
+
+    try {
+      const batch = db.batch();
+      batch.set(db.collection("members").doc(uid), publicMember);
+      batch.set(db.collection("privateMembers").doc(uid), privateMember);
+      await batch.commit();
+    } catch (writeError) {
+      await admin.auth().deleteUser(uid).catch(() => undefined);
+      throw writeError;
+    }
+
+    await setMemberClaims(uid, { role: "public_user", ...tenant });
+
+    console.log(`[Auth] register: uid=${uid} email=${email} parish=${tenant.parishId} → Pending`);
+    return res.status(201).json({
+      ok: true,
+      uid,
+      status: "Pending",
+      message: "Registration submitted for parish admin approval. After approval, sign in with your email or mobile and date of birth (DDMMYYYY).",
+    });
+  } catch (error: any) {
+    console.error("[Auth] register failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Registration failed." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// RESOLVE LOGIN — email or mobile → Auth email (no PII beyond email)
+// ---------------------------------------------------------------------------
+app.post("/api/auth/resolve-login", loginResolveLimiter, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const identifier = requireString(req.body?.identifier, "identifier", 200);
+
+    if (looksLikeEmail(identifier)) {
+      return res.json({ email: identifier.toLowerCase() });
+    }
+
+    const mobile = normalizeMobile(identifier);
+    if (mobile.length < 8) {
+      return res.status(400).json({ error: "Enter a valid email or mobile number." });
+    }
+
+    const snap = await admin.firestore()
+      .collection("privateMembers")
+      .where("mobileNormalized", "==", mobile)
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      // Fallback: some older records may only store raw mobile digits
+      const rawSnap = await admin.firestore()
+        .collection("privateMembers")
+        .where("mobile", "==", identifier.trim())
+        .limit(1)
+        .get();
+      if (rawSnap.empty) {
+        return res.status(404).json({ error: "No member found for that email or mobile number." });
+      }
+      const email = String(rawSnap.docs[0].data()?.email || "").toLowerCase().trim();
+      if (!email) {
+        return res.status(404).json({ error: "No member found for that email or mobile number." });
+      }
+      return res.json({ email });
+    }
+
+    const email = String(snap.docs[0].data()?.email || "").toLowerCase().trim();
+    if (!email) {
+      return res.status(404).json({ error: "No member found for that email or mobile number." });
+    }
+    return res.json({ email });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "Could not resolve login." });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // AUTO-SYNC ROLE CLAIMS
-// Called automatically after sign-in. If the user's email is listed in the
-// ADMIN_EMAILS env var (comma-separated), they receive choir_admin claims.
-// Everyone else receives choir_member claims.
-// No secret or manual step required — just sign in with the right email.
+// Admins (ADMIN_EMAILS) → parish_admin.
+// Members → choir_member only when members/{uid}.status is Active Member/Admin.
+// Otherwise → public_user (pending / rejected / no record).
 // ---------------------------------------------------------------------------
 app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
   try {
@@ -309,7 +562,7 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
     }
 
-    const uid   = (req as any).user.uid;
+    const uid = (req as any).user.uid;
     const email = ((req as any).user.email || "").toLowerCase().trim();
 
     const adminEmails = (process.env.ADMIN_EMAILS || "")
@@ -321,23 +574,140 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       "stjosephschoirambattur@gmail.com",
     ]);
 
-    const role = parishAdminEmails.has(email)
-      ? "parish_admin"
-      : "choir_member";
+    if (parishAdminEmails.has(email)) {
+      const tenantId = process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "madras-mylapore";
+      const parishId = process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
+      const choirId = process.env.VITE_DEFAULT_CHOIR_ID || process.env.DEFAULT_CHOIR_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir";
+      const archdioceseId = process.env.VITE_DEFAULT_ARCHDIOCESE_ID || process.env.DEFAULT_ARCHDIOCESE_ID || tenantId;
+      const parishName = process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT";
+      const claims = { role: "parish_admin", archdioceseId, parishName, tenantId, parishId, choirId };
+      await setMemberClaims(uid, claims);
+      console.log(`[Auth] sync-role: uid=${uid} email=${email} → parish_admin`);
+      return res.json({ ok: true, role: "parish_admin", claims, pendingApproval: false });
+    }
 
-    const tenantId = process.env.VITE_DEFAULT_TENANT_ID || process.env.DEFAULT_TENANT_ID || "madras-mylapore";
-    const parishId = process.env.VITE_DEFAULT_PARISH_ID || process.env.DEFAULT_PARISH_ID || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
-    const choirId  = process.env.VITE_DEFAULT_CHOIR_ID  || process.env.DEFAULT_CHOIR_ID  || "church-of-sts-joseph-the-worker-philip-ambattur-ot-choir";
-    const archdioceseId = process.env.VITE_DEFAULT_ARCHDIOCESE_ID || process.env.DEFAULT_ARCHDIOCESE_ID || tenantId;
-    const parishName = process.env.VITE_DEFAULT_PARISH_NAME || process.env.DEFAULT_PARISH_NAME || "Church of Sts Joseph the Worker & Philip - Ambattur OT";
+    const memberSnap = await admin.firestore().collection("members").doc(uid).get();
+    const member = memberSnap.data();
 
-    await admin.auth().setCustomUserClaims(uid, { role, archdioceseId, parishName, tenantId, parishId, choirId });
+    if (member && isActiveMemberStatus(member.status)) {
+      const claims: ParishClaims = {
+        role: "choir_member",
+        archdioceseId: String(member.archdioceseId || "madras-mylapore"),
+        parishName: String(member.parishName || member.parish || ""),
+        tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
+        parishId: String(member.parishId || ""),
+        choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
+      };
+      await setMemberClaims(uid, claims);
+      console.log(`[Auth] sync-role: uid=${uid} email=${email} → choir_member parish=${claims.parishId}`);
+      return res.json({ ok: true, role: "choir_member", claims, pendingApproval: false });
+    }
 
-    console.log(`[Auth] sync-role: uid=${uid} email=${email} → role=${role} tenant=${tenantId}/${parishId}`);
+    const tenant = member?.parishId
+      ? {
+          archdioceseId: String(member.archdioceseId || "madras-mylapore"),
+          parishName: String(member.parishName || member.parish || ""),
+          tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
+          parishId: String(member.parishId),
+          choirId: String(member.choirId || `${member.parishId}-choir`),
+        }
+      : tenantFromParishId(
+          process.env.VITE_DEFAULT_PARISH_ID
+            || process.env.DEFAULT_PARISH_ID
+            || "church-of-sts-joseph-the-worker-philip-ambattur-ot",
+        );
 
-    return res.json({ ok: true, role, claims: { role, archdioceseId, parishName, tenantId, parishId, choirId } });
+    const claims = { role: "public_user", ...tenant };
+    await setMemberClaims(uid, claims);
+    const pendingApproval = member?.status === "Pending" || member?.status === "Correction Requested";
+    console.log(`[Auth] sync-role: uid=${uid} email=${email} → public_user status=${member?.status ?? "none"}`);
+    return res.json({
+      ok: true,
+      role: "public_user",
+      claims,
+      pendingApproval,
+      memberStatus: member?.status ?? null,
+      message: pendingApproval
+        ? "Your registration is awaiting parish admin approval."
+        : member
+          ? "Your account does not have active member access yet."
+          : "No member registration found for this account.",
+    });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to sync role." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: update member status + elevate/demote Auth claims
+// ---------------------------------------------------------------------------
+app.post("/api/members/:id/status", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const memberId = requireString(req.params.id, "id", 128);
+    const status = requireString(req.body?.status, "status", 40);
+    const note = typeof req.body?.note === "string" ? req.body.note.trim().slice(0, 500) : "";
+    const allowed = new Set([
+      "Pending",
+      "Correction Requested",
+      "Approved",
+      "Active Member",
+      "Rejected",
+      "Admin",
+    ]);
+    if (!allowed.has(status)) {
+      return res.status(400).json({ error: "Invalid member status." });
+    }
+
+    const db = admin.firestore();
+    const memberRef = db.collection("members").doc(memberId);
+    const privateRef = db.collection("privateMembers").doc(memberId);
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      return res.status(404).json({ error: "Member not found." });
+    }
+
+    const now = new Date().toISOString();
+    const adminUid = (req as any).user.uid as string;
+    const patch = {
+      status,
+      correctionNote: note,
+      updatedAt: now,
+      updatedBy: adminUid,
+    };
+
+    const batch = db.batch();
+    batch.set(memberRef, patch, { merge: true });
+    batch.set(privateRef, { status, updatedAt: now, updatedBy: adminUid }, { merge: true });
+    await batch.commit();
+
+    const member = { ...memberSnap.data(), ...patch } as Record<string, unknown>;
+    const tenant = {
+      archdioceseId: String(member.archdioceseId || "madras-mylapore"),
+      parishName: String(member.parishName || member.parish || ""),
+      tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
+      parishId: String(member.parishId || ""),
+      choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
+    };
+
+    let role = "public_user";
+    if (isActiveMemberStatus(status)) {
+      role = "choir_member";
+    }
+    try {
+      await setMemberClaims(memberId, { role, ...tenant });
+    } catch (claimError: any) {
+      // Member doc may use legacy M00x ids without an Auth user
+      console.warn(`[Auth] status claims skipped for ${memberId}:`, claimError?.message || claimError);
+    }
+
+    console.log(`[Auth] member status: id=${memberId} → ${status} role=${role}`);
+    return res.json({ ok: true, status, role });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "Failed to update member status." });
   }
 });
 

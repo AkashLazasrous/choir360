@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, LogOut, ShieldCheck } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Role } from '../types';
+import type { SignInResult } from '../hooks/useFirebaseAuth';
 
 interface AuthPanelProps {
   user: User | null;
   isConfigured: boolean;
   authError: string | null;
   effectiveRole: Role;
-  onSignIn: (email: string, password: string) => Promise<void>;
-  onCreateAccount: (email: string, password: string, displayName: string) => Promise<void>;
+  onSignIn: (identifier: string, password: string) => Promise<SignInResult | void>;
   onLogout: () => Promise<void>;
   onRefreshToken: () => Promise<void>;
   onOpenRegistration?: () => void;
@@ -21,51 +21,35 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
   authError,
   effectiveRole,
   onSignIn,
-  onCreateAccount,
   onLogout,
   onOpenRegistration,
 }) => {
-  const [mode, setMode] = useState<'signin' | 'create'>('signin');
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [localError, setLocalError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLocalError('');
-    if (mode === 'create' && password !== confirmPassword) {
-      setLocalError('Passwords do not match.');
-      return;
-    }
+    setInfoMessage('');
     setIsSubmitting(true);
     try {
-      if (mode === 'signin') {
-        await onSignIn(email, password);
-      } else {
-        const displayName = [firstName, lastName].filter(Boolean).join(' ').trim();
-        await onCreateAccount(email, password, displayName);
-        onOpenRegistration?.();
-      }
+      const result = await onSignIn(identifier.trim(), password);
       setPassword('');
-      setConfirmPassword('');
+      if (result?.pendingApproval || result?.role === 'public_user') {
+        setInfoMessage(
+          result.message
+            || 'Signed in. Your registration is awaiting parish admin approval before portal access.',
+        );
+      }
+    } catch {
+      // authError / local errors surface below
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const switchMode = () => {
-    setMode(mode === 'signin' ? 'create' : 'signin');
-    setPassword('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-    setLocalError('');
   };
 
   if (!isConfigured) {
@@ -90,6 +74,11 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
             </p>
           </div>
         </div>
+        {effectiveRole === 'public_user' && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[12px] font-medium text-amber-900">
+            Awaiting parish admin approval. You can browse public pages; member portal unlocks after approval.
+          </p>
+        )}
         <button
           type="button"
           onClick={() => void onLogout()}
@@ -103,50 +92,30 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="apple-card font-apple p-5">
+    <form onSubmit={(e) => void handleSubmit(e)} className="apple-card font-apple p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
-            {mode === 'signin' ? 'Sign in' : 'Create account'}
-          </p>
+          <p className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Sign in</p>
           <p className="mt-0.5 text-[12px] text-[#86868b]">
-            {mode === 'signin' ? 'Use your registered choir email' : 'Create login, then complete member form'}
+            Email or mobile · password = date of birth (DDMMYYYY)
           </p>
         </div>
-        <button
-          type="button"
-          onClick={switchMode}
-          className="btn-pill-link !text-[13px]"
-        >
-          {mode === 'signin' ? 'Create account' : 'Sign in'}
-        </button>
+        {onOpenRegistration && (
+          <button
+            type="button"
+            onClick={onOpenRegistration}
+            className="btn-pill-link !text-[13px]"
+          >
+            Register
+          </button>
+        )}
       </div>
-      {mode === 'create' && (
-        <div className="mb-2 grid grid-cols-2 gap-2">
-          <input
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-            placeholder="First name"
-            autoComplete="given-name"
-            className="apple-input !text-[15px]"
-            required
-          />
-          <input
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-            placeholder="Last name"
-            autoComplete="family-name"
-            className="apple-input !text-[15px]"
-            required
-          />
-        </div>
-      )}
       <input
-        type="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder="Registered email address"
-        autoComplete="email"
+        type="text"
+        value={identifier}
+        onChange={(event) => setIdentifier(event.target.value)}
+        placeholder="Email or mobile number"
+        autoComplete="username"
         className="apple-input mb-2 !text-[15px]"
         required
       />
@@ -155,9 +124,9 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="Password"
-          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-          minLength={mode === 'create' ? 8 : undefined}
+          placeholder="DOB as DDMMYYYY (e.g. 01012000)"
+          autoComplete="current-password"
+          inputMode="numeric"
           className="apple-input !pr-12 !text-[15px]"
           required
         />
@@ -171,40 +140,28 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
-      {mode === 'create' && (
-        <div className="relative mb-2">
-          <input
-            type={showConfirmPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Confirm password"
-            autoComplete="new-password"
-            minLength={8}
-            className="apple-input !pr-12 !text-[15px]"
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword((value) => !value)}
-            className="absolute right-1.5 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#18392f] hover:bg-black/[0.04]"
-            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-            title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-          >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-      )}
       {(localError || authError) && (
         <p className="mb-2 text-[13px] font-medium text-[#d70015]">{localError || authError}</p>
+      )}
+      {infoMessage && (
+        <p className="mb-2 text-[13px] font-medium text-amber-800">{infoMessage}</p>
       )}
       <button
         type="submit"
         disabled={isSubmitting}
         className="btn-pill btn-pill-primary mt-1 w-full !text-[15px]"
       >
-        {mode === 'signin' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-        {isSubmitting ? 'Working...' : mode === 'signin' ? 'Sign in' : 'Create account'}
+        <LogIn className="h-4 w-4" />
+        {isSubmitting ? 'Signing in...' : 'Sign in'}
       </button>
+      {onOpenRegistration && (
+        <p className="mt-3 text-center text-[12px] text-[#86868b]">
+          New to the choir?{' '}
+          <button type="button" onClick={onOpenRegistration} className="font-semibold text-[#18392f] underline-offset-2 hover:underline">
+            Submit registration
+          </button>
+        </p>
+      )}
     </form>
   );
 };

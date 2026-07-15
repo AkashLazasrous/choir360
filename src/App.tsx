@@ -22,6 +22,7 @@ import { PageTransition } from './components/interactions/PageTransition';
 import { ParishProvider } from './features/parish/ParishContext';
 import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
+import { apiFetch } from './services/apiClient';
 
 
 const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
@@ -303,21 +304,32 @@ function AppInner() {
   const handleUpdateMemberStatus = (memberId: string, status: MemberStatus, note?: string) => {
     if (!guard.isAdmin) return;
     const previousStatus = members.find((m) => m.id === memberId)?.status;
-    void memberSync.patch(memberId, { status, correctionNote: note ?? '' }, authState.user?.uid).then((result) => {
-      if (!result.ok) {
-        showToast({ tone: 'error', message: result.error ?? 'Could not update member status.' });
-      } else {
+    void (async () => {
+      try {
+        const response = await apiFetch(`/api/members/${encodeURIComponent(memberId)}/status`, {
+          method: 'POST',
+          body: JSON.stringify({ status, note: note ?? '' }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showToast({ tone: 'error', message: payload?.error ?? 'Could not update member status.' });
+          return;
+        }
         showToast({
-          message: status === 'Active Member' ? 'Member approved.' : `Member status set to ${status}.`,
+          message: status === 'Active Member'
+            ? 'Member approved — they can now sign in with email/mobile and DOB (DDMMYYYY).'
+            : `Member status set to ${status}.`,
           onUndo: previousStatus && previousStatus !== status
-            ? () => void memberSync.patch(memberId, { status: previousStatus }, authState.user?.uid)
+            ? () => void handleUpdateMemberStatus(memberId, previousStatus)
             : undefined,
         });
+      } catch {
+        showToast({ tone: 'error', message: 'Could not update member status.' });
       }
-    });
+    })();
   };
 
-  const currentMember = members.find((m) => m.id === authState.user?.uid) ?? members[0];
+  const currentMember = members.find((m) => m.id === authState.user?.uid);
 
   const activeLabel = navItems.find((item) => item.id === activeTab)?.label ?? 'Overview';
   const pendingCount = members.filter((m) => m.status === 'Pending').length;
@@ -462,7 +474,6 @@ function AppInner() {
               authError={authState.authError}
               effectiveRole={authState.effectiveRole}
               onSignIn={authState.signIn}
-              onCreateAccount={authState.createAccount}
               onLogout={authState.logout}
               onRefreshToken={authState.refreshToken}
               onOpenRegistration={() => navigate('registration')}
@@ -582,7 +593,6 @@ function AppInner() {
             )}
             {activeTab === 'registration' && (
               <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
-                onAddMember={(member) => void memberSync.upsert({ ...member, ...createRecordMetadata(authState.user?.uid ?? 'public_user', 'Pending', tenantContext) }, authState.user?.uid)}
                 onUpdateMemberStatus={handleUpdateMemberStatus} />
             )}
             {activeTab === 'dashboard_member' && (
