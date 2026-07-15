@@ -212,7 +212,11 @@ function AppInner() {
   const syncEnabled = Boolean(authState.user && !authState.user.isAnonymous);
 
   const { records: members, isLive: membersLive, syncError: membersSyncError, actions: memberSync } =
-    useMembersWithPrivateData(MOCK_MEMBERS, syncEnabled, tenantContext);
+    useMembersWithPrivateData(MOCK_MEMBERS, syncEnabled, tenantContext, {
+      viewerUid: authState.user?.uid ?? null,
+      // Parish-wide privateMembers queries are admin-only (rules: own doc or adminRole).
+      canReadParishPrivate: guard.isAdmin,
+    });
   const { records: masses, actions: massSync } =
     useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext);
   const { records: payments, actions: paymentSync } =
@@ -494,9 +498,7 @@ function AppInner() {
                 </span>
                 {membersSyncError && (
                   <span className="block truncate text-rose-600" title={membersSyncError}>
-                    {membersSyncError.includes('insufficient permissions')
-                      ? 'Sync blocked by security rules — redeploy firestore rules or sign out/in'
-                      : membersSyncError}
+                    {membersSyncError}
                   </span>
                 )}
               </>
