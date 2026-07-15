@@ -3,7 +3,7 @@ dist
 .env
 .env.*
 !.env.example
-src
+# Allow src/ — server.ts imports parish catalog + memberAuth for Docker esbuild.
 public
 *.md
 .git
