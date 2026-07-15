@@ -7,6 +7,8 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY server.ts ./
+# Local modules imported by server.ts (parish catalog, member auth helpers, etc.)
+COPY src ./src
 
 # Bundle server.ts → dist/server.cjs
 RUN npx esbuild server.ts \

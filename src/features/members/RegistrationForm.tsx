@@ -133,9 +133,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           },
         }),
       });
-      const payload = await response.json().catch(() => ({}));
+      const payload = await response.json().catch(() => ({} as { error?: string }));
       if (!response.ok) {
-        throw new Error(payload?.error || 'Registration failed. Please try again.');
+        const detail = typeof payload?.error === 'string' && payload.error.trim()
+          ? payload.error
+          : response.status === 404
+            ? 'Registration service is updating. Please wait a minute and try again.'
+            : `Registration failed (${response.status}). Please try again.`;
+        throw new Error(detail);
       }
 
       onSubmitted(
