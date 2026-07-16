@@ -60,15 +60,34 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         onCta={() => onNavigate('registration')}
       />
 
-      {/* Hero — Apple: huge product name, short subcopy, pill Buy */}
-      <section className="relative overflow-hidden bg-[#0f2b22] text-[#f5f5f7]">
-        <div className="choir-hero-ambient" aria-hidden />
-        <div className="apple-content relative flex min-h-[min(86svh,780px)] flex-col items-center justify-center px-6 py-20 text-center">
-          <p className="text-[17px] font-semibold tracking-[-0.01em] text-amber-300">Choir360</p>
-          <h1 className="mt-3 max-w-3xl text-[clamp(2.75rem,8vw,5rem)] font-semibold leading-[1.05] tracking-[-0.035em]">
+      {/* Hero — full-bleed liturgy photo + brand, one line, one CTA */}
+      <section className="relative min-h-[min(92svh,860px)] overflow-hidden bg-[#0f2b22] text-[#f5f5f7]">
+        <img
+          src="/images/landing-hero.png"
+          alt=""
+          className="choir-hero-photo absolute inset-0 h-full w-full object-cover object-[center_35%]"
+          fetchPriority="high"
+          decoding="async"
+        />
+        {/* Brand-tint scrim so white type stays readable over warm cathedral light */}
+        <div
+          className="absolute inset-0"
+          aria-hidden
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(15,43,34,0.55) 0%, rgba(15,43,34,0.28) 38%, rgba(15,43,34,0.72) 72%, rgba(15,43,34,0.92) 100%), radial-gradient(ellipse 80% 55% at 50% 40%, rgba(15,43,34,0.15) 0%, rgba(15,43,34,0.55) 100%)',
+          }}
+        />
+        <div className="choir-hero-ambient opacity-40" aria-hidden />
+
+        <div className="apple-content relative z-10 flex min-h-[min(92svh,860px)] flex-col items-center justify-end px-6 pb-16 pt-28 text-center sm:justify-center sm:pb-20 sm:pt-24">
+          <p className="text-[17px] font-semibold tracking-[0.02em] text-[#f5c24c] drop-shadow-[0_1px_12px_rgba(0,0,0,0.35)]">
+            Choir360
+          </p>
+          <h1 className="mt-3 max-w-3xl text-[clamp(2.75rem,8vw,5rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)]">
             Your choir&apos;s ministry.<br className="hidden sm:block" /> Beautifully organised.
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-[19px] font-normal leading-snug tracking-[-0.01em] text-[#a1a1a6]">
+          <p className="mx-auto mt-5 max-w-xl text-[19px] font-normal leading-snug tracking-[-0.01em] text-[#e8e8ed]/[0.92] drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)]">
             Masses, rehearsals, hymns, attendance, and accounts —
             so your parish choir spends less time coordinating and more time singing.
           </p>
@@ -76,7 +95,7 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
             <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
               Join your choir
             </AppleButton>
-            <AppleButton variant="link" onClick={() => onNavigate('song_library')} className="!text-[#2997ff]">
+            <AppleButton variant="link" onClick={() => onNavigate('song_library')} className="!text-white/90 hover:!text-white">
               Browse songs ›
             </AppleButton>
           </div>

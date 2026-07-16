@@ -722,6 +722,23 @@
   to { transform: translate(16px, 20px) scale(1.05); }
 }
 
+.choir-hero-photo {
+  transform: scale(1.02);
+  animation: choirHeroKenBurns 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes choirHeroKenBurns {
+  from { transform: scale(1.02) translate3d(0, 0, 0); }
+  to { transform: scale(1.08) translate3d(0, -1.5%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choir-hero-photo {
+    animation: none;
+  }
+}
+
 .page-enter {
   animation: pageEnter 0.4s var(--choir-ease) both;
 }
