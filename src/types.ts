@@ -99,6 +99,26 @@ export type MemberStatus =
   | 'Rejected'
   | 'Admin';
 
+export type BloodGroup =
+  | 'A+'
+  | 'A-'
+  | 'B+'
+  | 'B-'
+  | 'AB+'
+  | 'AB-'
+  | 'O+'
+  | 'O-'
+  | 'Unknown';
+
+export type RelationshipStatus =
+  | 'Single'
+  | 'Married'
+  | 'Engaged'
+  | 'Widowed'
+  | 'Separated'
+  | 'Divorced'
+  | 'Prefer not to say';
+
 export interface Member {
   id: string;
   photoUrl: string;
@@ -120,6 +140,10 @@ export interface Member {
   instrument?: string;
   skills: string;
   experience: number;
+  /** Marital / relationship status (public roster field). */
+  relationshipStatus?: RelationshipStatus | string;
+  /** Medical blood group (stored on privateMembers). */
+  bloodGroup?: BloodGroup | string;
   emergencyContact: {
     name: string;
     relationship: string;

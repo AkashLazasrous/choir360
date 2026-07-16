@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Save, X } from 'lucide-react';
-import { Member, MemberType, VoiceType } from '../../types';
+import { BloodGroup, Member, MemberType, RelationshipStatus, VoiceType } from '../../types';
+import {
+  BLOOD_GROUPS,
+  EMERGENCY_RELATIONSHIPS,
+  RELATIONSHIP_STATUSES,
+  SPECIAL_SKILLS,
+} from '../../data/registrationOptions';
 import { normalizeMobile } from '../../utils/memberAuth';
 
 const MEMBER_TYPES: MemberType[] = [
@@ -102,6 +108,28 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
               <input type="date" required value={form.dob} onChange={(e) => set('dob', e.target.value)} className="apple-input" />
             </label>
             <label className="space-y-1.5">
+              <span className="apple-label">Blood group</span>
+              <select
+                value={form.bloodGroup || ''}
+                onChange={(e) => set('bloodGroup', e.target.value as BloodGroup)}
+                className="apple-select"
+              >
+                <option value="">— Select —</option>
+                {BLOOD_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </label>
+            <label className="space-y-1.5">
+              <span className="apple-label">Relationship status</span>
+              <select
+                value={form.relationshipStatus || ''}
+                onChange={(e) => set('relationshipStatus', e.target.value as RelationshipStatus)}
+                className="apple-select"
+              >
+                <option value="">— Select —</option>
+                {RELATIONSHIP_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+            <label className="space-y-1.5">
               <span className="apple-label">Mobile</span>
               <input required value={form.mobile} onChange={(e) => set('mobile', e.target.value)} className="apple-input" />
             </label>
@@ -138,8 +166,14 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
               <input type="number" min={0} max={60} value={form.experience} onChange={(e) => set('experience', Number(e.target.value))} className="apple-input" />
             </label>
             <label className="space-y-1.5 sm:col-span-2">
-              <span className="apple-label">Skills</span>
-              <input value={form.skills} onChange={(e) => set('skills', e.target.value)} className="apple-input" />
+              <span className="apple-label">Special skills & talents</span>
+              <select value={form.skills} onChange={(e) => set('skills', e.target.value)} className="apple-select">
+                <option value="">— Select —</option>
+                {SPECIAL_SKILLS.map((skill) => <option key={skill} value={skill}>{skill}</option>)}
+                {form.skills && !SPECIAL_SKILLS.includes(form.skills) ? (
+                  <option value={form.skills}>{form.skills}</option>
+                ) : null}
+              </select>
             </label>
           </div>
 
@@ -152,12 +186,18 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
                 onChange={(e) => set('emergencyContact', { ...form.emergencyContact, name: e.target.value })}
                 className="apple-input"
               />
-              <input
-                placeholder="Relationship"
+              <select
                 value={form.emergencyContact.relationship}
                 onChange={(e) => set('emergencyContact', { ...form.emergencyContact, relationship: e.target.value })}
-                className="apple-input"
-              />
+                className="apple-select"
+              >
+                <option value="">— Relationship —</option>
+                {EMERGENCY_RELATIONSHIPS.map((rel) => <option key={rel} value={rel}>{rel}</option>)}
+                {form.emergencyContact.relationship
+                  && !EMERGENCY_RELATIONSHIPS.includes(form.emergencyContact.relationship) ? (
+                  <option value={form.emergencyContact.relationship}>{form.emergencyContact.relationship}</option>
+                ) : null}
+              </select>
               <input
                 placeholder="Phone"
                 value={form.emergencyContact.phone}

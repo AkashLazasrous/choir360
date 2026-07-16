@@ -11,7 +11,16 @@ import { db, isFirebaseConfigured, updateTenantRecord, upsertTenantRecord } from
  * document instead, readable only by the member themself or an admin
  * (see firestore.rules).
  */
-const PRIVATE_FIELD_KEYS = ['dob', 'mobile', 'mobileNormalized', 'whatsapp', 'email', 'address', 'emergencyContact'] as const;
+const PRIVATE_FIELD_KEYS = [
+  'dob',
+  'mobile',
+  'mobileNormalized',
+  'whatsapp',
+  'email',
+  'address',
+  'bloodGroup',
+  'emergencyContact',
+] as const;
 type PrivateFieldKey = typeof PRIVATE_FIELD_KEYS[number];
 type PrivateFields = Pick<Member, PrivateFieldKey>;
 type PublicMember = Omit<Member, PrivateFieldKey>;
@@ -24,6 +33,7 @@ const EMPTY_PRIVATE_FIELDS: PrivateFields = {
   whatsapp: '',
   email: '',
   address: '',
+  bloodGroup: '',
   emergencyContact: { name: '', relationship: '', phone: '' },
 };
 
@@ -53,7 +63,17 @@ function copyTenantEnvelope(record: Partial<TenantScopedRecord>) {
 }
 
 function splitMember(member: Member & Partial<TenantScopedRecord>): { publicPart: PublicMember; privatePart: PrivateMemberRecord } {
-  const { dob, mobile, mobileNormalized, whatsapp, email, address, emergencyContact, ...publicPart } = member;
+  const {
+    dob,
+    mobile,
+    mobileNormalized,
+    whatsapp,
+    email,
+    address,
+    bloodGroup,
+    emergencyContact,
+    ...publicPart
+  } = member;
   return {
     publicPart,
     privatePart: {
@@ -64,6 +84,7 @@ function splitMember(member: Member & Partial<TenantScopedRecord>): { publicPart
       whatsapp,
       email,
       address,
+      bloodGroup: bloodGroup || '',
       emergencyContact,
       ...copyTenantEnvelope(member),
     },

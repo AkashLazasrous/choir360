@@ -493,6 +493,8 @@ function AppInner() {
           whatsapp: updated.whatsapp,
           email: updated.email,
           address: updated.address,
+          bloodGroup: updated.bloodGroup || '',
+          relationshipStatus: updated.relationshipStatus || '',
           memberType: updated.memberType,
           voiceType: updated.voiceType,
           experience: updated.experience,

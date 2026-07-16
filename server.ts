@@ -371,6 +371,9 @@ app.post("/api/members/register", registerLimiter, async (req, res) => {
     const skills = typeof req.body?.skills === "string" ? req.body.skills.trim().slice(0, 300) : "";
     const photoUrl = typeof req.body?.photoUrl === "string" ? req.body.photoUrl.trim().slice(0, 500) : "";
     const experience = Number(req.body?.experience ?? 0);
+    const bloodGroup = typeof req.body?.bloodGroup === "string" ? req.body.bloodGroup.trim().slice(0, 20) : "";
+    const relationshipStatus = typeof req.body?.relationshipStatus === "string"
+      ? req.body.relationshipStatus.trim().slice(0, 40) : "";
     const emergencyName = typeof req.body?.emergencyContact?.name === "string"
       ? req.body.emergencyContact.name.trim().slice(0, 80) : "Guardian";
     const emergencyRelation = typeof req.body?.emergencyContact?.relationship === "string"
@@ -431,6 +434,7 @@ app.post("/api/members/register", registerLimiter, async (req, res) => {
       firstName,
       lastName,
       gender,
+      relationshipStatus: relationshipStatus || "Prefer not to say",
       parish: tenant.parishName,
       choirName: choirName || `${tenant.parishName} Choir`,
       voiceType: memberType === "Singer" ? voiceType : "None",
@@ -457,6 +461,7 @@ app.post("/api/members/register", registerLimiter, async (req, res) => {
       whatsapp: (whatsappRaw || mobileRaw).trim(),
       email,
       address,
+      bloodGroup: bloodGroup || "Unknown",
       emergencyContact: {
         name: emergencyName || "Guardian",
         relationship: emergencyRelation || "Family",
@@ -701,6 +706,7 @@ app.get("/api/members/roster", requireFirebaseAuth, requireAdminRole, async (req
         firstName: pub.firstName || "",
         lastName: pub.lastName || "",
         gender: pub.gender || "",
+        relationshipStatus: pub.relationshipStatus || "",
         parish: pub.parish || pub.parishName || "",
         choirName: pub.choirName || "",
         voiceType: pub.voiceType || "None",
@@ -717,6 +723,7 @@ app.get("/api/members/roster", requireFirebaseAuth, requireAdminRole, async (req
         whatsapp: priv.whatsapp || "",
         email: priv.email || "",
         address: priv.address || "",
+        bloodGroup: priv.bloodGroup || "",
         emergencyContact: priv.emergencyContact || { name: "", relationship: "", phone: "" },
         archdioceseId: pub.archdioceseId,
         parishName: pub.parishName,
@@ -979,6 +986,9 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
     const address = typeof body.address === "string" ? body.address.trim().slice(0, 500) : "";
     const skills = typeof body.skills === "string" ? body.skills.trim().slice(0, 500) : "";
     const experience = Number.isFinite(Number(body.experience)) ? Math.max(0, Math.min(60, Number(body.experience))) : 0;
+    const bloodGroup = typeof body.bloodGroup === "string" ? body.bloodGroup.trim().slice(0, 20) : "";
+    const relationshipStatus = typeof body.relationshipStatus === "string"
+      ? body.relationshipStatus.trim().slice(0, 40) : "";
     const emergency = body.emergencyContact && typeof body.emergencyContact === "object"
       ? body.emergencyContact
       : {};
@@ -993,6 +1003,7 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
       firstName,
       lastName,
       gender,
+      relationshipStatus,
       memberType,
       voiceType,
       skills,
@@ -1008,6 +1019,7 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
       whatsapp: whatsappRaw || mobileRaw.trim(),
       email,
       address,
+      bloodGroup,
       emergencyContact: {
         name: emergencyName,
         relationship: emergencyRelationship,

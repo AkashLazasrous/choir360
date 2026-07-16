@@ -10,9 +10,15 @@ import {
   Send,
 } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { Member, VoiceType, MemberType, Language } from '../../types';
+import { Member, VoiceType, MemberType, Language, BloodGroup, RelationshipStatus } from '../../types';
 import type { CloudinaryMediaRecord } from '../../types';
 import { MULTILINGUAL_DICTIONARY } from '../../data/mockData';
+import {
+  BLOOD_GROUPS,
+  EMERGENCY_RELATIONSHIPS,
+  RELATIONSHIP_STATUSES,
+  SPECIAL_SKILLS,
+} from '../../data/registrationOptions';
 import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { useParish } from '../parish/ParishContext';
 import { activeParishes, findParishById } from '../../data/madrasMylaporeParishes';
@@ -69,8 +75,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [dob, setDob] = useState('2000-01-01');
   const [mobile, setMobile] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [whatsappSameAsMobile, setWhatsappSameAsMobile] = useState(true);
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [bloodGroup, setBloodGroup] = useState<BloodGroup | ''>('');
+  const [relationshipStatus, setRelationshipStatus] = useState<RelationshipStatus | ''>('');
   const [parishId, setParishId] = useState(() => selectedParish?.id ?? '');
   const [choirName, setChoirName] = useState(() => selectedParish ? `${selectedParish.parishName} Choir` : '');
   const [voiceType, setVoiceType] = useState<VoiceType>('Soprano');
@@ -83,6 +92,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [step, setStep] = useState<RegStep>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  const resolvedWhatsapp = whatsappSameAsMobile ? mobile : whatsapp;
 
   const dobPasswordHint = (() => {
     try {
@@ -120,8 +131,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setLastName('');
       setMobile('');
       setWhatsapp('');
+      setWhatsappSameAsMobile(true);
       setEmail('');
       setAddress('');
+      setBloodGroup('');
+      setRelationshipStatus('');
       setSkills('');
       setCloudinaryRecord(null);
       setEmergencyName('');
@@ -139,9 +153,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           gender,
           dob,
           mobile,
-          whatsapp: whatsapp || mobile,
+          whatsapp: resolvedWhatsapp || mobile,
           email,
           address,
+          bloodGroup: bloodGroup || 'Unknown',
+          relationshipStatus: relationshipStatus || 'Prefer not to say',
           parishId,
           choirName: choirName || `${parish.parishName} Choir`,
           voiceType: memberType === 'Singer' ? voiceType : 'None',
@@ -193,9 +209,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         dob,
         mobile,
         mobileNormalized: normalizeMobile(mobile),
-        whatsapp: whatsapp || mobile,
+        whatsapp: resolvedWhatsapp || mobile,
         email: email.trim().toLowerCase(),
         address,
+        bloodGroup: bloodGroup || 'Unknown',
+        relationshipStatus: relationshipStatus || 'Prefer not to say',
         parish: parish.displayName,
         choirName: choirName || `${parish.parishName} Choir`,
         voiceType: memberType === 'Singer' ? voiceType : 'None',
@@ -311,8 +329,34 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               required
             />
             <p className="mt-1 text-[12px] text-[#86868b]">
-              After approval, this becomes your login password as <span className="font-semibold text-[#18392f]">{dobPasswordHint}</span> (DDMMYYYY).
+              After approval, this becomes your login password as <span className="font-semibold text-[#0e3d4c]">{dobPasswordHint}</span> (DDMMYYYY).
             </p>
+          </Field>
+
+          <Field label="Blood group">
+            <select
+              value={bloodGroup}
+              onChange={(e) => setBloodGroup(e.target.value as BloodGroup | '')}
+              className="apple-select"
+            >
+              <option value="">— Select blood group —</option>
+              {BLOOD_GROUPS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Relationship status">
+            <select
+              value={relationshipStatus}
+              onChange={(e) => setRelationshipStatus(e.target.value as RelationshipStatus | '')}
+              className="apple-select"
+            >
+              <option value="">— Select status —</option>
+              {RELATIONSHIP_STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Mobile number" required>
@@ -327,12 +371,27 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </Field>
 
           <Field label="WhatsApp number">
+            <label className="mb-2 flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl bg-black/[0.03] px-3 py-2 text-[13px] font-medium text-[#1d1d1f]">
+              <input
+                type="checkbox"
+                checked={whatsappSameAsMobile}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setWhatsappSameAsMobile(checked);
+                  if (checked) setWhatsapp('');
+                }}
+                className="h-4 w-4 accent-[#0e3d4c]"
+              />
+              Same as mobile number *
+            </label>
             <input
               type="tel"
-              value={whatsapp}
+              value={whatsappSameAsMobile ? mobile : whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              placeholder="Leave empty to use mobile number"
+              placeholder="e.g. 9876543210"
               className="apple-input"
+              disabled={whatsappSameAsMobile}
+              required={!whatsappSameAsMobile}
             />
           </Field>
 
@@ -461,13 +520,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </Field>
 
           <Field label="Special skills & talents" className="md:col-span-2">
-            <input
-              type="text"
+            <select
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g. sight-reading, tempo moderation"
-              className="apple-input"
-            />
+              className="apple-select"
+            >
+              <option value="">— Select a skill or talent —</option>
+              {SPECIAL_SKILLS.map((skill) => (
+                <option key={skill} value={skill}>{skill}</option>
+              ))}
+            </select>
           </Field>
         </div>
           </>
@@ -508,13 +570,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </Field>
 
           <Field label="Relationship">
-            <input
-              type="text"
+            <select
               value={emergencyRelation}
               onChange={(e) => setEmergencyRelation(e.target.value)}
-              placeholder="e.g. Father / Spouse"
-              className="apple-input"
-            />
+              className="apple-select"
+            >
+              <option value="">— Select relationship —</option>
+              {EMERGENCY_RELATIONSHIPS.map((rel) => (
+                <option key={rel} value={rel}>{rel}</option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Contact phone">
