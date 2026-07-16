@@ -47,30 +47,39 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
   };
 
   return (
-    <div className="apple-modal-backdrop flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="apple-modal max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl p-6 sm:rounded-3xl">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Edit member profile</h3>
-            <p className="mt-0.5 text-[13px] text-[#86868b]">
-              {member.firstName} {member.lastName} · {member.status}
-            </p>
+    <div
+      className="apple-modal-backdrop flex items-end justify-center p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="apple-modal flex max-h-[min(90dvh,100%)] w-full max-w-2xl flex-col rounded-t-3xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex-shrink-0 border-b border-black/[0.06] px-6 pb-4 pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Edit member profile</h3>
+              <p className="mt-0.5 text-[13px] text-[#86868b]">
+                {member.firstName} {member.lastName} · {member.status}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
+
+          {error && (
+            <p className="mt-4 rounded-2xl bg-[rgba(255,59,48,0.08)] px-3 py-2 text-[13px] font-medium text-[#d70015]">{error}</p>
+          )}
         </div>
 
-        {error && (
-          <p className="mb-4 rounded-2xl bg-[rgba(255,59,48,0.08)] px-3 py-2 text-[13px] font-medium text-[#d70015]">{error}</p>
-        )}
-
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="space-y-1.5">
               <span className="apple-label">First name</span>
@@ -158,9 +167,11 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          </div>
+
+          <div className="flex flex-shrink-0 gap-2 border-t border-black/[0.06] bg-white px-6 py-4">
             <button type="button" onClick={onClose} className="btn-pill btn-pill-secondary flex-1">Cancel</button>
-            <button type="submit" disabled={saving} className="btn-pill btn-pill-primary flex-1 flex items-center justify-center gap-2">
+            <button type="submit" disabled={saving} className="btn-pill btn-pill-primary flex flex-1 items-center justify-center gap-2">
               <Save className="h-4 w-4" />
               {saving ? 'Saving…' : 'Save profile'}
             </button>
