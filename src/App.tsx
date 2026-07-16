@@ -461,6 +461,44 @@ function AppInner() {
     })();
   };
 
+  const handleEditMember = async (updated: Member): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    const result = await memberSync.upsert(
+      {
+        ...updated,
+        ...createRecordMetadata(authState.user?.uid ?? 'admin', updated.status, tenantContext),
+      },
+      authState.user?.uid,
+    );
+    if (result.ok) {
+      showToast({ message: `Profile updated for ${updated.firstName} ${updated.lastName}.` });
+    } else {
+      showToast({ tone: 'error', message: result.error ?? 'Could not save profile.' });
+    }
+    return result;
+  };
+
+  const handleRemoveMember = async (member: Member): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    try {
+      const response = await apiFetch(`/api/members/${encodeURIComponent(member.id)}/remove`, {
+        method: 'POST',
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = payload?.error ?? 'Could not remove member.';
+        showToast({ tone: 'error', message: msg });
+        return { ok: false, error: msg };
+      }
+      showToast({ message: `${member.firstName} ${member.lastName} removed from the roster.` });
+      return { ok: true };
+    } catch {
+      const msg = 'Could not remove member.';
+      showToast({ tone: 'error', message: msg });
+      return { ok: false, error: msg };
+    }
+  };
+
   const currentMember = members.find((m) => m.id === authState.user?.uid);
 
   const activeLabel = navItems.find((item) => item.id === activeTab)?.label ?? 'Overview';
@@ -751,7 +789,9 @@ function AppInner() {
                     member.id,
                   );
                 }}
-                onUpdateMemberStatus={handleUpdateMemberStatus} />
+                onUpdateMemberStatus={handleUpdateMemberStatus}
+                onEditMember={handleEditMember}
+                onRemoveMember={handleRemoveMember} />
             )}
             {activeTab === 'dashboard_member' && (
               guard.canAccess('choir_member') ? (

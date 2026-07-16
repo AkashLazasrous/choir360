@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ClipboardCheck, MapPin, PhoneCall, RefreshCw, UserPlus } from 'lucide-react';
 import { Member, MemberStatus } from '../../types';
 import { ApprovalControls } from './ApprovalControls';
+import { AdminMemberEditor } from './AdminMemberEditor';
 import { apiFetch } from '../../services/apiClient';
 import { auth } from '../../services/firebase';
 
@@ -22,6 +23,8 @@ interface ApprovalDeskProps {
   parishId?: string;
   parishName?: string;
   onUpdateMemberStatus: (memberId: string, status: MemberStatus, note?: string) => void;
+  onEditMember?: (member: Member) => Promise<{ ok: boolean; error?: string }>;
+  onRemoveMember?: (member: Member) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const STATUS_ORDER: Record<string, number> = {
@@ -39,12 +42,17 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
   parishId,
   parishName,
   onUpdateMemberStatus,
+  onEditMember,
+  onRemoveMember,
 }) => {
   const [apiMembers, setApiMembers] = useState<Member[] | null>(null);
   const [elsewhere, setElsewhere] = useState<ElsewherePending[]>([]);
   const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(false);
   const [adoptingId, setAdoptingId] = useState('');
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const loadRoster = useCallback(async () => {
     if (!parishId) return;
@@ -79,7 +87,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
     void loadRoster();
   }, [loadRoster]);
 
-  const members = apiMembers ?? liveMembers;
+  const members = (apiMembers ?? liveMembers).filter((m) => (m.status as string) !== 'deleted');
 
   const sorted = useMemo(
     () =>
@@ -94,6 +102,31 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
   const handleStatus = (memberId: string, status: MemberStatus, note?: string) => {
     onUpdateMemberStatus(memberId, status, note);
     window.setTimeout(() => void loadRoster(), 800);
+  };
+
+  const handleSaveEdit = async (updated: Member) => {
+    if (!onEditMember) return;
+    setSavingEdit(true);
+    setEditError('');
+    const result = await onEditMember(updated);
+    setSavingEdit(false);
+    if (!result.ok) {
+      setEditError(result.error ?? 'Could not save profile.');
+      return;
+    }
+    setEditingMember(null);
+    window.setTimeout(() => void loadRoster(), 600);
+  };
+
+  const handleRemove = async (member: Member) => {
+    if (!onRemoveMember) return;
+    setLoadError('');
+    const result = await onRemoveMember(member);
+    if (!result.ok) {
+      setLoadError(result.error ?? 'Could not remove member.');
+      return;
+    }
+    window.setTimeout(() => void loadRoster(), 600);
   };
 
   const adoptMember = async (memberId: string) => {
@@ -282,12 +315,28 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
                 )}
 
                 <div className="border-t border-white/60 pt-2">
-                  <ApprovalControls member={m} members={members} onUpdateMemberStatus={handleStatus} />
+                  <ApprovalControls
+                    member={m}
+                    members={members}
+                    onUpdateMemberStatus={handleStatus}
+                    onEditMember={onEditMember ? (member) => setEditingMember(member) : undefined}
+                    onRemoveMember={onRemoveMember ? (member) => void handleRemove(member) : undefined}
+                  />
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {editingMember && onEditMember && (
+        <AdminMemberEditor
+          member={editingMember}
+          saving={savingEdit}
+          error={editError}
+          onClose={() => { setEditingMember(null); setEditError(''); }}
+          onSave={handleSaveEdit}
+        />
       )}
     </div>
   );

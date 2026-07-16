@@ -13,6 +13,8 @@ interface MemberRegistrationProps {
   parishName?: string;
   onPersistMember: (member: Member) => Promise<{ ok: boolean; error?: string }>;
   onUpdateMemberStatus: (memberId: string, status: MemberStatus, note?: string) => void;
+  onEditMember?: (member: Member) => Promise<{ ok: boolean; error?: string }>;
+  onRemoveMember?: (member: Member) => Promise<{ ok: boolean; error?: string }>;
 }
 
 /**
@@ -27,7 +29,9 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
   parishId,
   parishName,
   onPersistMember,
-  onUpdateMemberStatus
+  onUpdateMemberStatus,
+  onEditMember,
+  onRemoveMember,
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
   const isAdmin = ['super_admin', 'diocese_admin', 'parish_admin', 'choir_admin'].includes(currentUserRole);
@@ -100,6 +104,8 @@ export const MemberRegistration: React.FC<MemberRegistrationProps> = ({
           parishId={parishId}
           parishName={parishName}
           onUpdateMemberStatus={onUpdateMemberStatus}
+          onEditMember={onEditMember}
+          onRemoveMember={onRemoveMember}
         />
       )}
     </div>

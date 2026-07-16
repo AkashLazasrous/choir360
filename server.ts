@@ -691,7 +691,7 @@ app.get("/api/members/roster", requireFirebaseAuth, requireAdminRole, async (req
 
     const db = admin.firestore();
     const membersSnap = await db.collection("members").where("parishId", "==", parishId).limit(500).get();
-    const members = await Promise.all(membersSnap.docs.map(async (doc) => {
+    const members = (await Promise.all(membersSnap.docs.map(async (doc) => {
       const pub = doc.data() || {};
       const privSnap = await db.collection("privateMembers").doc(doc.id).get();
       const priv = privSnap.exists ? privSnap.data() || {} : {};
@@ -726,7 +726,7 @@ app.get("/api/members/roster", requireFirebaseAuth, requireAdminRole, async (req
         createdAt: pub.createdAt,
         updatedAt: pub.updatedAt,
       };
-    }));
+    }))).filter((m) => m.status !== "deleted");
 
     const pending = members.filter((m) => m.status === "Pending" || m.status === "Correction Requested").length;
 
@@ -930,6 +930,61 @@ app.post("/api/members/:id/status", requireFirebaseAuth, requireAdminRole, async
     return res.json({ ok: true, status, role });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to update member status." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: soft-remove member from parish roster
+// ---------------------------------------------------------------------------
+app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const memberId = requireString(req.params.id, "id", 128);
+    const db = admin.firestore();
+    const memberRef = db.collection("members").doc(memberId);
+    const privateRef = db.collection("privateMembers").doc(memberId);
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      return res.status(404).json({ error: "Member not found." });
+    }
+
+    const now = new Date().toISOString();
+    const adminUid = (req as any).user.uid as string;
+    const patch = {
+      status: "deleted",
+      deletedAt: now,
+      deletedBy: adminUid,
+      updatedAt: now,
+      updatedBy: adminUid,
+    };
+
+    const batch = db.batch();
+    batch.set(memberRef, patch, { merge: true });
+    batch.set(privateRef, patch, { merge: true });
+    await batch.commit();
+
+    const member = { ...memberSnap.data(), ...patch } as Record<string, unknown>;
+    const tenant = {
+      archdioceseId: String(member.archdioceseId || "madras-mylapore"),
+      parishName: String(member.parishName || member.parish || ""),
+      tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
+      parishId: String(member.parishId || ""),
+      choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
+    };
+
+    try {
+      await setMemberClaims(memberId, { role: "public_user", ...tenant });
+    } catch (claimError: any) {
+      console.warn(`[Auth] remove claims skipped for ${memberId}:`, claimError?.message || claimError);
+    }
+
+    console.log(`[Members] removed id=${memberId} by=${adminUid}`);
+    return res.json({ ok: true });
+  } catch (error: any) {
+    return res.status(400).json({ error: error?.message || "Failed to remove member." });
   }
 });
 
