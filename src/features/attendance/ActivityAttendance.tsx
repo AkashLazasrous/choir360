@@ -25,9 +25,11 @@ import {
   computeParishStats,
 } from '../../utils/attendanceStats';
 import {
+  collectUnmatchedNames,
   kindFromFilename,
   matchMemberByName,
   parseAttendanceMatrixCsv,
+  shouldSplitMassByWeekday,
 } from './parseAttendanceCsv';
 import { dedupeImportSessions } from '../../utils/attendanceActivity';
 import { AttendanceLeaderboard } from './AttendanceLeaderboard';
@@ -193,7 +195,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setImportMessage(null);
 
     const sessions: ActivityAttendanceSavePayload[] = [];
-    let unmatched = 0;
+    const unmatchedNameHits: string[] = [];
 
     for (const file of Array.from(files)) {
       if (/\.xlsx?$/i.test(file.name)) {
@@ -205,24 +207,35 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
       const detectedKind = kindFromFilename(file.name);
       if (!detectedKind) continue;
       const text = await file.text();
-      const parsed = parseAttendanceMatrixCsv(text, detectedKind);
+      const parsed = parseAttendanceMatrixCsv(text, detectedKind, {
+        splitMassByWeekday: shouldSplitMassByWeekday(file.name),
+      });
 
-      const byDate = new Map<string, Record<string, AttendanceStatus | null>>();
+      // key = kind::date
+      const bySession = new Map<string, { kind: ActivityKind; date: string; marks: Record<string, AttendanceStatus | null> }>();
       for (const row of parsed.rows) {
         const memberId = matchMemberByName(row.memberName, members);
         if (!memberId) {
-          unmatched += 1;
+          unmatchedNameHits.push(row.memberName);
           continue;
         }
-        if (!byDate.has(row.date)) byDate.set(row.date, {});
-        byDate.get(row.date)![memberId] = row.status;
+        const sessionKey = `${row.kind}::${row.date}`;
+        if (!bySession.has(sessionKey)) {
+          bySession.set(sessionKey, { kind: row.kind, date: row.date, marks: {} });
+        }
+        bySession.get(sessionKey)!.marks[memberId] = row.status;
       }
 
-      for (const [sessionDate, sessionMarks] of byDate) {
-        sessions.push({ kind: detectedKind, date: sessionDate, marks: sessionMarks });
+      for (const session of bySession.values()) {
+        sessions.push({
+          kind: session.kind,
+          date: session.date,
+          marks: session.marks,
+        });
       }
     }
 
+    const unmatchedNames = collectUnmatchedNames(unmatchedNameHits, members);
     const dedupedSessions = dedupeImportSessions(sessions);
     const result = await onImportSessions({ kind, sessions: dedupedSessions });
     setImporting(false);
@@ -232,12 +245,17 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
         ? `Imported ${result.imported ?? dedupedSessions.length} sessions${
             result.skipped ? ` · ${result.skipped} unchanged` : ''
           }${skipped ? ` · ${skipped} duplicate dates merged` : ''}${
-            unmatched ? ` · ${unmatched} name(s) unmatched` : ''
+            unmatchedNames.length
+              ? ` · unmatched: ${unmatchedNames.join(', ')}`
+              : ''
           }.`
         : (result.error ?? 'Import failed.'),
     );
+    if (unmatchedNames.length) {
+      console.warn('[attendance import] Unmatched CSV names:', unmatchedNames);
+    }
     if (fileRef.current) fileRef.current.value = '';
-    setTimeout(() => setImportMessage(null), 6000);
+    setTimeout(() => setImportMessage(null), unmatchedNames.length ? 12000 : 6000);
   };
 
   return (

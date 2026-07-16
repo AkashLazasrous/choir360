@@ -5,6 +5,8 @@ export interface CsvImportRow {
   memberName: string;
   date: string;
   status: AttendanceStatus;
+  /** Resolved activity kind for this mark (Mass sheet may split Sat/Sun). */
+  kind: ActivityKind;
 }
 
 export interface CsvImportResult {
@@ -15,13 +17,49 @@ export interface CsvImportResult {
   skippedCells: number;
 }
 
+export interface NameMatchMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+/** Strip UTF-8 BOM and normalize newlines for Excel exports. */
+export function stripCsvBom(text: string): string {
+  return text.replace(/^\uFEFF/, '');
+}
+
+/**
+ * Mass matrix CSVs often mix Saturday + Sunday (+ occasional midweek) columns.
+ * Sat → saturday_mass; Sun and other weekdays → sunday_mass.
+ */
+export function massKindForIsoDate(isoDate: string): ActivityKind {
+  const day = new Date(`${isoDate}T12:00:00.000Z`).getUTCDay();
+  if (day === 6) return 'saturday_mass';
+  return 'sunday_mass';
+}
+
+/** True when this filename is a mixed Mass sheet that should split by weekday. */
+export function shouldSplitMassByWeekday(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  if (lower.includes('special') || lower.includes('practis') || lower.includes('practice')) return false;
+  if (lower.includes('saturday') || lower.includes('sat mass') || lower.includes('sat-')) return false;
+  return lower.includes('mass') || lower.includes('sunday');
+}
+
 /** Parse a choir attendance matrix CSV (Ambattur OT format). */
-export function parseAttendanceMatrixCsv(text: string, kind: ActivityKind): CsvImportResult {
-  const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+export function parseAttendanceMatrixCsv(
+  text: string,
+  kind: ActivityKind,
+  options?: { splitMassByWeekday?: boolean },
+): CsvImportResult {
+  const lines = stripCsvBom(text)
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0);
   if (lines.length < 2) {
     return { kind, rows: [], dateCount: 0, memberCount: 0, skippedCells: 0 };
   }
 
+  const splitMass = options?.splitMassByWeekday === true;
   const headerCells = splitCsvLine(lines[0]);
   const dateColumns: { index: number; date: string }[] = [];
 
@@ -47,7 +85,8 @@ export function parseAttendanceMatrixCsv(text: string, kind: ActivityKind): CsvI
         if ((cells[index] ?? '').trim()) skippedCells += 1;
         continue;
       }
-      rows.push({ memberName, date, status });
+      const rowKind = splitMass ? massKindForIsoDate(date) : kind;
+      rows.push({ memberName, date, status, kind: rowKind });
     }
   }
 
@@ -93,23 +132,87 @@ export function kindFromFilename(filename: string): ActivityKind | null {
   return null;
 }
 
-/** Match CSV member name to roster member id (case-insensitive full name). */
-export function matchMemberByName(
-  memberName: string,
-  members: { id: string; firstName: string; lastName: string }[],
-): string | null {
-  const normalized = memberName.trim().toLowerCase();
-  const hit = members.find(
-    (m) => `${m.firstName} ${m.lastName}`.trim().toLowerCase() === normalized,
-  );
-  return hit?.id ?? null;
+/** Normalize a person name for comparison (trim, case, accents, punctuation). */
+export function normalizePersonName(name: string): string {
+  return name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
-/** Keep one mark per member + date (last cell wins). */
+function memberNameKeys(member: NameMatchMember): string[] {
+  const first = normalizePersonName(member.firstName);
+  const last = normalizePersonName(member.lastName);
+  const full = `${first} ${last}`.trim();
+  const swapped = `${last} ${first}`.trim();
+  const keys = new Set<string>([full, swapped].filter(Boolean));
+  return [...keys];
+}
+
+/**
+ * Match CSV member name to roster member id.
+ * Supports exact full name, first/last swap, and last-initial forms ("Sharon G").
+ */
+export function matchMemberByName(
+  memberName: string,
+  members: NameMatchMember[],
+): string | null {
+  const normalized = normalizePersonName(memberName);
+  if (!normalized) return null;
+
+  for (const member of members) {
+    if (memberNameKeys(member).includes(normalized)) return member.id;
+  }
+
+  const parts = normalized.split(' ').filter(Boolean);
+  if (parts.length < 2) return null;
+
+  const lastToken = parts[parts.length - 1]!;
+  const firstPart = parts.slice(0, -1).join(' ');
+
+  const candidates = members.filter((member) => {
+    const first = normalizePersonName(member.firstName);
+    const last = normalizePersonName(member.lastName);
+    if (!first || !last) return false;
+
+    // "Sharon G" → firstName Sharon, lastName Gabriel / G
+    if (first === firstPart && (last === lastToken || last.startsWith(lastToken) || (lastToken.length === 1 && last.startsWith(lastToken)))) {
+      return true;
+    }
+    // swapped: "G Sharon"
+    if (last === firstPart && (first === lastToken || first.startsWith(lastToken) || (lastToken.length === 1 && first.startsWith(lastToken)))) {
+      return true;
+    }
+    return false;
+  });
+
+  if (candidates.length === 1) return candidates[0]!.id;
+  return null;
+}
+
+/** Match many CSV names; returns unique unmatched display names (sorted). */
+export function collectUnmatchedNames(
+  names: string[],
+  members: NameMatchMember[],
+): string[] {
+  const unmatched = new Map<string, string>();
+  for (const name of names) {
+    const trimmed = name.trim();
+    if (!trimmed || matchMemberByName(trimmed, members)) continue;
+    const key = normalizePersonName(trimmed);
+    if (!unmatched.has(key)) unmatched.set(key, trimmed);
+  }
+  return [...unmatched.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/** Keep one mark per member + date + kind (last cell wins). */
 export function dedupeImportRows(rows: CsvImportRow[]): CsvImportRow[] {
   const map = new Map<string, CsvImportRow>();
   for (const row of rows) {
-    map.set(`${row.memberName.toLowerCase()}::${row.date}`, row);
+    map.set(`${row.kind}::${row.memberName.toLowerCase()}::${row.date}`, row);
   }
   return [...map.values()];
 }

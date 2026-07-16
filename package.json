@@ -21,6 +21,7 @@
     "firebase:seed": "node scripts/seedFirestore.mjs",
     "firebase:provision-admin": "node scripts/provisionParishAdmin.mjs",
     "firebase:import-attendance": "node scripts/importAttendanceCsv.mjs",
+    "firebase:normalize-attendance-csv": "node scripts/normalizeAttendanceCsv.mjs",
     "icons:generate": "node scripts/generate-favicons.mjs"
   },
   "dependencies": {

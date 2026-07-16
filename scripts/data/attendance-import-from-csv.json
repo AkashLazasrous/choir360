@@ -1,0 +1,5899 @@
+{
+  "generatedAt": "2026-07-16T19:50:54.935Z",
+  "note": "Names only — memberId resolved at import time against Firestore roster.",
+  "parishId": "church-of-sts-joseph-the-worker-philip-ambattur-ot",
+  "kindCounts": {
+    "saturday_mass": 212,
+    "sunday_mass": 302,
+    "practice": 140,
+    "special_mass": 185
+  },
+  "csvNames": [
+    "Akash Lazar",
+    "Diana Irudhayaraj",
+    "Jansi J",
+    "Jeniefer S",
+    "Lincy J",
+    "Pravin Antony",
+    "Sharon G",
+    "Stella Jasper",
+    "Tamizh Arasi",
+    "Virgin Mary"
+  ],
+  "recordCount": 839,
+  "records": [
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-01",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-02",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-10",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-24",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-06",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-14",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-11",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-01",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-02",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-10",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-30",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-31",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-06",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-20",
+      "status": "Late",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-21",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-25",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-31",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-18",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-01",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-21",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-22",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-05",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-02",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-10",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-18",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-06",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-21",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-12",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-31",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-18",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-02",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-10",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-06",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-07",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-11",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-01",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-21",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-05",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-25",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-26",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-02",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-10",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-16",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-17",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-19",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-24",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-30",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-31",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-06",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-07",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-13",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-14",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-20",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-21",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-04",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-11",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-02",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-10",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-06",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-13",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-14",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-25",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-14",
+      "status": "Late",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-02",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-10",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-06",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-04",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-25",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-08",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-21",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-05",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-11",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-26",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-28",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-29",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-02",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-10",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-16",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-17",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-18",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-24",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-06",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-14",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-20",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-21",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-12",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-25",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-18",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-21",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-08",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-14",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-15",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-21",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-22",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-28",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-18",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-25",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-26",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-27",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-28",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-29",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-30",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-01",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-02",
+      "status": "Late",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-10",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-16",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-17",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-18",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-19",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-24",
+      "status": "Absent",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-31",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-06",
+      "status": "Late",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-14",
+      "status": "Late",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-19",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-21",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "saturday_mass"
+    },
+    {
+      "sourceFile": "Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "sunday_mass"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-11",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-30",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-21",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-31",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-18",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-11",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-21",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-13",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-20",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-04",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-11",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-07",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-13",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-09",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-04",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-24",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-21",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-18",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-23",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-13",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-20",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-27",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-24",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-31",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-07",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-21",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-21",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-18",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-09",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-23",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-30",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-13",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-20",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-27",
+      "status": "Absent",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-04",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Practise Session (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-11",
+      "status": "Present",
+      "kind": "practice"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-02",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-03-26",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-13",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-04-20",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-05-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-10",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Akash Lazar",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-02",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-03-26",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-13",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-05-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-10",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Diana Irudhayaraj",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-01-28",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-02",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-03-26",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-13",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-19",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-05-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-10",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jansi J",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-02",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-03-26",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-13",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-19",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-05-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-10",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Jeniefer S",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-14",
+      "status": "Late",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-02",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-03-26",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-13",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-05-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-06-29",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-10",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Lincy J",
+      "date": "2026-07-12",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-02",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-03-26",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-13",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-04-20",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-05-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-10",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Pravin Antony",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-10",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Sharon G",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-14",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-02",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-03-26",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-13",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-05-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-10",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Stella Jasper",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-01-28",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-14",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-02-15",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-02",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-03-26",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-12",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-13",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-04-20",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-03",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-05-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-05",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-10",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Tamizh Arasi",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-01-28",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-14",
+      "status": "Late",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-02-15",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-02",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-03-26",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-12",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-13",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-19",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-04-20",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-03",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-05-11",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-07",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-11",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-06-29",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-05",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-07",
+      "status": "Absent",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-10",
+      "status": "Present",
+      "kind": "special_mass"
+    },
+    {
+      "sourceFile": "Special Mass (1 jan - 15 jul).csv",
+      "memberName": "Virgin Mary",
+      "date": "2026-07-12",
+      "status": "Present",
+      "kind": "special_mass"
+    }
+  ]
+}
