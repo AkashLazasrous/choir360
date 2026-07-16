@@ -22,15 +22,7 @@ import {
   storeLanguage,
   t,
 } from './i18n/ui';
-import {
-  attendingMemberIdsFromMarks,
-  buildAttendanceRecords,
-  buildMassFromActivity,
-  buildRehearsalFromActivity,
-  dedupeImportSessions,
-  findActivityParent,
-  sessionMarksUnchanged,
-} from './utils/attendanceActivity';
+import { dedupeImportSessions } from './utils/attendanceActivity';
 import type { ActivityAttendanceImportPayload, ActivityAttendanceSavePayload } from './features/attendance/ActivityAttendance';
 import { ARCHDIOCESE_ID, activeParishes, findParishById } from './data/madrasMylaporeParishes';
 import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
@@ -243,7 +235,7 @@ function AppInner() {
       canReadParishPrivate: guard.isAdmin,
     });
   const { records: masses, actions: massSync } =
-    useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext);
+    useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext, 500);
   const { records: payments, actions: paymentSync } =
     useSyncedCollection<Payment>('payments', MOCK_PAYMENTS, syncEnabled, tenantContext);
   const { records: events, actions: eventSync } =
@@ -251,9 +243,9 @@ function AppInner() {
   const { records: announcements } =
     useSyncedCollection<Announcement>('announcements', MOCK_ANNOUNCEMENTS, syncEnabled, tenantContext);
   const { records: rehearsals, actions: rehearsalSync } =
-    useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext);
+    useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext, 500);
   const { records: attendanceRecords, actions: attendanceSync } =
-    useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext);
+    useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext, 5000);
 
   // Wait for Firebase session restore before kicking unsigned users off
   // protected deep links (otherwise a hard refresh on /attendance etc. races
@@ -281,68 +273,29 @@ function AppInner() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Attendance writes go through Admin SDK APIs. Client upserts rewrite
+  // immutable createdAt/createdBy/tenant fields and Firestore rules deny them
+  // ("Missing or insufficient permissions") — same pattern as member profile edit.
   const persistActivitySession = async (
     payload: ActivityAttendanceSavePayload,
   ): Promise<{ ok: boolean; error?: string }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
-    const userId = authState.user?.uid ?? 'admin';
-    const attendingIds = attendingMemberIdsFromMarks(payload.marks);
-    const existing = findActivityParent(payload.kind, payload.date, masses, rehearsals);
-
-    let entityId: string;
-    let entityName: string;
-
-    if (payload.kind === 'practice') {
-      const rehearsal = buildRehearsalFromActivity(
-        payload.date,
-        payload.title,
-        payload.notes,
-        attendingIds,
-        existing as Rehearsal | undefined,
-      );
-      entityId = rehearsal.id;
-      entityName = rehearsal.name;
-      const rehearsalResult = await rehearsalSync.upsert(
-        { ...rehearsal, ...createRecordMetadata(userId, rehearsal.status, tenantContext) },
-        userId,
-      );
-      if (!rehearsalResult.ok) return rehearsalResult;
-    } else {
-      const mass = buildMassFromActivity(
-        payload.kind,
-        payload.date,
-        payload.title,
-        payload.notes,
-        attendingIds,
-        existing as Mass | undefined,
-      );
-      entityId = mass.id;
-      entityName = mass.name;
-      const massResult = await massSync.upsert(
-        { ...mass, ...createRecordMetadata(userId, 'active', tenantContext) },
-        userId,
-      );
-      if (!massResult.ok) return massResult;
+    try {
+      const response = await apiFetch('/api/attendance/session', {
+        method: 'POST',
+        body: JSON.stringify({
+          session: payload,
+          parishId: tenantContext.parishId,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { ok: false, error: data?.error ?? 'Save failed.' };
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Save failed.' };
     }
-
-    const records = buildAttendanceRecords(
-      payload.kind,
-      entityId,
-      entityName,
-      payload.date,
-      payload.marks,
-      members,
-    );
-
-    for (const record of records) {
-      const result = await attendanceSync.upsert(
-        { ...record, ...createRecordMetadata(userId, record.status, tenantContext) },
-        userId,
-      );
-      if (!result.ok) return result;
-    }
-
-    return { ok: true };
   };
 
   const importActivitySessions = async (
@@ -350,18 +303,27 @@ function AppInner() {
   ): Promise<{ ok: boolean; error?: string; imported?: number; skipped?: number }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
     const sessions = dedupeImportSessions(payload.sessions);
-    let imported = 0;
-    let skipped = 0;
-    for (const session of sessions) {
-      if (sessionMarksUnchanged(session.kind, session.date, session.marks, attendanceRecords)) {
-        skipped += 1;
-        continue;
+    if (sessions.length === 0) return { ok: true, imported: 0, skipped: 0 };
+    try {
+      const response = await apiFetch('/api/attendance/import', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessions,
+          parishId: tenantContext.parishId,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { ok: false, error: data?.error ?? 'Import failed.', imported: 0, skipped: 0 };
       }
-      const result = await persistActivitySession(session);
-      if (!result.ok) return { ...result, imported, skipped };
-      imported += 1;
+      return {
+        ok: true,
+        imported: typeof data.imported === 'number' ? data.imported : sessions.length,
+        skipped: typeof data.skipped === 'number' ? data.skipped : 0,
+      };
+    } catch {
+      return { ok: false, error: 'Import failed.' };
     }
-    return { ok: true, imported, skipped };
   };
 
   // ---------------------------------------------------------------------

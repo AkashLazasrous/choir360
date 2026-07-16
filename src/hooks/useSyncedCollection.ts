@@ -15,6 +15,7 @@ export function useSyncedCollection<T extends { id: string }>(
   fallbackRecords: T[],
   syncEnabled = true,
   tenantContext?: TenantContext,
+  pageSize = 200,
 ) {
   const [records, setRecords] = useState<T[]>(fallbackRecords);
   const [isLive, setIsLive] = useState(false);
@@ -45,14 +46,14 @@ export function useSyncedCollection<T extends { id: string }>(
       (items) => { setRecords(items); setIsLive(true); setSyncError(null); },
       (error) => { setSyncError(error.message); setIsLive(false); },
       [],
-      200,
+      pageSize,
       tenantContext,
     );
     return unsubscribe;
     // contextKey encodes all tenant fields; adding it here makes the effect
     // re-run whenever the user switches parish.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionName, syncEnabled, contextKey]);
+  }, [collectionName, syncEnabled, contextKey, pageSize]);
 
   // Insert or replace a record.
   const upsert = useCallback(

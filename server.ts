@@ -9,6 +9,18 @@ import dotenv from "dotenv";
 import { stripSongSiteChrome, isSongChromeLine } from "./src/utils/songLyricsClean";
 import { findParishById } from "./src/data/madrasMylaporeParishes";
 import { dobToPassword, looksLikeEmail, normalizeMobile } from "./src/utils/memberAuth";
+import {
+  activityEntityId,
+  attendingMemberIdsFromMarks,
+  attendanceRecordId,
+  buildAttendanceRecords,
+  buildMassFromActivity,
+  buildRehearsalFromActivity,
+  defaultEntityName,
+  kindToEntityType,
+} from "./src/utils/attendanceActivity";
+import type { ActivityKind, AttendanceStatus, Mass, Member, Rehearsal } from "./src/types";
+import type { DocumentData, Firestore } from "firebase-admin/firestore";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -76,7 +88,8 @@ app.use(cors({
   allowedHeaders: ["Authorization", "Content-Type"],
 }));
 
-app.use(express.json({ limit: "512kb" })); // Tighter limit – 1mb is excessive for this API
+// Attendance CSV import payloads can exceed 512kb (multi-year matrices).
+app.use(express.json({ limit: "2mb" }));
 
 // ---------------------------------------------------------------------------
 // HEALTH CHECK – used by Render's healthCheckPath
@@ -86,7 +99,7 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     service: "choir360-backend",
     // Bump when Cloudinary public-signature support changes (ops probe).
-    build: "member-roster-api-v3",
+    build: "attendance-import-api-v1",
     timestamp: new Date().toISOString(),
   });
 });
@@ -1109,6 +1122,392 @@ app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async
     return res.json({ ok: true });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to remove member." });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ADMIN: attendance session upsert via Admin SDK
+// Client Firestore writes fail when createRecordMetadata rewrites immutable
+// createdAt/createdBy/tenant fields (same class of bug as member profile edit).
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_KINDS = new Set<ActivityKind>([
+  "sunday_mass",
+  "saturday_mass",
+  "practice",
+  "special_mass",
+]);
+const ATTENDANCE_STATUSES = new Set<AttendanceStatus>([
+  "Present",
+  "Absent",
+  "Late",
+  "Excused",
+]);
+
+type AttendanceSessionBody = {
+  kind: ActivityKind;
+  date: string;
+  title?: string;
+  notes?: string;
+  marks: Record<string, AttendanceStatus | null>;
+};
+
+type TenantEnvelope = {
+  archdioceseId: string;
+  parishName: string;
+  tenantId: string;
+  parishId: string;
+  choirId: string;
+};
+
+function resolveAdminTenant(
+  user: { role?: string; parishId?: string; tenantId?: string; archdioceseId?: string; parishName?: string; choirId?: string },
+  requestedParishId?: string,
+): TenantEnvelope {
+  const role = String(user.role || "");
+  const elevated = ["super_admin", "diocese_admin"].includes(role);
+  const tokenParishId = String(user.parishId || "").trim();
+  const parishId = String(requestedParishId || tokenParishId || "").trim();
+  if (!parishId) {
+    throw new Error("parishId is required.");
+  }
+  if (!elevated && tokenParishId && parishId !== tokenParishId) {
+    throw new Error("You can only import attendance for your active parish.");
+  }
+
+  const parish = findParishById(parishId);
+  return {
+    archdioceseId: String(user.archdioceseId || parish?.archdioceseId || "madras-mylapore"),
+    parishName: String(user.parishName || parish?.displayName || parishId),
+    tenantId: String(user.tenantId || parish?.archdioceseId || "madras-mylapore"),
+    parishId,
+    choirId: String(user.choirId || (parish ? `${parish.id}-choir` : `${parishId}-choir`)),
+  };
+}
+
+function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionBody {
+  if (!raw || typeof raw !== "object") {
+    throw new Error(`sessions[${index}] must be an object.`);
+  }
+  const body = raw as Record<string, unknown>;
+  const kind = String(body.kind || "") as ActivityKind;
+  if (!ACTIVITY_KINDS.has(kind)) {
+    throw new Error(`sessions[${index}].kind is invalid.`);
+  }
+  const date = requireString(body.date, `sessions[${index}].date`, 32);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`sessions[${index}].date must be YYYY-MM-DD.`);
+  }
+  const marksRaw = body.marks && typeof body.marks === "object" ? body.marks as Record<string, unknown> : {};
+  const marks: Record<string, AttendanceStatus | null> = {};
+  for (const [memberId, status] of Object.entries(marksRaw)) {
+    if (!memberId || memberId.length > 128) continue;
+    if (status == null || status === "") {
+      marks[memberId] = null;
+      continue;
+    }
+    const value = String(status) as AttendanceStatus;
+    if (!ATTENDANCE_STATUSES.has(value)) {
+      throw new Error(`sessions[${index}].marks has invalid status for ${memberId}.`);
+    }
+    marks[memberId] = value;
+  }
+  if (Object.keys(marks).length > 300) {
+    throw new Error(`sessions[${index}] has too many marks (max 300).`);
+  }
+  return {
+    kind,
+    date,
+    title: typeof body.title === "string" ? body.title.trim().slice(0, 200) : undefined,
+    notes: typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : undefined,
+    marks,
+  };
+}
+
+function stripUndefinedDeep<T extends Record<string, unknown>>(payload: T): T {
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined),
+  ) as T;
+}
+
+async function loadParishMembers(
+  db: Firestore,
+  tenant: TenantEnvelope,
+): Promise<Member[]> {
+  const snap = await db.collection("members")
+    .where("parishId", "==", tenant.parishId)
+    .where("tenantId", "==", tenant.tenantId)
+    .get();
+  return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Member));
+}
+
+async function getDocsByIds(
+  db: Firestore,
+  collectionName: string,
+  ids: string[],
+): Promise<Map<string, DocumentData>> {
+  const out = new Map<string, DocumentData>();
+  const unique = [...new Set(ids.filter(Boolean))];
+  for (let i = 0; i < unique.length; i += 100) {
+    const chunk = unique.slice(i, i + 100);
+    const refs = chunk.map((id) => db.collection(collectionName).doc(id));
+    const snaps = await db.getAll(...refs);
+    for (const snap of snaps) {
+      if (snap.exists) out.set(snap.id, snap.data() || {});
+    }
+  }
+  return out;
+}
+
+function envelopeForWrite(
+  tenant: TenantEnvelope,
+  adminUid: string,
+  status: string,
+  existing?: DocumentData,
+  now = new Date().toISOString(),
+) {
+  return {
+    ...tenant,
+    createdAt: typeof existing?.createdAt === "string" ? existing.createdAt : now,
+    createdBy: typeof existing?.createdBy === "string" ? existing.createdBy : adminUid,
+    updatedAt: now,
+    updatedBy: adminUid,
+    status,
+    deletedAt: existing?.deletedAt ?? null,
+    deletedBy: existing?.deletedBy ?? null,
+  };
+}
+
+function sessionMarksMatchExisting(
+  marks: Record<string, AttendanceStatus | null>,
+  existingById: Map<string, DocumentData>,
+  entityId: string,
+): boolean {
+  const incoming = Object.entries(marks).filter(([, status]) => status) as [string, AttendanceStatus][];
+  if (incoming.length === 0) return existingById.size === 0;
+  if (incoming.length !== existingById.size) return false;
+  return incoming.every(([memberId, status]) => {
+    const docData = existingById.get(attendanceRecordId(entityId, memberId));
+    return Boolean(docData && docData.status === status);
+  });
+}
+
+async function upsertAttendanceSessions(opts: {
+  db: Firestore;
+  adminUid: string;
+  tenant: TenantEnvelope;
+  members: Member[];
+  sessions: AttendanceSessionBody[];
+}): Promise<{ imported: number; skipped: number; writtenRecords: number }> {
+  const { db, adminUid, tenant, members, sessions } = opts;
+  const memberById = new Map(members.map((m) => [m.id, m]));
+  const now = new Date().toISOString();
+
+  const massIds: string[] = [];
+  const rehearsalIds: string[] = [];
+  const attendanceIds: string[] = [];
+  const prepared = sessions.map((session) => {
+    const entityId = activityEntityId(session.kind, session.date);
+    const recordIds = Object.entries(session.marks)
+      .filter(([, status]) => status)
+      .map(([memberId]) => attendanceRecordId(entityId, memberId));
+    if (session.kind === "practice") rehearsalIds.push(entityId);
+    else massIds.push(entityId);
+    attendanceIds.push(...recordIds);
+    return { session, entityId, recordIds };
+  });
+
+  const [massExisting, rehearsalExisting, attendanceExistingAll] = await Promise.all([
+    getDocsByIds(db, "masses", massIds),
+    getDocsByIds(db, "rehearsals", rehearsalIds),
+    getDocsByIds(db, "attendance", attendanceIds),
+  ]);
+
+  let imported = 0;
+  let skipped = 0;
+  let writtenRecords = 0;
+  let batch = db.batch();
+  let ops = 0;
+  const commitBatch = async () => {
+    if (ops === 0) return;
+    await batch.commit();
+    batch = db.batch();
+    ops = 0;
+  };
+
+  for (const { session, entityId, recordIds } of prepared) {
+    const attendanceExisting = new Map<string, DocumentData>();
+    for (const id of recordIds) {
+      const docData = attendanceExistingAll.get(id);
+      if (docData) attendanceExisting.set(id, docData);
+    }
+
+    if (sessionMarksMatchExisting(session.marks, attendanceExisting, entityId)) {
+      skipped += 1;
+      continue;
+    }
+
+    const attendingIds = attendingMemberIdsFromMarks(session.marks);
+    const parentPrev = session.kind === "practice"
+      ? rehearsalExisting.get(entityId)
+      : massExisting.get(entityId);
+
+    if (session.kind === "practice") {
+      const rehearsal = buildRehearsalFromActivity(
+        session.date,
+        session.title,
+        session.notes,
+        attendingIds,
+        parentPrev ? ({ id: entityId, ...parentPrev } as Rehearsal) : undefined,
+      );
+      batch.set(
+        db.collection("rehearsals").doc(entityId),
+        stripUndefinedDeep({
+          ...rehearsal,
+          ...envelopeForWrite(tenant, adminUid, rehearsal.status || "Completed", parentPrev, now),
+        }),
+        { merge: true },
+      );
+    } else {
+      const mass = buildMassFromActivity(
+        session.kind,
+        session.date,
+        session.title,
+        session.notes,
+        attendingIds,
+        parentPrev ? ({ id: entityId, ...parentPrev } as Mass) : undefined,
+      );
+      batch.set(
+        db.collection("masses").doc(entityId),
+        stripUndefinedDeep({
+          ...mass,
+          ...envelopeForWrite(tenant, adminUid, "active", parentPrev, now),
+        }),
+        { merge: true },
+      );
+    }
+    ops += 1;
+
+    const entityName = session.title?.trim()
+      || (typeof parentPrev?.name === "string" ? parentPrev.name : defaultEntityName(session.kind, session.date));
+    const records = buildAttendanceRecords(
+      session.kind,
+      entityId,
+      entityName,
+      session.date,
+      session.marks,
+      members,
+    );
+
+    const ensured = new Map(records.map((r) => [r.id, r]));
+    for (const [memberId, status] of Object.entries(session.marks)) {
+      if (!status || ensured.has(attendanceRecordId(entityId, memberId))) continue;
+      const member = memberById.get(memberId);
+      if (!member) continue;
+      const id = attendanceRecordId(entityId, memberId);
+      ensured.set(id, {
+        id,
+        entityId,
+        entityType: kindToEntityType(session.kind),
+        activityKind: session.kind,
+        entityName,
+        date: session.date,
+        memberId,
+        memberName: `${member.firstName} ${member.lastName}`.trim(),
+        status,
+      });
+    }
+
+    for (const record of ensured.values()) {
+      const prev = attendanceExistingAll.get(record.id);
+      batch.set(
+        db.collection("attendance").doc(record.id),
+        stripUndefinedDeep({
+          ...record,
+          ...envelopeForWrite(tenant, adminUid, record.status, prev, now),
+        }),
+        { merge: true },
+      );
+      ops += 1;
+      writtenRecords += 1;
+      if (ops >= 400) await commitBatch();
+    }
+
+    imported += 1;
+    if (ops >= 400) await commitBatch();
+  }
+
+  await commitBatch();
+  return { imported, skipped, writtenRecords };
+}
+
+app.post("/api/attendance/session", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const session = parseAttendanceSession(body.session ?? body, 0);
+    const tenant = resolveAdminTenant((req as any).user, typeof body.parishId === "string" ? body.parishId : undefined);
+    const adminUid = (req as any).user.uid as string;
+    const db = admin.firestore();
+    const members = await loadParishMembers(db, tenant);
+    const result = await upsertAttendanceSessions({
+      db,
+      adminUid,
+      tenant,
+      members,
+      sessions: [session],
+    });
+    console.log(
+      `[Attendance] session upsert kind=${session.kind} date=${session.date} `
+      + `imported=${result.imported} skipped=${result.skipped} by=${adminUid}`,
+    );
+    return res.json({ ok: true, ...result });
+  } catch (error: any) {
+    console.error("[Attendance] session upsert failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Failed to save attendance." });
+  }
+});
+
+app.post("/api/attendance/import", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const sessionsRaw = Array.isArray(body.sessions) ? body.sessions : null;
+    if (!sessionsRaw) {
+      return res.status(400).json({ error: "sessions array is required." });
+    }
+    if (sessionsRaw.length === 0) {
+      return res.json({ ok: true, imported: 0, skipped: 0, writtenRecords: 0 });
+    }
+    if (sessionsRaw.length > 800) {
+      return res.status(400).json({ error: "Too many sessions in one import (max 800)." });
+    }
+
+    const sessions = sessionsRaw.map((item, index) => parseAttendanceSession(item, index));
+    const tenant = resolveAdminTenant((req as any).user, typeof body.parishId === "string" ? body.parishId : undefined);
+    const adminUid = (req as any).user.uid as string;
+    const db = admin.firestore();
+    const members = await loadParishMembers(db, tenant);
+    const result = await upsertAttendanceSessions({
+      db,
+      adminUid,
+      tenant,
+      members,
+      sessions,
+    });
+
+    console.log(
+      `[Attendance] import parish=${tenant.parishId} sessions=${sessions.length} `
+      + `imported=${result.imported} skipped=${result.skipped} records=${result.writtenRecords} by=${adminUid}`,
+    );
+    return res.json({ ok: true, ...result });
+  } catch (error: any) {
+    console.error("[Attendance] import failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Failed to import attendance." });
   }
 });
 
