@@ -20,7 +20,8 @@
     "firebase:set-claims": "node scripts/setFirebaseClaims.mjs",
     "firebase:seed": "node scripts/seedFirestore.mjs",
     "firebase:provision-admin": "node scripts/provisionParishAdmin.mjs",
-    "firebase:import-attendance": "node scripts/importAttendanceCsv.mjs"
+    "firebase:import-attendance": "node scripts/importAttendanceCsv.mjs",
+    "icons:generate": "node scripts/generate-favicons.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

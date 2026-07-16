@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Choir360">
+  <defs>
+    <linearGradient id="bg" x1="6" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#134556"/>
+      <stop offset="55%" stop-color="#0e3d4c"/>
+      <stop offset="100%" stop-color="#050a14"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="8" y1="6" x2="24" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="45%" stop-color="#f5c24c"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7.5" fill="url(#bg)"/>
+  <rect x="1" y="1" width="30" height="30" rx="6.5" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <!-- Bold geometric C for Choir360; open to the right -->
+  <path
+    fill="url(#gold)"
+    d="M21.6 8.35c-1.05-.72-2.28-1.15-3.7-1.15-4.55 0-7.85 3.35-7.85 8.8 0 5.45 3.3 8.8 7.85 8.8 1.42 0 2.65-.43 3.7-1.15l1.35 2.05c-1.55 1.15-3.35 1.85-5.05 1.85-6.05 0-10.55-4.35-10.55-11.55S8.7 4.45 14.75 4.45c1.7 0 3.5.7 5.05 1.85l-1.2 2.05z"
+  />
+  <!-- Compact eighth note in the C aperture -->
+  <g fill="url(#gold)">
+    <ellipse cx="22.15" cy="19.35" rx="2.35" ry="1.85" transform="rotate(-22 22.15 19.35)"/>
+    <rect x="23.55" y="8.9" width="1.55" height="10.2" rx="0.6"/>
+    <path d="M25.1 8.9c0 0 2.35 1.05 2.55 4.15-.95-.7-1.85-.95-2.55-1.05V8.9z"/>
+  </g>
+</svg>
