@@ -7,6 +7,7 @@ import {
   LEADERBOARD_FORMULA_HINT,
   computeAttendanceLeaderboard,
   findLeaderboardRank,
+  type CategoryAttendanceStats,
   type LeaderboardEntry,
 } from '../../utils/attendanceLeaderboard';
 import { CountUp } from '../../components/interactions/CountUp';
@@ -130,6 +131,27 @@ function ScoreBar({
   );
 }
 
+function CategoryChip({ label, stats }: { label: string; stats: CategoryAttendanceStats }) {
+  if (stats.logged === 0) {
+    return (
+      <span className="rounded-lg bg-[rgba(14,61,76,0.04)] px-2 py-1 text-[10px] text-[#86868b]">
+        {label}: —
+      </span>
+    );
+  }
+  return (
+    <span
+      className="rounded-lg bg-[rgba(14,61,76,0.06)] px-2 py-1 text-[10px] tabular-nums text-[#334155]"
+      title={`${label}: Present ${stats.present}, Late ${stats.late}, Absent ${stats.absent}, Excused ${stats.excused}`}
+    >
+      <span className="font-semibold text-[#0e3d4c]">{label}</span>{' '}
+      {stats.attended}/{stats.logged}
+      {stats.late > 0 && <span className="text-[#8a6a10]"> · L{stats.late}</span>}
+      {stats.absent > 0 && <span className="text-[#d70015]"> · A{stats.absent}</span>}
+    </span>
+  );
+}
+
 const LeaderboardRow: React.FC<{
   entry: LeaderboardEntry;
   isYou: boolean;
@@ -169,11 +191,16 @@ const LeaderboardRow: React.FC<{
             reduceMotion={reduceMotion}
             accent={top3}
           />
+          <div className="flex flex-wrap gap-1.5">
+            <CategoryChip label="Mass" stats={entry.mass} />
+            <CategoryChip label="Special" stats={entry.specialMass} />
+            <CategoryChip label="Practice" stats={entry.practice} />
+          </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-[#64748b]">
             <span>
-              Attended{' '}
+              Overall{' '}
               <strong className="font-semibold text-[#0e3d4c]">
-                {entry.massAttended}/{entry.massLogged}
+                {entry.sessionAttended}/{entry.sessionLogged}
               </strong>
             </span>
             <span>
@@ -223,7 +250,7 @@ const LeaderboardRow: React.FC<{
 };
 
 /**
- * Animated liturgy reliability leaderboard — shared by member + admin surfaces.
+ * Animated attendance reliability leaderboard — Mass / Special / Practice columns.
  */
 export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
   attendanceRecords,
@@ -291,9 +318,9 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
         {visible.length === 0 ? (
           <div className="apple-empty py-10">
             <Users className="mx-auto mb-2 h-9 w-9 text-[#c7c7cc]" />
-            <p className="text-[14px] font-medium text-[#3a3a3c]">No mass attendance yet</p>
+            <p className="text-[14px] font-medium text-[#3a3a3c]">No attendance yet</p>
             <p className="mt-1 text-[12px] text-[#86868b]">
-              Rankings appear once liturgy check-ins are logged for this parish.
+              Rankings appear once Mass, Special Mass, or Practice check-ins are logged.
             </p>
           </div>
         ) : (

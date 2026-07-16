@@ -1134,6 +1134,9 @@ app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async
 const ACTIVITY_KINDS = new Set<ActivityKind>([
   "sunday_mass",
   "saturday_mass",
+  "weekday_mass",
+  "feast_day",
+  "novena",
   "practice",
   "special_mass",
 ]);
@@ -1144,12 +1147,23 @@ const ATTENDANCE_STATUSES = new Set<AttendanceStatus>([
   "Excused",
 ]);
 
+type SpecialMassBilling = "free" | "paid";
+type SpecialMassPaymentDetails = {
+  amount?: number;
+  whoPaid?: string;
+  notes?: string;
+  dateReceived?: string;
+  paymentMode?: string;
+};
+
 type AttendanceSessionBody = {
   kind: ActivityKind;
   date: string;
   title?: string;
   notes?: string;
   marks: Record<string, AttendanceStatus | null>;
+  specialMassBilling?: SpecialMassBilling;
+  specialMassPayment?: SpecialMassPaymentDetails;
 };
 
 type TenantEnvelope = {
@@ -1212,12 +1226,38 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
   if (Object.keys(marks).length > 300) {
     throw new Error(`sessions[${index}] has too many marks (max 300).`);
   }
+  let specialMassBilling: SpecialMassBilling | undefined;
+  let specialMassPayment: SpecialMassPaymentDetails | undefined;
+  if (kind === "special_mass") {
+    const billingRaw = typeof body.specialMassBilling === "string"
+      ? body.specialMassBilling.trim().toLowerCase()
+      : "";
+    if (billingRaw === "free" || billingRaw === "paid") {
+      specialMassBilling = billingRaw;
+    }
+    if (specialMassBilling === "paid" && body.specialMassPayment && typeof body.specialMassPayment === "object") {
+      const pay = body.specialMassPayment as Record<string, unknown>;
+      const amount = typeof pay.amount === "number" ? pay.amount : Number(pay.amount);
+      specialMassPayment = {
+        amount: Number.isFinite(amount) && amount >= 0 ? amount : undefined,
+        whoPaid: typeof pay.whoPaid === "string" ? pay.whoPaid.trim().slice(0, 200) : undefined,
+        notes: typeof pay.notes === "string" ? pay.notes.trim().slice(0, 1000) : undefined,
+        dateReceived: typeof pay.dateReceived === "string" && /^\d{4}-\d{2}-\d{2}$/.test(pay.dateReceived)
+          ? pay.dateReceived
+          : undefined,
+        paymentMode: typeof pay.paymentMode === "string" ? pay.paymentMode.trim().slice(0, 40) : undefined,
+      };
+    }
+  }
+
   return {
     kind,
     date,
     title: typeof body.title === "string" ? body.title.trim().slice(0, 200) : undefined,
     notes: typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : undefined,
     marks,
+    specialMassBilling,
+    specialMassPayment,
   };
 }
 
@@ -1403,6 +1443,12 @@ async function upsertAttendanceSessions(opts: {
         session.notes,
         attendingIds,
         parentPrev ? ({ id: entityId, ...parentPrev } as Mass) : undefined,
+        session.kind === "special_mass"
+          ? {
+              specialMassBilling: session.specialMassBilling,
+              specialMassPayment: session.specialMassPayment,
+            }
+          : undefined,
       );
       batch.set(
         db.collection("masses").doc(entityId),

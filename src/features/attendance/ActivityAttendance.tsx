@@ -1,25 +1,31 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Calendar, Check, Clock, ClipboardList, History, Save, Upload,
+  Calendar, Check, Clock, ClipboardList, History, IndianRupee, Save, Upload,
   UserCheck, Users, X, AlertCircle,
 } from 'lucide-react';
 import {
   ActivityKind,
+  AttendanceCategory,
   AttendanceRecord,
   AttendanceStatus,
   Mass,
   Member,
   Payment,
   Rehearsal,
+  SpecialMassBilling,
+  SpecialMassPaymentDetails,
 } from '../../types';
 import { formatINR } from '../../utils/currency';
 import {
   ACTIVITY_KIND_LABELS,
+  ATTENDANCE_CATEGORY_LABELS,
   activityEntityId,
-  attendingMemberIdsFromMarks,
+  categoryForActivityKind,
   findActivityParent,
+  kindsForCategory,
   listActivitySessions,
   marksFromRecords,
+  MASS_BUCKET_KINDS,
 } from '../../utils/attendanceActivity';
 import {
   computeParishStats,
@@ -33,6 +39,7 @@ import {
 } from './parseAttendanceCsv';
 import { dedupeImportSessions } from '../../utils/attendanceActivity';
 import { AttendanceLeaderboard } from './AttendanceLeaderboard';
+import { computeAttendanceLeaderboard } from '../../utils/attendanceLeaderboard';
 
 const STATUSES: AttendanceStatus[] = ['Present', 'Absent', 'Late', 'Excused'];
 
@@ -59,12 +66,16 @@ const STATUS_STYLE: Record<AttendanceStatus, { active: string; idle: string; ico
   },
 };
 
+const CATEGORIES: AttendanceCategory[] = ['mass', 'special_mass', 'practice'];
+
 export interface ActivityAttendanceSavePayload {
   kind: ActivityKind;
   date: string;
   title?: string;
   notes?: string;
   marks: Record<string, AttendanceStatus | null>;
+  specialMassBilling?: SpecialMassBilling;
+  specialMassPayment?: SpecialMassPaymentDetails;
 }
 
 export interface ActivityAttendanceImportPayload {
@@ -95,6 +106,13 @@ interface ActivityAttendanceProps {
   }>;
 }
 
+function canMutateKind(kind: ActivityKind, isAdmin: boolean): boolean {
+  if (!isAdmin) return false;
+  // Practice create/edit/delete is admin-only (members view in history/leaderboard).
+  if (kind === 'practice') return isAdmin;
+  return true;
+}
+
 export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   members,
   masses,
@@ -110,12 +128,19 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [section, setSection] = useState<'log' | 'history' | 'overview'>('log');
+  const [category, setCategory] = useState<AttendanceCategory>('mass');
   const [kind, setKind] = useState<ActivityKind>('sunday_mass');
-  const [historyKindFilter, setHistoryKindFilter] = useState<ActivityKind | 'all'>('all');
+  const [historyCategoryFilter, setHistoryCategoryFilter] = useState<AttendanceCategory | 'all'>('all');
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [marks, setMarks] = useState<Record<string, AttendanceStatus | null>>({});
+  const [specialBilling, setSpecialBilling] = useState<SpecialMassBilling>('free');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentWho, setPaymentWho] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
+  const [paymentMode, setPaymentMode] = useState('Cash');
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -146,12 +171,17 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     [attendanceRecords, members, masses, payments],
   );
 
+  const leaderboardRows = useMemo(
+    () => computeAttendanceLeaderboard(attendanceRecords, members),
+    [attendanceRecords, members],
+  );
+
   const rosterRows = isAdmin
-    ? parishStats.rosterStats
-    : parishStats.rosterStats.filter((s) => s.memberId === viewerMemberId);
+    ? leaderboardRows
+    : leaderboardRows.filter((s) => s.memberId === viewerMemberId);
 
   const viewerStats = viewerMemberId
-    ? parishStats.rosterStats.find((s) => s.memberId === viewerMemberId) ?? null
+    ? leaderboardRows.find((s) => s.memberId === viewerMemberId) ?? null
     : null;
 
   const recentHistory = useMemo(
@@ -159,13 +189,11 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     [attendanceRecords, kind],
   );
 
-  const fullHistory = useMemo(
-    () => listActivitySessions(
-      attendanceRecords,
-      historyKindFilter === 'all' ? undefined : historyKindFilter,
-    ),
-    [attendanceRecords, historyKindFilter],
-  );
+  const fullHistory = useMemo(() => {
+    const all = listActivitySessions(attendanceRecords);
+    if (historyCategoryFilter === 'all') return all;
+    return all.filter((s) => categoryForActivityKind(s.kind) === historyCategoryFilter);
+  }, [attendanceRecords, historyCategoryFilter]);
 
   const summary = useMemo(() => {
     const logged = Object.values(loadedMarks).filter(Boolean).length;
@@ -176,8 +204,32 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     return { logged, present, late, absent, excused };
   }, [loadedMarks]);
 
+  const massSubKinds = MASS_BUCKET_KINDS;
+  const canEdit = canMutateKind(kind, isAdmin);
+
+  // Sync billing fields when opening an existing special mass parent
+  useEffect(() => {
+    if (kind !== 'special_mass') return;
+    const mass = existingParent && 'category' in existingParent ? existingParent as Mass : undefined;
+    if (!mass) return;
+    setSpecialBilling(mass.specialMassBilling ?? 'free');
+    setPaymentAmount(mass.specialMassPayment?.amount != null ? String(mass.specialMassPayment.amount) : '');
+    setPaymentWho(mass.specialMassPayment?.whoPaid ?? '');
+    setPaymentNotes(mass.specialMassPayment?.notes ?? '');
+    setPaymentDate(mass.specialMassPayment?.dateReceived ?? '');
+    setPaymentMode(mass.specialMassPayment?.paymentMode ?? 'Cash');
+  }, [kind, date, existingParent]);
+
+  const selectCategory = (next: AttendanceCategory) => {
+    setCategory(next);
+    const kinds = kindsForCategory(next);
+    setKind(kinds[0]!);
+    setMarks({});
+    setSaveMessage(null);
+  };
+
   const setMemberStatus = (memberId: string, status: AttendanceStatus) => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     setMarks((prev) => {
       const current = prev[memberId] ?? existingMarks[memberId] ?? null;
       return { ...prev, [memberId]: current === status ? null : status };
@@ -186,6 +238,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
   const openSession = (sessionDate: string, sessionKind: ActivityKind) => {
     setKind(sessionKind);
+    setCategory(categoryForActivityKind(sessionKind));
     setDate(sessionDate);
     setMarks({});
     setTitle('');
@@ -194,8 +247,20 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setSaveMessage(null);
   };
 
+  const buildSpecialPayment = (): SpecialMassPaymentDetails | undefined => {
+    if (kind !== 'special_mass' || specialBilling !== 'paid') return undefined;
+    const amount = Number(paymentAmount);
+    return {
+      amount: Number.isFinite(amount) && amount > 0 ? amount : undefined,
+      whoPaid: paymentWho.trim() || undefined,
+      notes: paymentNotes.trim() || undefined,
+      dateReceived: paymentDate || undefined,
+      paymentMode: paymentMode || undefined,
+    };
+  };
+
   const handleSave = async () => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     setSaving(true);
     setSaveMessage(null);
     const result = await onSaveSession({
@@ -204,6 +269,12 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
       title: title || undefined,
       notes: notes || undefined,
       marks: loadedMarks,
+      ...(kind === 'special_mass'
+        ? {
+            specialMassBilling: specialBilling,
+            specialMassPayment: buildSpecialPayment(),
+          }
+        : {}),
     });
     setSaving(false);
     setSaveMessage(result.ok ? 'Attendance saved.' : (result.error ?? 'Save failed.'));
@@ -238,7 +309,6 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
         splitMassByWeekday: shouldSplitMassByWeekday(file.name),
       });
 
-      // key = kind::date
       const bySession = new Map<string, { kind: ActivityKind; date: string; marks: Record<string, AttendanceStatus | null> }>();
       for (const row of parsed.rows) {
         const memberId = matchMemberByName(row.memberName, members);
@@ -290,7 +360,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
         + ' Open History to browse imported dates.',
       );
       setSection('history');
-      setHistoryKindFilter('all');
+      setHistoryCategoryFilter('all');
     } else {
       setImportMessage(
         `${result.error ?? 'Import failed.'}`
@@ -304,6 +374,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setTimeout(() => setImportMessage(null), unmatchedNames.length || !result.ok ? 16000 : 8000);
   };
 
+  const specialMassParent = kind === 'special_mass' && existingParent && 'category' in existingParent
+    ? existingParent as Mass
+    : undefined;
+
   return (
     <div className="space-y-6 font-apple">
       <section className="apple-hero-soft relative px-6 py-7 sm:px-8">
@@ -316,7 +390,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
             </div>
             <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">Activity Attendance</h2>
             <p className="mt-1 text-[15px] text-[#a1a1a6]">
-              Sunday Mass · Practice · Special Mass — one log for Sts Joseph &amp; Philip
+              Mass · Special Mass · Practice Session — one log for Sts Joseph &amp; Philip
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -359,19 +433,19 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setHistoryKindFilter('all')}
-                  className={`btn-pill btn-pill-sm ${historyKindFilter === 'all' ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                  onClick={() => setHistoryCategoryFilter('all')}
+                  className={`btn-pill btn-pill-sm ${historyCategoryFilter === 'all' ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
                 >
                   All
                 </button>
-                {(Object.keys(ACTIVITY_KIND_LABELS) as ActivityKind[]).map((k) => (
+                {CATEGORIES.map((c) => (
                   <button
-                    key={k}
+                    key={c}
                     type="button"
-                    onClick={() => setHistoryKindFilter(k)}
-                    className={`btn-pill btn-pill-sm ${historyKindFilter === k ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                    onClick={() => setHistoryCategoryFilter(c)}
+                    className={`btn-pill btn-pill-sm ${historyCategoryFilter === c ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
                   >
-                    {ACTIVITY_KIND_LABELS[k]}
+                    {ATTENDANCE_CATEGORY_LABELS[c]}
                   </button>
                 ))}
               </div>
@@ -393,6 +467,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     <div className="min-w-0">
                       <p className="text-[15px] font-semibold text-[#1d1d1f]">{session.date}</p>
                       <p className="truncate text-[12px] text-[#86868b]">
+                        {ATTENDANCE_CATEGORY_LABELS[categoryForActivityKind(session.kind)]}
+                        {' · '}
                         {ACTIVITY_KIND_LABELS[session.kind]}
                         {session.entityName ? ` · ${session.entityName}` : ''}
                       </p>
@@ -424,7 +500,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <p className="mt-1 text-[28px] font-semibold text-[#18392f]">{parishStats.trendLast30Days}%</p>
             </div>
             <div className="apple-card p-4 text-center">
-              <p className="text-[12px] font-medium text-[#86868b]">Masses attended</p>
+              <p className="text-[12px] font-medium text-[#86868b]">Liturgy attended</p>
               <p className="mt-1 text-[28px] font-semibold text-[#18392f]">
                 {parishStats.parishMassAttended}<span className="text-[16px] text-[#86868b]">/{parishStats.parishMassLogged}</span>
               </p>
@@ -440,14 +516,16 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <p className="apple-label mb-2">Your attendance</p>
               <div className="flex flex-wrap items-center gap-6">
                 <div>
-                  <p className="text-[32px] font-semibold text-[#18392f]">{viewerStats.finalPercent}%</p>
-                  <p className="text-[12px] text-[#86868b]">Final rate</p>
+                  <p className="text-[32px] font-semibold text-[#18392f]">{viewerStats.scorePercent}%</p>
+                  <p className="text-[12px] text-[#86868b]">Reliability score</p>
                 </div>
-                <div className="text-[13px] text-[#3a3a3c]">
-                  <p>Masses: <strong>{viewerStats.massAttended} / {viewerStats.massLogged}</strong> attended</p>
-                  <p>Present: <strong>{viewerStats.present}</strong> · Late: <strong>{viewerStats.late}</strong></p>
-                  <p>Absent: <strong>{viewerStats.absent}</strong> · Excused: <strong>{viewerStats.excused}</strong></p>
-                  <p>Share total: <strong>{formatINR(viewerStats.totalShareINR)}</strong></p>
+                <div className="text-[13px] text-[#3a3a3c] space-y-1">
+                  <p>Mass: <strong>{viewerStats.mass.attended}/{viewerStats.mass.logged}</strong>
+                    {viewerStats.mass.late ? ` · Late ${viewerStats.mass.late}` : ''}
+                    {viewerStats.mass.absent ? ` · Absent ${viewerStats.mass.absent}` : ''}
+                  </p>
+                  <p>Special: <strong>{viewerStats.specialMass.attended}/{viewerStats.specialMass.logged}</strong></p>
+                  <p>Practice: <strong>{viewerStats.practice.attended}/{viewerStats.practice.logged}</strong></p>
                 </div>
               </div>
             </div>
@@ -463,37 +541,49 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
           <div className="apple-card overflow-hidden p-0">
             <div className="border-b border-black/[0.06] px-5 py-3">
               <h3 className="text-[17px] font-semibold text-[#1d1d1f]">Member attendance</h3>
+              <p className="mt-0.5 text-[12px] text-[#86868b]">
+                Columns show attended / total · late · absent per category
+              </p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-[13px]">
+              <table className="w-full min-w-[980px] text-left text-[13px]">
                 <thead className="bg-[#f5f5f7] text-[11px] font-semibold uppercase tracking-wide text-[#86868b]">
                   <tr>
                     <th className="px-4 py-2.5">Member</th>
-                    <th className="px-4 py-2.5">Masses</th>
-                    <th className="px-4 py-2.5">Present</th>
-                    <th className="px-4 py-2.5">Late</th>
-                    <th className="px-4 py-2.5">Absent</th>
-                    <th className="px-4 py-2.5">Excused</th>
-                    <th className="px-4 py-2.5">Final %</th>
+                    <th className="px-4 py-2.5">Mass</th>
+                    <th className="px-4 py-2.5">Special Mass</th>
+                    <th className="px-4 py-2.5">Practice</th>
+                    <th className="px-4 py-2.5">Overall</th>
+                    <th className="px-4 py-2.5">Score</th>
                     <th className="px-4 py-2.5">Share</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rosterRows.map((row) => (
-                    <tr key={row.memberId} className="border-t border-black/[0.04]">
-                      <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
-                      <td className="px-4 py-3 tabular-nums">
-                        <span className="font-semibold text-[#18392f]">{row.massAttended}</span>
-                        <span className="text-[#86868b]"> / {row.massLogged}</span>
-                      </td>
-                      <td className="px-4 py-3 tabular-nums">{row.present}</td>
-                      <td className="px-4 py-3 tabular-nums text-[#8a6a10]">{row.late}</td>
-                      <td className="px-4 py-3 tabular-nums text-[#d70015]">{row.absent}</td>
-                      <td className="px-4 py-3 tabular-nums">{row.excused}</td>
-                      <td className="px-4 py-3 tabular-nums font-semibold text-[#18392f]">{row.finalPercent}%</td>
-                      <td className="px-4 py-3 tabular-nums font-medium">{formatINR(row.totalShareINR)}</td>
-                    </tr>
-                  ))}
+                  {rosterRows.map((row) => {
+                    const share = parishStats.rosterStats.find((r) => r.memberId === row.memberId)?.totalShareINR ?? 0;
+                    const fmt = (c: { attended: number; logged: number; late: number; absent: number }) => (
+                      <span className="tabular-nums">
+                        <span className="font-semibold text-[#18392f]">{c.attended}</span>
+                        <span className="text-[#86868b]">/{c.logged}</span>
+                        {c.late > 0 && <span className="ml-1 text-[#8a6a10]">L{c.late}</span>}
+                        {c.absent > 0 && <span className="ml-1 text-[#d70015]">A{c.absent}</span>}
+                      </span>
+                    );
+                    return (
+                      <tr key={row.memberId} className="border-t border-black/[0.04]">
+                        <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
+                        <td className="px-4 py-3">{fmt(row.mass)}</td>
+                        <td className="px-4 py-3">{fmt(row.specialMass)}</td>
+                        <td className="px-4 py-3">{fmt(row.practice)}</td>
+                        <td className="px-4 py-3 tabular-nums">
+                          <span className="font-semibold text-[#18392f]">{row.sessionAttended}</span>
+                          <span className="text-[#86868b]"> / {row.sessionLogged}</span>
+                        </td>
+                        <td className="px-4 py-3 tabular-nums font-semibold text-[#18392f]">{row.scorePercent}%</td>
+                        <td className="px-4 py-3 tabular-nums font-medium">{formatINR(share)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -520,25 +610,55 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 className="btn-pill btn-pill-secondary flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
-                {importing ? 'Importing…' : 'Import Excel/CSV'}
+                {importing ? 'Importing…' : 'Import Mass / Special / Practice CSV'}
               </button>
-              {importMessage && <p className="text-[13px] text-[#18392f]">{importMessage}</p>}
+              <p className="text-[12px] text-[#86868b]">
+                Expects files named Mass, Special Mass, Practise Session (CSV).
+              </p>
+              {importMessage && <p className="w-full text-[13px] text-[#18392f]">{importMessage}</p>}
             </div>
           )}
 
           <div className="apple-card space-y-4 p-5">
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(ACTIVITY_KIND_LABELS) as ActivityKind[]).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => { setKind(k); setMarks({}); }}
-                  className={`btn-pill btn-pill-sm ${kind === k ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
-                >
-                  {ACTIVITY_KIND_LABELS[k]}
-                </button>
-              ))}
+            <div>
+              <p className="apple-label mb-2">Category</p>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => selectCategory(c)}
+                    className={`btn-pill btn-pill-sm ${category === c ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                  >
+                    {ATTENDANCE_CATEGORY_LABELS[c]}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {category === 'mass' && (
+              <div>
+                <p className="apple-label mb-2">Mass type</p>
+                <div className="flex flex-wrap gap-2">
+                  {massSubKinds.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => { setKind(k); setMarks({}); }}
+                      className={`btn-pill btn-pill-sm ${kind === k ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
+                    >
+                      {ACTIVITY_KIND_LABELS[k]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {kind === 'practice' && !isAdmin && (
+              <p className="rounded-xl bg-[rgba(14,61,76,0.06)] px-3 py-2 text-[13px] text-[#0e3d4c]">
+                Practice sessions are view-only for members. Only choir admins can create or edit practice attendance.
+              </p>
+            )}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="space-y-1.5">
@@ -548,9 +668,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   value={date}
                   onChange={(e) => { setDate(e.target.value); setMarks({}); }}
                   className="apple-input"
+                  disabled={!canEdit && isAdmin === false}
                 />
               </label>
-              {isAdmin && (
+              {canEdit && (
                 <>
                   <label className="space-y-1.5 sm:col-span-1">
                     <span className="apple-label">Title (optional)</span>
@@ -572,6 +693,94 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 </>
               )}
             </div>
+
+            {kind === 'special_mass' && (
+              <div className="space-y-3 rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4">
+                <p className="apple-label flex items-center gap-1 text-amber-800">
+                  <IndianRupee className="h-3.5 w-3.5" /> Special Mass billing
+                </p>
+                {!canEdit && specialMassParent && (
+                  <p className="text-[13px] text-[#3a3a3c]">
+                    {specialMassParent.specialMassBilling === 'paid'
+                      ? `Paid${specialMassParent.specialMassPayment?.amount != null ? ` · ${formatINR(specialMassParent.specialMassPayment.amount)}` : ''}${specialMassParent.specialMassPayment?.whoPaid ? ` · ${specialMassParent.specialMassPayment.whoPaid}` : ''}`
+                      : 'Free'}
+                    {specialMassParent.specialMassPayment?.notes
+                      ? ` — ${specialMassParent.specialMassPayment.notes}`
+                      : ''}
+                  </p>
+                )}
+                {canEdit && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {(['free', 'paid'] as SpecialMassBilling[]).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setSpecialBilling(opt)}
+                          className={`btn-pill btn-pill-sm ${specialBilling === opt ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                        >
+                          {opt === 'free' ? 'Free' : 'Paid'}
+                        </button>
+                      ))}
+                    </div>
+                    {specialBilling === 'paid' && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="space-y-1.5">
+                          <span className="apple-label">Amount (₹)</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            className="apple-input"
+                            placeholder="0"
+                          />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="apple-label">Who paid</span>
+                          <input
+                            value={paymentWho}
+                            onChange={(e) => setPaymentWho(e.target.value)}
+                            className="apple-input"
+                            placeholder="Payer / sponsor"
+                          />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="apple-label">Date received</span>
+                          <input
+                            type="date"
+                            value={paymentDate}
+                            onChange={(e) => setPaymentDate(e.target.value)}
+                            className="apple-input"
+                          />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="apple-label">Mode</span>
+                          <select
+                            value={paymentMode}
+                            onChange={(e) => setPaymentMode(e.target.value)}
+                            className="apple-select"
+                          >
+                            {['Cash', 'UPI', 'Bank Transfer', 'Cheque', 'DD'].map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="space-y-1.5 sm:col-span-2">
+                          <span className="apple-label">Payment notes</span>
+                          <input
+                            value={paymentNotes}
+                            onChange={(e) => setPaymentNotes(e.target.value)}
+                            className="apple-input"
+                            placeholder="Optional remarks"
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_240px]">
@@ -604,7 +813,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                               <button
                                 key={s}
                                 type="button"
-                                disabled={!isAdmin}
+                                disabled={!canEdit}
                                 onClick={() => setMemberStatus(member.id, s)}
                                 className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-xl border text-[10px] font-semibold transition ${
                                   active ? cfg.active : cfg.idle
@@ -631,7 +840,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   </p>
                   <button
                     type="button"
-                    onClick={() => { setHistoryKindFilter(kind); setSection('history'); }}
+                    onClick={() => { setHistoryCategoryFilter(category); setSection('history'); }}
                     className="text-[12px] font-semibold text-[#18392f] hover:underline"
                   >
                     View all
@@ -658,7 +867,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
             </div>
           </div>
 
-          {isAdmin && (
+          {canEdit && (
             <div className="sticky bottom-[calc(var(--app-bottom-nav-height,0px)+0.75rem)] z-20 rounded-2xl border border-black/[0.08] bg-white/95 p-4 shadow-lg backdrop-blur-xl">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-wrap gap-3 text-[13px] text-[#3a3a3c]">
@@ -684,7 +893,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
           {!isAdmin && (
             <p className="rounded-2xl bg-[rgba(24,57,47,0.06)] px-4 py-3 text-[13px] text-[#18392f]">
-              Only choir admins can log attendance. Switch to Overview to see your stats.
+              Only choir admins can log attendance. Switch to Overview or History to view Mass, Special Mass, and Practice stats.
             </p>
           )}
         </div>

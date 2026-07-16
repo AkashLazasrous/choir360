@@ -5,26 +5,44 @@ import {
   Mass,
   Member,
   Rehearsal,
+  SpecialMassBilling,
+  SpecialMassPaymentDetails,
 } from '../types';
+import {
+  ACTIVITY_KIND_LABELS,
+  ACTIVITY_KIND_SHORT,
+  defaultTimeForKind,
+  isLiturgyActivityKind,
+  kindToMassCategory,
+  resolveActivityKind,
+} from './attendanceTaxonomy';
 
-export const ACTIVITY_KIND_LABELS: Record<ActivityKind, string> = {
-  sunday_mass: 'Sunday Mass',
-  saturday_mass: 'Saturday Mass',
-  practice: 'Practice',
-  special_mass: 'Special Mass',
-};
+export {
+  ACTIVITY_KIND_LABELS,
+  ACTIVITY_KIND_SHORT,
+  ATTENDANCE_CATEGORY_LABELS,
+  ALL_ACTIVITY_KINDS,
+  MASS_BUCKET_KINDS,
+  categoryForActivityKind,
+  isMassBucketKind,
+  isLiturgyActivityKind,
+  kindsForCategory,
+  kindToMassCategory,
+  resolveActivityKind,
+} from './attendanceTaxonomy';
 
-export const ACTIVITY_KIND_SHORT: Record<ActivityKind, string> = {
-  sunday_mass: 'Mass',
-  saturday_mass: 'Sat Mass',
-  practice: 'Practice',
-  special_mass: 'Special',
-};
-
-export const MASS_ACTIVITY_KINDS: ActivityKind[] = ['sunday_mass', 'saturday_mass', 'special_mass'];
+/** @deprecated Prefer isLiturgyActivityKind — includes special_mass, excludes practice. */
+export const MASS_ACTIVITY_KINDS: ActivityKind[] = [
+  'sunday_mass',
+  'saturday_mass',
+  'weekday_mass',
+  'feast_day',
+  'novena',
+  'special_mass',
+];
 
 export function isMassActivityKind(kind: ActivityKind): boolean {
-  return MASS_ACTIVITY_KINDS.includes(kind);
+  return isLiturgyActivityKind(kind);
 }
 
 export function activityEntityId(kind: ActivityKind, date: string): string {
@@ -38,12 +56,6 @@ export function attendanceRecordId(entityId: string, memberId: string): string {
 
 export function kindToEntityType(kind: ActivityKind): AttendanceRecord['entityType'] {
   return kind === 'practice' ? 'Rehearsal' : 'Mass';
-}
-
-export function kindToMassCategory(kind: ActivityKind): Mass['category'] {
-  if (kind === 'special_mass') return 'Special Mass';
-  if (kind === 'saturday_mass') return 'Saturday Mass';
-  return 'Sunday Mass';
 }
 
 export function defaultEntityName(kind: ActivityKind, date: string): string {
@@ -78,20 +90,42 @@ export function buildMassFromActivity(
   notes: string | undefined,
   attendingMemberIds: string[],
   existing?: Mass,
+  billing?: {
+    specialMassBilling?: SpecialMassBilling;
+    specialMassPayment?: SpecialMassPaymentDetails;
+  },
 ): Mass {
   const id = existing?.id ?? activityEntityId(kind, date);
+  const isSpecial = kind === 'special_mass';
+  const specialMassBilling = isSpecial
+    ? (billing?.specialMassBilling ?? existing?.specialMassBilling)
+    : undefined;
+  const specialMassPayment = isSpecial && specialMassBilling === 'paid'
+    ? (billing?.specialMassPayment ?? existing?.specialMassPayment)
+    : isSpecial && specialMassBilling === 'free'
+      ? undefined
+      : existing?.specialMassPayment;
+
   return {
     id,
     name: title?.trim() || existing?.name || defaultEntityName(kind, date),
     category: kindToMassCategory(kind),
     date,
-    time: existing?.time ?? (kind === 'sunday_mass' ? '07:00' : kind === 'saturday_mass' ? '18:00' : '10:00'),
+    time: existing?.time ?? defaultTimeForKind(kind),
     language: existing?.language ?? 'Tamil',
     notes: notes?.trim() || existing?.notes,
     attendingMemberIds,
     activityKind: kind,
     celebrant: existing?.celebrant,
     venue: existing?.venue,
+    ...(isSpecial && specialMassBilling
+      ? {
+          specialMassBilling,
+          ...(specialMassBilling === 'paid' && specialMassPayment
+            ? { specialMassPayment }
+            : {}),
+        }
+      : {}),
   };
 }
 
@@ -179,11 +213,21 @@ export function parseSheetDate(header: string): string | null {
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
+export interface ActivitySessionPayload {
+  kind: ActivityKind;
+  date: string;
+  title?: string;
+  notes?: string;
+  marks: Record<string, AttendanceStatus | null>;
+  specialMassBilling?: SpecialMassBilling;
+  specialMassPayment?: SpecialMassPaymentDetails;
+}
+
 /** Merge import sessions by kind + date; later marks win on conflict. */
 export function dedupeImportSessions(
-  sessions: { kind: ActivityKind; date: string; title?: string; notes?: string; marks: Record<string, AttendanceStatus | null> }[],
-): { kind: ActivityKind; date: string; title?: string; notes?: string; marks: Record<string, AttendanceStatus | null> }[] {
-  const map = new Map<string, { kind: ActivityKind; date: string; title?: string; notes?: string; marks: Record<string, AttendanceStatus | null> }>();
+  sessions: ActivitySessionPayload[],
+): ActivitySessionPayload[] {
+  const map = new Map<string, ActivitySessionPayload>();
 
   for (const session of sessions) {
     const key = `${session.kind}::${session.date}`;
@@ -193,6 +237,8 @@ export function dedupeImportSessions(
         ...existing,
         title: session.title ?? existing.title,
         notes: session.notes ?? existing.notes,
+        specialMassBilling: session.specialMassBilling ?? existing.specialMassBilling,
+        specialMassPayment: session.specialMassPayment ?? existing.specialMassPayment,
         marks: { ...existing.marks, ...session.marks },
       });
     } else {
@@ -235,7 +281,7 @@ export function listActivitySessions(
   const membersBySession = new Map<string, Set<string>>();
 
   for (const record of records) {
-    const recordKind = record.activityKind ?? (record.entityType === 'Rehearsal' ? 'practice' : record.entityName.toLowerCase().includes('special') ? 'special_mass' : record.entityName.toLowerCase().includes('saturday') ? 'saturday_mass' : 'sunday_mass');
+    const recordKind = resolveActivityKind(record);
     if (kind && recordKind !== kind) continue;
     const key = `${recordKind}::${record.date}`;
     const members = membersBySession.get(key) ?? new Set<string>();

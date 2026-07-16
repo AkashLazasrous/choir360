@@ -1,12 +1,14 @@
-import type { AttendanceRecord, AttendanceStatus, Member } from '../types';
+import type { AttendanceCategory, AttendanceRecord, AttendanceStatus, Member } from '../types';
 import { isActiveMember } from './choirStats';
-import { isMassActivityKind } from './attendanceActivity';
-import type { ActivityKind } from '../types';
+import { categoryForActivityKind, resolveActivityKind } from './attendanceTaxonomy';
 
 /**
- * Liturgy reliability score points (mass kinds only).
+ * Reliability score points (all attendance categories).
  * Present = full credit, Late = half, Excused = slight credit, Absent = none.
- * score = sum(points) / max(massSessions, 1)
+ *
+ * Overall score = sum(points) / max(sessionCount, 1) across Mass + Special Mass + Practice.
+ * Mass typically dominates standings by session volume; practice and special mass
+ * count equally per session in the combined rate.
  */
 export const LEADERBOARD_POINTS: Record<AttendanceStatus, number> = {
   Present: 1,
@@ -16,10 +18,20 @@ export const LEADERBOARD_POINTS: Record<AttendanceStatus, number> = {
 };
 
 export const LEADERBOARD_CAPTION =
-  'Ranked by attendance rate, with late and absent counting against you.';
+  'Ranked by attendance across Mass, Special Mass, and Practice — late and absent count against you.';
 
 export const LEADERBOARD_FORMULA_HINT =
-  'Score = (Present×1 + Late×0.5 + Excused×0.25 + Absent×0) ÷ mass sessions. Ties break by on-time count, then name.';
+  'Score = (Present×1 + Late×0.5 + Excused×0.25 + Absent×0) ÷ all sessions (Mass + Special Mass + Practice). Ties break by on-time count, then name.';
+
+export interface CategoryAttendanceStats {
+  logged: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  /** Present + Late */
+  attended: number;
+}
 
 export interface LeaderboardEntry {
   rank: number;
@@ -28,34 +40,54 @@ export interface LeaderboardEntry {
   photoUrl: string;
   voiceType: string;
   memberType: string;
-  /** 0–1 reliability score */
+  /** 0–1 reliability score across all categories */
   score: number;
   /** Rounded 0–100 for display */
   scorePercent: number;
-  massLogged: number;
-  /** Present + Late (showed up) */
-  massAttended: number;
+  /** Combined session totals (Mass + Special + Practice) */
+  sessionLogged: number;
+  sessionAttended: number;
   onTime: number;
   late: number;
   absent: number;
   excused: number;
+  /** Per-category breakdown for board columns */
+  mass: CategoryAttendanceStats;
+  specialMass: CategoryAttendanceStats;
+  practice: CategoryAttendanceStats;
+  /** @deprecated Prefer sessionLogged / mass.logged — kept for older call sites */
+  massLogged: number;
+  /** @deprecated Prefer sessionAttended / mass.attended */
+  massAttended: number;
 }
 
-function resolveKind(record: AttendanceRecord): ActivityKind {
-  if (record.activityKind) return record.activityKind;
-  if (record.entityType === 'Rehearsal') return 'practice';
-  const name = record.entityName.toLowerCase();
-  if (name.includes('special')) return 'special_mass';
-  if (name.includes('saturday') || name.includes('sat mass')) return 'saturday_mass';
-  return 'sunday_mass';
+function emptyCategoryStats(): CategoryAttendanceStats {
+  return { logged: 0, present: 0, late: 0, absent: 0, excused: 0, attended: 0 };
 }
 
-/** One mark per member + mass kind + date (latest wins). */
-function dedupeMassRecords(records: AttendanceRecord[]): AttendanceRecord[] {
+function applyStatus(stats: CategoryAttendanceStats, status: AttendanceStatus): void {
+  stats.logged += 1;
+  if (status === 'Present') stats.present += 1;
+  if (status === 'Late') stats.late += 1;
+  if (status === 'Absent') stats.absent += 1;
+  if (status === 'Excused') stats.excused += 1;
+  stats.attended = stats.present + stats.late;
+}
+
+function categoryBucket(
+  entry: { mass: CategoryAttendanceStats; specialMass: CategoryAttendanceStats; practice: CategoryAttendanceStats },
+  category: AttendanceCategory,
+): CategoryAttendanceStats {
+  if (category === 'special_mass') return entry.specialMass;
+  if (category === 'practice') return entry.practice;
+  return entry.mass;
+}
+
+/** One mark per member + kind + date (latest wins). Includes practice. */
+function dedupeSessionRecords(records: AttendanceRecord[]): AttendanceRecord[] {
   const map = new Map<string, AttendanceRecord>();
   for (const record of records) {
-    const kind = resolveKind(record);
-    if (!isMassActivityKind(kind)) continue;
+    const kind = resolveActivityKind(record);
     const key = `${record.memberId}::${kind}::${record.date}`;
     map.set(key, record);
   }
@@ -71,15 +103,15 @@ export function pointsForStatus(status: AttendanceStatus): number {
 }
 
 /**
- * Build a liturgy reliability leaderboard from live attendance records.
- * Only active members with at least one mass mark are ranked.
+ * Build attendance leaderboard from live records.
+ * Active members with ≥1 mark across Mass / Special / Practice are ranked.
  */
 export function computeAttendanceLeaderboard(
   records: AttendanceRecord[],
   members: Member[],
 ): LeaderboardEntry[] {
-  const massRecords = dedupeMassRecords(records);
-  if (massRecords.length === 0) return [];
+  const sessionRecords = dedupeSessionRecords(records);
+  if (sessionRecords.length === 0) return [];
 
   const memberMap = new Map(members.map((m) => [m.id, m]));
   const buckets = new Map<
@@ -91,15 +123,18 @@ export function computeAttendanceLeaderboard(
       voiceType: string;
       memberType: string;
       points: number;
-      massLogged: number;
+      sessionLogged: number;
       onTime: number;
       late: number;
       absent: number;
       excused: number;
+      mass: CategoryAttendanceStats;
+      specialMass: CategoryAttendanceStats;
+      practice: CategoryAttendanceStats;
     }
   >();
 
-  for (const record of massRecords) {
+  for (const record of sessionRecords) {
     const member = memberMap.get(record.memberId);
     if (member && !isActiveMember(member)) continue;
 
@@ -112,16 +147,23 @@ export function computeAttendanceLeaderboard(
         voiceType: member?.voiceType ?? '—',
         memberType: member?.memberType ?? '—',
         points: 0,
-        massLogged: 0,
+        sessionLogged: 0,
         onTime: 0,
         late: 0,
         absent: 0,
         excused: 0,
+        mass: emptyCategoryStats(),
+        specialMass: emptyCategoryStats(),
+        practice: emptyCategoryStats(),
       };
       buckets.set(record.memberId, bucket);
     }
 
-    bucket.massLogged += 1;
+    const kind = resolveActivityKind(record);
+    const category = categoryForActivityKind(kind);
+    applyStatus(categoryBucket(bucket, category), record.status);
+
+    bucket.sessionLogged += 1;
     bucket.points += pointsForStatus(record.status);
     if (record.status === 'Present') bucket.onTime += 1;
     if (record.status === 'Late') bucket.late += 1;
@@ -129,11 +171,9 @@ export function computeAttendanceLeaderboard(
     if (record.status === 'Excused') bucket.excused += 1;
   }
 
-  // Include active members who appear in roster but only if they have mass logs
-  // (already ensured by iterating records). Enrich photo/role from member doc.
   const rows = [...buckets.values()].map((b) => {
     const member = memberMap.get(b.memberId);
-    const score = b.points / Math.max(b.massLogged, 1);
+    const score = b.points / Math.max(b.sessionLogged, 1);
     return {
       memberId: b.memberId,
       memberName: member ? displayName(member) : b.memberName,
@@ -142,12 +182,17 @@ export function computeAttendanceLeaderboard(
       memberType: member?.memberType ?? b.memberType,
       score,
       scorePercent: Math.round(score * 100),
-      massLogged: b.massLogged,
-      massAttended: b.onTime + b.late,
+      sessionLogged: b.sessionLogged,
+      sessionAttended: b.onTime + b.late,
       onTime: b.onTime,
       late: b.late,
       absent: b.absent,
       excused: b.excused,
+      mass: b.mass,
+      specialMass: b.specialMass,
+      practice: b.practice,
+      massLogged: b.mass.logged,
+      massAttended: b.mass.attended,
     };
   });
 

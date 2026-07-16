@@ -1,7 +1,8 @@
 import { MassCategory, isPaymentMassCategory } from '../../types';
 
+/** Liturgy dropdown — Funeral removed from new entries (legacy docs may still show it). */
 export const ALL_MASS_CATEGORIES: MassCategory[] = [
-  'Sunday Mass', 'Saturday Mass', 'Weekday Mass', 'Special Mass', 'Wedding', 'Funeral',
+  'Sunday Mass', 'Saturday Mass', 'Weekday Mass', 'Special Mass', 'Wedding',
   'Death Mass', 'Death Anniversary Mass', 'Feast Day', 'Ordination',
   'First Holy Communion', 'Confirmation', 'Novena',
 ];

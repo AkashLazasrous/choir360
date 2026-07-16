@@ -20,8 +20,12 @@ const OUT = resolve(SCRIPT_DIR, 'data', 'attendance-import-from-csv.json');
 const KIND_FROM_FILE = [
   { test: (name) => /practis|practice/i.test(name), kind: 'practice', splitMass: false },
   { test: (name) => /special/i.test(name), kind: 'special_mass', splitMass: false },
+  { test: (name) => /novena/i.test(name), kind: 'novena', splitMass: false },
+  { test: (name) => /feast/i.test(name), kind: 'feast_day', splitMass: false },
+  { test: (name) => /weekday|ferial/i.test(name), kind: 'weekday_mass', splitMass: false },
   { test: (name) => /saturday|sat mass|sat-/i.test(name), kind: 'saturday_mass', splitMass: false },
-  { test: (name) => /mass|sunday/i.test(name), kind: 'sunday_mass', splitMass: true },
+  { test: (name) => /sunday/i.test(name), kind: 'sunday_mass', splitMass: false },
+  { test: (name) => /mass/i.test(name), kind: 'sunday_mass', splitMass: true },
 ];
 
 function stripBom(text) {
@@ -37,7 +41,9 @@ function parseSheetDate(header) {
 
 function massKindForIsoDate(isoDate) {
   const day = new Date(`${isoDate}T12:00:00.000Z`).getUTCDay();
-  return day === 6 ? 'saturday_mass' : 'sunday_mass';
+  if (day === 6) return 'saturday_mass';
+  if (day === 0) return 'sunday_mass';
+  return 'weekday_mass';
 }
 
 function parseCsvMark(cell) {

@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { isActiveMember, calculatePaymentShares } from './choirStats';
 import { isMassActivityKind } from './attendanceActivity';
+import { ALL_ACTIVITY_KINDS, resolveActivityKind } from './attendanceTaxonomy';
 
 /** Present-only for raw spreadsheet %. */
 export function countsAsPresentRaw(status: AttendanceStatus): boolean {
@@ -66,21 +67,13 @@ export interface ParishAttendanceStats {
 }
 
 function emptyKindBreakdown(): Record<ActivityKind, { logged: number; finalPercent: number }> {
-  return {
-    sunday_mass: { logged: 0, finalPercent: 0 },
-    saturday_mass: { logged: 0, finalPercent: 0 },
-    practice: { logged: 0, finalPercent: 0 },
-    special_mass: { logged: 0, finalPercent: 0 },
-  };
+  return Object.fromEntries(
+    ALL_ACTIVITY_KINDS.map((kind) => [kind, { logged: 0, finalPercent: 0 }]),
+  ) as Record<ActivityKind, { logged: number; finalPercent: number }>;
 }
 
 function resolveKind(record: AttendanceRecord): ActivityKind {
-  if (record.activityKind) return record.activityKind;
-  if (record.entityType === 'Rehearsal') return 'practice';
-  const name = record.entityName.toLowerCase();
-  if (name.includes('special')) return 'special_mass';
-  if (name.includes('saturday') || name.includes('sat mass')) return 'saturday_mass';
-  return 'sunday_mass';
+  return resolveActivityKind(record);
 }
 
 function memberDisplayName(member: Member): string {

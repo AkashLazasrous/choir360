@@ -19,7 +19,8 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
   const [massTime,     setMassTime]     = useState('06:30 AM');
   const [massLang,     setMassLang]     = useState('Tamil');
 
-  // Payment fields (only for Special / Death / Death Anniversary)
+  // Payment fields (Special / Wedding / Death / …) — Free skips payment record
+  const [billingType,      setBillingType]      = useState<'free' | 'paid'>('paid');
   const [partyName,        setPartyName]        = useState('');
   const [amountProposed,   setAmountProposed]   = useState<number>(0);
   const [amountReceived,   setAmountReceived]   = useState<boolean>(false);
@@ -39,6 +40,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
     setMassSaveError('');
 
     const massId = createUniqueId('mass');
+    const isSpecialLike = isPaymentMass(massCategory) || massCategory === 'Special Mass';
     const newMass: Mass = {
       id: massId,
       name: massName,
@@ -46,6 +48,22 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       date: massDate,
       time: massTime,
       language: massLang,
+      ...(isSpecialLike
+        ? {
+            specialMassBilling: billingType,
+            ...(billingType === 'paid'
+              ? {
+                  specialMassPayment: {
+                    amount: amountProposed || undefined,
+                    whoPaid: whoPaid || undefined,
+                    notes: paymentRemarks || undefined,
+                    dateReceived: dateReceived || undefined,
+                    paymentMode: paymentMode || undefined,
+                  },
+                }
+              : {}),
+          }
+        : {}),
     };
 
     const massResult = await onAddMass(newMass);
@@ -59,7 +77,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       return;
     }
 
-    if (isPaymentMass(massCategory) && partyName && amountProposed > 0) {
+    if (isPaymentMass(massCategory) && billingType === 'paid' && partyName && amountProposed > 0) {
       const recvAmt  = amountReceived ? receivedAmount : 0;
       const pending  = Math.max(amountProposed - recvAmt, 0);
       const status   = derivePaymentStatus(amountProposed, amountReceived, receivedAmount);
@@ -90,6 +108,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
     setMassName(''); setPartyName(''); setAmountProposed(0); setAmountReceived(false);
     setReceivedAmount(0); setDateReceived(''); setWhoPaid('');
     setPaymentMode('Cash'); setReceiptNo(''); setPaymentRemarks('');
+    setBillingType('paid');
     setMassSuccess(`✓ Logged: ${massName}`);
     setTimeout(() => setMassSuccess(''), 4000);
   };
@@ -161,81 +180,112 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
         {isPaymentMass(massCategory) && (
           <div className="space-y-3 border-t border-amber-100 pt-3 mt-2">
             <p className="text-[10px] font-bold text-amber-700 uppercase flex items-center gap-1">
-              <IndianRupee className="w-3 h-3" /> Payment Details
+              <IndianRupee className="w-3 h-3" /> Billing
             </p>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Sponsor / Party Name</label>
-              <input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="e.g. Joseph Family"
-                className="apple-input text-sm" />
+            <div className="flex gap-2">
+              {(['free', 'paid'] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setBillingType(opt)}
+                  className={`flex-1 py-2 rounded-lg border text-xs font-bold transition ${
+                    billingType === opt
+                      ? 'bg-[#0e3d4c] text-white border-[#0e3d4c]'
+                      : 'bg-slate-50 text-slate-500 border-slate-200'
+                  }`}
+                >
+                  {opt === 'free' ? 'Free' : 'Paid'}
+                </button>
+              ))}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Proposed (₹)</label>
-              <input type="number" min={0} value={amountProposed || ''} onChange={(e) => setAmountProposed(Number(e.target.value))}
-                placeholder="0"
-                className="apple-input text-sm" />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Received?</label>
-              <div className="flex gap-2">
-                {[true, false].map((v) => (
-                  <button key={String(v)} type="button"
-                    onClick={() => setAmountReceived(v)}
-                    className={`flex-1 py-2 rounded-lg border text-xs font-bold transition ${amountReceived === v
-                      ? v ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-rose-100 text-rose-700 border-rose-300'
-                      : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                    {v ? 'Yes' : 'No'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {amountReceived && (
+            {billingType === 'paid' && (
               <>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Received (₹)</label>
-                  <input type="number" min={0} value={receivedAmount || ''} onChange={(e) => setReceivedAmount(Number(e.target.value))}
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Sponsor / Party Name</label>
+                  <input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder="e.g. Joseph Family"
                     className="apple-input text-sm" />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Date Received</label>
-                    <input type="date" value={dateReceived} onChange={(e) => setDateReceived(e.target.value)}
-                      className="apple-input text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Mode</label>
-                    <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}
-                      className="apple-select text-sm">
-                      {['Cash','UPI','Bank Transfer','Cheque','DD'].map((m) => <option key={m}>{m}</option>)}
-                    </select>
-                  </div>
-                </div>
+
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Who Paid</label>
-                  <input value={whoPaid} onChange={(e) => setWhoPaid(e.target.value)} placeholder="Payer name"
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Proposed (₹)</label>
+                  <input type="number" min={0} value={amountProposed || ''} onChange={(e) => setAmountProposed(Number(e.target.value))}
+                    placeholder="0"
                     className="apple-input text-sm" />
                 </div>
+
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Receipt No. (optional)</label>
-                  <input value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)}
-                    className="apple-input text-sm" />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Received?</label>
+                  <div className="flex gap-2">
+                    {[true, false].map((v) => (
+                      <button key={String(v)} type="button"
+                        onClick={() => setAmountReceived(v)}
+                        className={`flex-1 py-2 rounded-lg border text-xs font-bold transition ${amountReceived === v
+                          ? v ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-rose-100 text-rose-700 border-rose-300'
+                          : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                        {v ? 'Yes' : 'No'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {amountReceived && (
+                  <>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Received (₹)</label>
+                      <input type="number" min={0} value={receivedAmount || ''} onChange={(e) => setReceivedAmount(Number(e.target.value))}
+                        className="apple-input text-sm" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Date Received</label>
+                        <input type="date" value={dateReceived} onChange={(e) => setDateReceived(e.target.value)}
+                          className="apple-input text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Payment Mode</label>
+                        <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}
+                          className="apple-select text-sm">
+                          {['Cash','UPI','Bank Transfer','Cheque','DD'].map((m) => <option key={m}>{m}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Who Paid</label>
+                      <input value={whoPaid} onChange={(e) => setWhoPaid(e.target.value)} placeholder="Payer name"
+                        className="apple-input text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase">Receipt No. (optional)</label>
+                      <input value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)}
+                        className="apple-input text-sm" />
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Notes (optional)</label>
+                  <input value={paymentRemarks} onChange={(e) => setPaymentRemarks(e.target.value)}
+                    className="apple-input text-sm" placeholder="Payment remarks" />
+                </div>
+
+                <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg ${
+                  !amountReceived ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                  : receivedAmount >= amountProposed ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-orange-50 text-orange-800 border border-orange-200'
+                }`}>
+                  Status:{' '}
+                  {!amountReceived ? 'Pending'
+                    : receivedAmount >= amountProposed ? 'Received (Full)'
+                    : `Partial — ${formatINR(Math.max(amountProposed - receivedAmount, 0))} pending`}
                 </div>
               </>
             )}
 
-            <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg ${
-              !amountReceived ? 'bg-amber-50 text-amber-800 border border-amber-200'
-              : receivedAmount >= amountProposed ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-              : 'bg-orange-50 text-orange-800 border border-orange-200'
-            }`}>
-              Status:{' '}
-              {!amountReceived ? 'Pending'
-                : receivedAmount >= amountProposed ? 'Received (Full)'
-                : `Partial — ${formatINR(Math.max(amountProposed - receivedAmount, 0))} pending`}
-            </div>
+            {billingType === 'free' && (
+              <p className="text-[11px] text-slate-500">Free special mass — no payment record will be created.</p>
+            )}
           </div>
         )}
 

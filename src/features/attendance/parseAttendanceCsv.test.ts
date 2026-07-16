@@ -25,10 +25,12 @@ describe('stripCsvBom', () => {
 });
 
 describe('kindFromFilename / shouldSplitMassByWeekday', () => {
-  it('maps practise / special / mass filenames', () => {
+  it('maps practise / special / mass / feast / novena filenames', () => {
     expect(kindFromFilename('Practise Session (1 jan - 15 jul).csv')).toBe('practice');
     expect(kindFromFilename('Special Mass (1 jan - 15 jul).csv')).toBe('special_mass');
     expect(kindFromFilename('Mass (1 jan - 15 jul).csv')).toBe('sunday_mass');
+    expect(kindFromFilename('Feast Day.csv')).toBe('feast_day');
+    expect(kindFromFilename('Novena.csv')).toBe('novena');
   });
 
   it('splits only mixed Mass sheets by weekday', () => {
@@ -36,14 +38,15 @@ describe('kindFromFilename / shouldSplitMassByWeekday', () => {
     expect(shouldSplitMassByWeekday('Special Mass (1 jan - 15 jul).csv')).toBe(false);
     expect(shouldSplitMassByWeekday('Practise Session.csv')).toBe(false);
     expect(shouldSplitMassByWeekday('Saturday Mass.csv')).toBe(false);
+    expect(shouldSplitMassByWeekday('Feast Day.csv')).toBe(false);
   });
 });
 
 describe('massKindForIsoDate', () => {
-  it('maps Saturday to saturday_mass and Sunday to sunday_mass', () => {
+  it('maps Sat → saturday_mass, Sun → sunday_mass, Mon–Fri → weekday_mass', () => {
     expect(massKindForIsoDate('2026-01-24')).toBe('saturday_mass');
     expect(massKindForIsoDate('2026-01-25')).toBe('sunday_mass');
-    expect(massKindForIsoDate('2026-02-18')).toBe('sunday_mass'); // midweek → sunday_mass bucket
+    expect(massKindForIsoDate('2026-02-18')).toBe('weekday_mass'); // Wednesday
   });
 });
 

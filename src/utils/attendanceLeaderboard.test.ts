@@ -24,7 +24,7 @@ const record = (
 ): AttendanceRecord => ({
   id: `att-${overrides.memberId}-${overrides.date ?? '2026-01-01'}-${overrides.activityKind}`,
   entityId: `mass-${overrides.activityKind}-${overrides.date ?? '2026-01-01'}`,
-  entityType: overrides.entityType ?? 'Mass',
+  entityType: overrides.entityType ?? (overrides.activityKind === 'practice' ? 'Rehearsal' : 'Mass'),
   entityName: 'Sunday Mass',
   date: overrides.date ?? '2026-01-01',
   memberId: overrides.memberId,
@@ -49,26 +49,45 @@ describe('computeAttendanceLeaderboard', () => {
     member({ id: 'm3', firstName: 'Pending', lastName: 'User', status: 'Pending' }),
   ];
 
-  it('returns empty when no mass records exist', () => {
+  it('returns empty when no attendance records exist', () => {
     expect(computeAttendanceLeaderboard([], members)).toEqual([]);
-    expect(
-      computeAttendanceLeaderboard(
-        [record({ memberId: 'm1', status: 'Present', activityKind: 'practice', entityType: 'Rehearsal' })],
-        members,
-      ),
-    ).toEqual([]);
   });
 
-  it('scores mass reliability and sorts by score, then on-time, then name', () => {
+  it('includes practice in standings and breaks out Mass / Special / Practice columns', () => {
     const records: AttendanceRecord[] = [
-      // m1: 1 + 0.5 + 0 = 1.5 / 3 = 0.5
+      record({ memberId: 'm1', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-04' }),
+      record({ memberId: 'm1', status: 'Late', activityKind: 'special_mass', date: '2026-01-05' }),
+      record({ memberId: 'm1', status: 'Absent', activityKind: 'practice', date: '2026-01-06', entityType: 'Rehearsal' }),
+      record({ memberId: 'm2', status: 'Present', activityKind: 'practice', date: '2026-01-06', entityType: 'Rehearsal' }),
+    ];
+
+    const board = computeAttendanceLeaderboard(records, members);
+    expect(board).toHaveLength(2);
+
+    const m2 = board.find((e) => e.memberId === 'm2')!;
+    const m1 = board.find((e) => e.memberId === 'm1')!;
+    // m2: 1/1 = 100%; m1: (1 + 0.5 + 0) / 3 = 50%
+    expect(m2.rank).toBe(1);
+    expect(m2.scorePercent).toBe(100);
+    expect(m2.practice.attended).toBe(1);
+    expect(m2.practice.logged).toBe(1);
+
+    expect(m1.scorePercent).toBe(50);
+    expect(m1.mass.attended).toBe(1);
+    expect(m1.mass.logged).toBe(1);
+    expect(m1.specialMass.late).toBe(1);
+    expect(m1.specialMass.logged).toBe(1);
+    expect(m1.practice.absent).toBe(1);
+    expect(m1.sessionLogged).toBe(3);
+  });
+
+  it('scores combined reliability and sorts by score, then on-time, then name', () => {
+    const records: AttendanceRecord[] = [
       record({ memberId: 'm1', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-04' }),
       record({ memberId: 'm1', status: 'Late', activityKind: 'sunday_mass', date: '2026-01-11' }),
       record({ memberId: 'm1', status: 'Absent', activityKind: 'sunday_mass', date: '2026-01-18' }),
-      // m2: perfect → 1.0
       record({ memberId: 'm2', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-04' }),
       record({ memberId: 'm2', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-11' }),
-      // pending member should be ignored even with logs
       record({ memberId: 'm3', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-04' }),
     ];
 
@@ -77,7 +96,7 @@ describe('computeAttendanceLeaderboard', () => {
     expect(board[0].memberId).toBe('m2');
     expect(board[0].rank).toBe(1);
     expect(board[0].scorePercent).toBe(100);
-    expect(board[0].massAttended).toBe(2);
+    expect(board[0].sessionAttended).toBe(2);
     expect(board[1].memberId).toBe('m1');
     expect(board[1].scorePercent).toBe(50);
     expect(board[1].late).toBe(1);
@@ -91,7 +110,6 @@ describe('computeAttendanceLeaderboard', () => {
       record({ memberId: 'm2', status: 'Present', activityKind: 'sunday_mass', date: '2026-01-04' }),
       record({ memberId: 'm2', status: 'Late', activityKind: 'sunday_mass', date: '2026-01-11' }),
     ];
-    // Both score 1.5/2 = 0.75, both onTime = 1 → alphabetical: Akash before Bella
     const board = computeAttendanceLeaderboard(records, members);
     expect(board[0].memberName).toBe('Akash Lazar');
     expect(board[1].memberName).toBe('Bella Mary');

@@ -5,7 +5,7 @@ export interface CsvImportRow {
   memberName: string;
   date: string;
   status: AttendanceStatus;
-  /** Resolved activity kind for this mark (Mass sheet may split Sat/Sun). */
+  /** Resolved activity kind for this mark (Mass sheet may split Sat/Sun/weekday). */
   kind: ActivityKind;
 }
 
@@ -29,20 +29,23 @@ export function stripCsvBom(text: string): string {
 }
 
 /**
- * Mass matrix CSVs often mix Saturday + Sunday (+ occasional midweek) columns.
- * Sat → saturday_mass; Sun and other weekdays → sunday_mass.
+ * Mass matrix CSVs mix Saturday + Sunday + occasional weekday columns.
+ * Sat → saturday_mass; Sun → sunday_mass; Mon–Fri → weekday_mass.
  */
 export function massKindForIsoDate(isoDate: string): ActivityKind {
   const day = new Date(`${isoDate}T12:00:00.000Z`).getUTCDay();
   if (day === 6) return 'saturday_mass';
-  return 'sunday_mass';
+  if (day === 0) return 'sunday_mass';
+  return 'weekday_mass';
 }
 
 /** True when this filename is a mixed Mass sheet that should split by weekday. */
 export function shouldSplitMassByWeekday(filename: string): boolean {
   const lower = filename.toLowerCase();
   if (lower.includes('special') || lower.includes('practis') || lower.includes('practice')) return false;
+  if (lower.includes('feast') || lower.includes('novena')) return false;
   if (lower.includes('saturday') || lower.includes('sat mass') || lower.includes('sat-')) return false;
+  if (lower.includes('weekday') || lower.includes('ferial')) return false;
   return lower.includes('mass') || lower.includes('sunday');
 }
 
@@ -123,12 +126,24 @@ function splitCsvLine(line: string): string[] {
   return cells;
 }
 
+/**
+ * Filename → activity kind.
+ * Mass / Special Mass / Practise Session are the three Ambattur OT uploads.
+ * Feast / Novena filenames map into the Mass bucket when detectable.
+ */
 export function kindFromFilename(filename: string): ActivityKind | null {
   const lower = filename.toLowerCase();
   if (lower.includes('practis') || lower.includes('practice')) return 'practice';
   if (lower.includes('special')) return 'special_mass';
-  if (lower.includes('saturday') || lower.includes('sat mass') || lower.includes('sat-')) return 'saturday_mass';
-  if (lower.includes('mass') || lower.includes('sunday')) return 'sunday_mass';
+  if (lower.includes('novena')) return 'novena';
+  if (lower.includes('feast')) return 'feast_day';
+  if (lower.includes('weekday') || lower.includes('ferial')) return 'weekday_mass';
+  if (lower.includes('saturday') || lower.includes('sat mass') || lower.includes('sat-')) {
+    return 'saturday_mass';
+  }
+  if (lower.includes('sunday')) return 'sunday_mass';
+  // Generic "Mass (…)" sheet — base kind; splitMassByWeekday remaps columns.
+  if (lower.includes('mass')) return 'sunday_mass';
   return null;
 }
 
@@ -175,14 +190,12 @@ function memberNameKeys(member: NameMatchMember): string[] {
   const full = `${first} ${last}`.trim();
   const swapped = `${last} ${first}`.trim();
   const keys = new Set<string>([full, swapped].filter(Boolean));
-  // Also index first-only when last is a single letter (roster sometimes stores "S")
   if (first && last.length === 1) keys.add(`${first} ${last}`);
   return [...keys];
 }
 
 function namesLooselyEqual(a: string, b: string): boolean {
   if (a === b) return true;
-  // jeniefer / jenifer / jennifer
   const compact = (s: string) => s.replace(/[^a-z]/g, '');
   const ca = compact(a);
   const cb = compact(b);
@@ -212,7 +225,6 @@ export function matchMemberByName(
 
   const parts = normalized.split(' ').filter(Boolean);
   if (parts.length < 2) {
-    // Single-token CSV name: unique first-name match only
     const firstOnly = members.filter((m) => normalizePersonName(m.firstName) === normalized);
     return firstOnly.length === 1 ? firstOnly[0]!.id : null;
   }
@@ -230,15 +242,12 @@ export function matchMemberByName(
       return tParts.length >= 2 && namesLooselyEqual(first, tParts.slice(0, -1).join(' '));
     });
 
-    // "Sharon G" → firstName Sharon, lastName Gabriel / G
     if (firstOk && (last === lastToken || last.startsWith(lastToken) || (lastToken.length === 1 && last.startsWith(lastToken)))) {
       return true;
     }
-    // swapped: "G Sharon"
     if (last === firstPart && (first === lastToken || first.startsWith(lastToken) || (lastToken.length === 1 && first.startsWith(lastToken)))) {
       return true;
     }
-    // Alias / nickname: CSV "Diana Irudhayaraj" vs roster "Diana Mary"
     if (namesLooselyEqual(first, firstPart) && targets.some((t) => memberNameKeys(member).includes(t))) {
       return true;
     }
@@ -247,7 +256,6 @@ export function matchMemberByName(
 
   if (candidates.length === 1) return candidates[0]!.id;
 
-  // Unique first-name fallback when CSV last name is an initial or known alias miss
   if (lastToken.length === 1 || candidates.length === 0) {
     const byFirst = members.filter((m) => namesLooselyEqual(normalizePersonName(m.firstName), firstPart));
     if (byFirst.length === 1) return byFirst[0]!.id;

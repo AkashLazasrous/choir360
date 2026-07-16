@@ -167,6 +167,7 @@ export type MassCategory =
   | 'Weekday Mass'
   | 'Special Mass'
   | 'Wedding'
+  /** @deprecated Removed from liturgy dropdowns; retained for legacy docs. */
   | 'Funeral'
   | 'Death Mass'
   | 'Death Anniversary Mass'
@@ -176,11 +177,10 @@ export type MassCategory =
   | 'Confirmation'
   | 'Novena';
 
-/** Categories that require payment tracking */
+/** Categories that require payment tracking (Funeral removed from new entries). */
 export const PAYMENT_MASS_CATEGORIES: MassCategory[] = [
   'Special Mass',
   'Wedding',
-  'Funeral',
   'Death Mass',
   'Death Anniversary Mass',
   'Feast Day',
@@ -188,6 +188,17 @@ export const PAYMENT_MASS_CATEGORIES: MassCategory[] = [
   'First Holy Communion',
   'Confirmation',
 ];
+
+/** Free vs paid billing for special-mass attendance sessions. */
+export type SpecialMassBilling = 'free' | 'paid';
+
+export interface SpecialMassPaymentDetails {
+  amount?: number;
+  whoPaid?: string;
+  notes?: string;
+  dateReceived?: string;
+  paymentMode?: string;
+}
 
 export function isPaymentMassCategory(cat: MassCategory): boolean {
   return PAYMENT_MASS_CATEGORIES.includes(cat);
@@ -207,6 +218,10 @@ export interface Mass {
   attendingMemberIds?: string[];
   /** Links attendance logs to Sunday vs Special Mass sheets */
   activityKind?: ActivityKind;
+  /** Special mass only: free choir service vs paid rite */
+  specialMassBilling?: SpecialMassBilling;
+  /** Populated when specialMassBilling === 'paid' */
+  specialMassPayment?: SpecialMassPaymentDetails;
 }
 
 export interface Payment {
@@ -268,8 +283,22 @@ export interface ShareCalculation {
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
 
-/** Choir activity kinds aligned with the Ambattur OT spreadsheet tabs. */
-export type ActivityKind = 'sunday_mass' | 'saturday_mass' | 'practice' | 'special_mass';
+/**
+ * Choir activity kinds for attendance logging.
+ * Mass bucket: sunday / saturday / weekday / feast_day / novena
+ * Separate buckets: special_mass, practice
+ */
+export type ActivityKind =
+  | 'sunday_mass'
+  | 'saturday_mass'
+  | 'weekday_mass'
+  | 'feast_day'
+  | 'novena'
+  | 'practice'
+  | 'special_mass';
+
+/** Top-level attendance taxonomy used by leaderboard columns + filters. */
+export type AttendanceCategory = 'mass' | 'special_mass' | 'practice';
 
 export interface AttendanceRecord {
   id: string;

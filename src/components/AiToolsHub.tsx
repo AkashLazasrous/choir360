@@ -205,7 +205,7 @@ export const AiToolsHub: React.FC<AiToolsHubProps> = ({ currentLang, members, ma
   ];
 
   const MASS_CATEGORIES: MassCategory[] = [
-    'Sunday Mass', 'Weekday Mass', 'Special Mass', 'Wedding', 'Funeral',
+    'Sunday Mass', 'Saturday Mass', 'Weekday Mass', 'Special Mass', 'Wedding',
     'Death Mass', 'Death Anniversary Mass', 'Feast Day', 'Ordination',
   ];
 
