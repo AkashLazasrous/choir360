@@ -235,7 +235,7 @@ function AppInner() {
       canReadParishPrivate: guard.isAdmin,
     });
   const { records: masses, actions: massSync } =
-    useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext, 500);
+    useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext, 1000);
   const { records: payments, actions: paymentSync } =
     useSyncedCollection<Payment>('payments', MOCK_PAYMENTS, syncEnabled, tenantContext);
   const { records: events, actions: eventSync } =
@@ -243,9 +243,9 @@ function AppInner() {
   const { records: announcements } =
     useSyncedCollection<Announcement>('announcements', MOCK_ANNOUNCEMENTS, syncEnabled, tenantContext);
   const { records: rehearsals, actions: rehearsalSync } =
-    useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext, 500);
+    useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext, 1000);
   const { records: attendanceRecords, actions: attendanceSync } =
-    useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext, 5000);
+    useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext, 8000);
 
   // Wait for Firebase session restore before kicking unsigned users off
   // protected deep links (otherwise a hard refresh on /attendance etc. races
@@ -300,26 +300,51 @@ function AppInner() {
 
   const importActivitySessions = async (
     payload: ActivityAttendanceImportPayload,
-  ): Promise<{ ok: boolean; error?: string; imported?: number; skipped?: number }> => {
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    imported?: number;
+    skipped?: number;
+    sessionsWritten?: number;
+    attendanceWritten?: number;
+    emptySkipped?: number;
+    unmatchedNames?: string[];
+    parishId?: string;
+  }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
     const sessions = dedupeImportSessions(payload.sessions);
-    if (sessions.length === 0) return { ok: true, imported: 0, skipped: 0 };
+    if (sessions.length === 0) {
+      return { ok: false, error: 'No sessions to import (all CSV names unmatched?).', imported: 0, skipped: 0 };
+    }
     try {
       const response = await apiFetch('/api/attendance/import', {
         method: 'POST',
         body: JSON.stringify({
           sessions,
           parishId: tenantContext.parishId,
+          unmatchedNames: payload.unmatchedNames ?? [],
         }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         return { ok: false, error: data?.error ?? 'Import failed.', imported: 0, skipped: 0 };
       }
+      const attendanceWritten = typeof data.attendanceWritten === 'number'
+        ? data.attendanceWritten
+        : typeof data.writtenRecords === 'number' ? data.writtenRecords : 0;
+      const imported = typeof data.imported === 'number' ? data.imported : 0;
+      const skipped = typeof data.skipped === 'number' ? data.skipped : 0;
+      const ok = data.ok !== false && (attendanceWritten > 0 || skipped > 0);
       return {
-        ok: true,
-        imported: typeof data.imported === 'number' ? data.imported : sessions.length,
-        skipped: typeof data.skipped === 'number' ? data.skipped : 0,
+        ok,
+        error: ok ? undefined : (data?.error ?? 'Import wrote 0 attendance records.'),
+        imported,
+        skipped,
+        sessionsWritten: typeof data.sessionsWritten === 'number' ? data.sessionsWritten : imported,
+        attendanceWritten,
+        emptySkipped: typeof data.emptySkipped === 'number' ? data.emptySkipped : 0,
+        unmatchedNames: Array.isArray(data.unmatchedNames) ? data.unmatchedNames : payload.unmatchedNames,
+        parishId: typeof data.parishId === 'string' ? data.parishId : tenantContext.parishId,
       };
     } catch {
       return { ok: false, error: 'Import failed.' };

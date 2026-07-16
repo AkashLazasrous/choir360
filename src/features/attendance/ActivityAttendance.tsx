@@ -70,6 +70,7 @@ export interface ActivityAttendanceSavePayload {
 export interface ActivityAttendanceImportPayload {
   kind: ActivityKind;
   sessions: ActivityAttendanceSavePayload[];
+  unmatchedNames?: string[];
 }
 
 interface ActivityAttendanceProps {
@@ -81,7 +82,17 @@ interface ActivityAttendanceProps {
   isAdmin: boolean;
   viewerMemberId?: string | null;
   onSaveSession: (payload: ActivityAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
-  onImportSessions: (payload: ActivityAttendanceImportPayload) => Promise<{ ok: boolean; error?: string; imported?: number; skipped?: number }>;
+  onImportSessions: (payload: ActivityAttendanceImportPayload) => Promise<{
+    ok: boolean;
+    error?: string;
+    imported?: number;
+    skipped?: number;
+    sessionsWritten?: number;
+    attendanceWritten?: number;
+    emptySkipped?: number;
+    unmatchedNames?: string[];
+    parishId?: string;
+  }>;
 }
 
 export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
@@ -98,8 +109,9 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const today = new Date().toISOString().slice(0, 10);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [section, setSection] = useState<'log' | 'overview'>('log');
+  const [section, setSection] = useState<'log' | 'history' | 'overview'>('log');
   const [kind, setKind] = useState<ActivityKind>('sunday_mass');
+  const [historyKindFilter, setHistoryKindFilter] = useState<ActivityKind | 'all'>('all');
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
@@ -142,9 +154,17 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     ? parishStats.rosterStats.find((s) => s.memberId === viewerMemberId) ?? null
     : null;
 
-  const history = useMemo(
+  const recentHistory = useMemo(
     () => listActivitySessions(attendanceRecords, kind).slice(0, 12),
     [attendanceRecords, kind],
+  );
+
+  const fullHistory = useMemo(
+    () => listActivitySessions(
+      attendanceRecords,
+      historyKindFilter === 'all' ? undefined : historyKindFilter,
+    ),
+    [attendanceRecords, historyKindFilter],
   );
 
   const summary = useMemo(() => {
@@ -171,6 +191,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setTitle('');
     setNotes('');
     setSection('log');
+    setSaveMessage(null);
   };
 
   const handleSave = async () => {
@@ -193,6 +214,12 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     if (!isAdmin || !files?.length) return;
     setImporting(true);
     setImportMessage(null);
+
+    if (members.length === 0) {
+      setImportMessage('Roster not loaded yet — wait for Sync: Live, then import again.');
+      setImporting(false);
+      return;
+    }
 
     const sessions: ActivityAttendanceSavePayload[] = [];
     const unmatchedNameHits: string[] = [];
@@ -237,25 +264,44 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
     const unmatchedNames = collectUnmatchedNames(unmatchedNameHits, members);
     const dedupedSessions = dedupeImportSessions(sessions);
-    const result = await onImportSessions({ kind, sessions: dedupedSessions });
+
+    if (dedupedSessions.length === 0) {
+      setImporting(false);
+      setImportMessage(
+        unmatchedNames.length
+          ? `Import failed — no names matched the roster. Unmatched: ${unmatchedNames.join(', ')}`
+          : 'Import failed — no attendance rows found in the CSV files.',
+      );
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
+
+    const result = await onImportSessions({ kind, sessions: dedupedSessions, unmatchedNames });
     setImporting(false);
     const skipped = sessions.length - dedupedSessions.length;
-    setImportMessage(
-      result.ok
-        ? `Imported ${result.imported ?? dedupedSessions.length} sessions${
-            result.skipped ? ` · ${result.skipped} unchanged` : ''
-          }${skipped ? ` · ${skipped} duplicate dates merged` : ''}${
-            unmatchedNames.length
-              ? ` · unmatched: ${unmatchedNames.join(', ')}`
-              : ''
-          }.`
-        : (result.error ?? 'Import failed.'),
-    );
+    const written = result.attendanceWritten ?? 0;
+    if (result.ok) {
+      setImportMessage(
+        `Imported ${result.sessionsWritten ?? result.imported ?? dedupedSessions.length} sessions · ${written} marks`
+        + `${result.skipped ? ` · ${result.skipped} unchanged` : ''}`
+        + `${result.emptySkipped ? ` · ${result.emptySkipped} empty` : ''}`
+        + `${skipped ? ` · ${skipped} duplicate dates merged` : ''}`
+        + `${unmatchedNames.length ? ` · unmatched: ${unmatchedNames.join(', ')}` : ''}.`
+        + ' Open History to browse imported dates.',
+      );
+      setSection('history');
+      setHistoryKindFilter('all');
+    } else {
+      setImportMessage(
+        `${result.error ?? 'Import failed.'}`
+        + (unmatchedNames.length ? ` Unmatched: ${unmatchedNames.join(', ')}` : ''),
+      );
+    }
     if (unmatchedNames.length) {
       console.warn('[attendance import] Unmatched CSV names:', unmatchedNames);
     }
     if (fileRef.current) fileRef.current.value = '';
-    setTimeout(() => setImportMessage(null), unmatchedNames.length ? 12000 : 6000);
+    setTimeout(() => setImportMessage(null), unmatchedNames.length || !result.ok ? 16000 : 8000);
   };
 
   return (
@@ -273,13 +319,20 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               Sunday Mass · Practice · Special Mass — one log for Sts Joseph &amp; Philip
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setSection('log')}
               className={`btn-pill btn-pill-sm ${section === 'log' ? 'btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
             >
               Log
+            </button>
+            <button
+              type="button"
+              onClick={() => setSection('history')}
+              className={`btn-pill btn-pill-sm ${section === 'history' ? 'btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
+            >
+              History
             </button>
             <button
               type="button"
@@ -291,6 +344,69 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
           </div>
         </div>
       </section>
+
+      {section === 'history' && (
+        <div className="space-y-4">
+          <div className="apple-card space-y-3 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[17px] font-semibold text-[#1d1d1f]">Session history</h3>
+                <p className="mt-0.5 text-[13px] text-[#86868b]">
+                  {fullHistory.length} session{fullHistory.length === 1 ? '' : 's'}
+                  {attendanceRecords.length ? ` · ${attendanceRecords.length} marks loaded` : ''}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHistoryKindFilter('all')}
+                  className={`btn-pill btn-pill-sm ${historyKindFilter === 'all' ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                >
+                  All
+                </button>
+                {(Object.keys(ACTIVITY_KIND_LABELS) as ActivityKind[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setHistoryKindFilter(k)}
+                    className={`btn-pill btn-pill-sm ${historyKindFilter === k ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                  >
+                    {ACTIVITY_KIND_LABELS[k]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {fullHistory.length === 0 ? (
+              <p className="rounded-2xl bg-[#f5f5f7] px-4 py-6 text-center text-[14px] text-[#86868b]">
+                No attendance sessions found yet. Admins can import CSV sheets or log a session on the Log tab.
+              </p>
+            ) : (
+              <div className="max-h-[min(70vh,640px)] space-y-1 overflow-y-auto">
+                {fullHistory.map((session) => (
+                  <button
+                    key={`${session.kind}-${session.date}`}
+                    type="button"
+                    onClick={() => openSession(session.date, session.kind)}
+                    className="flex w-full min-h-[48px] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-black/[0.04]"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-semibold text-[#1d1d1f]">{session.date}</p>
+                      <p className="truncate text-[12px] text-[#86868b]">
+                        {ACTIVITY_KIND_LABELS[session.kind]}
+                        {session.entityName ? ` · ${session.entityName}` : ''}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[rgba(24,57,47,0.08)] px-2.5 py-1 text-[12px] font-semibold tabular-nums text-[#18392f]">
+                      {session.loggedCount} marks
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {section === 'overview' && (
         <div className="space-y-5">
@@ -416,7 +532,6 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 <button
                   key={k}
                   type="button"
-                  disabled={!isAdmin}
                   onClick={() => { setKind(k); setMarks({}); }}
                   className={`btn-pill btn-pill-sm ${kind === k ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
                 >
@@ -431,7 +546,6 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 <input
                   type="date"
                   value={date}
-                  disabled={!isAdmin}
                   onChange={(e) => { setDate(e.target.value); setMarks({}); }}
                   className="apple-input"
                 />
@@ -511,14 +625,23 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
             <div className="space-y-3">
               <div className="apple-card p-4">
-                <p className="apple-label mb-2 flex items-center gap-1">
-                  <History className="h-3.5 w-3.5" /> Recent · {ACTIVITY_KIND_LABELS[kind]}
-                </p>
-                {history.length === 0 ? (
-                  <p className="text-[13px] text-[#86868b]">No sessions logged yet.</p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="apple-label flex items-center gap-1">
+                    <History className="h-3.5 w-3.5" /> Recent · {ACTIVITY_KIND_LABELS[kind]}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setHistoryKindFilter(kind); setSection('history'); }}
+                    className="text-[12px] font-semibold text-[#18392f] hover:underline"
+                  >
+                    View all
+                  </button>
+                </div>
+                {recentHistory.length === 0 ? (
+                  <p className="text-[13px] text-[#86868b]">No sessions logged yet for this kind.</p>
                 ) : (
                   <div className="space-y-1">
-                    {history.map((session) => (
+                    {recentHistory.map((session) => (
                       <button
                         key={`${session.kind}-${session.date}`}
                         type="button"

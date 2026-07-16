@@ -156,8 +156,12 @@ export function listenToTenantCollection<T>(
     query(collection(db, COLLECTIONS[collectionName]), ...constraints),
     (snapshot) => {
       const records = snapshot.docs
-        .map((item) => ({ id: item.id, ...item.data() }) as unknown as T & { status?: string; updatedAt?: string })
-        .filter((item) => item.status !== 'deleted')
+        .map((item) => ({ id: item.id, ...item.data() }) as unknown as T & {
+          status?: string;
+          updatedAt?: string;
+          deletedAt?: string | null;
+        })
+        .filter((item) => item.status !== 'deleted' && !item.deletedAt)
         .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
         .slice(0, pageSize) as T[];
       onChange(records);

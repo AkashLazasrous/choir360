@@ -261,7 +261,11 @@ service cloud.firestore {
     // ATTENDANCE
     // =========================================================================
     match /attendance/{docId} {
-      allow read: if memberRole() && existingInTenant() && notDeleted();
+      // Do not use notDeleted() here: attendance docs store Present/Absent/Late/
+      // Excused in `status` (same dual-use as members). Soft-deleted rows are
+      // filtered client-side. Using notDeleted() breaks list queries once any
+      // doc has a non-lifecycle status value the query cannot constrain.
+      allow read: if memberRole() && existingInTenant();
       allow create: if adminTenantCreate();
       allow update: if adminTenantUpdate();
       allow delete: if false;

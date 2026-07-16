@@ -1175,14 +1175,11 @@ function resolveAdminTenant(
     throw new Error("You can only import attendance for your active parish.");
   }
 
-  const parish = findParishById(parishId);
-  return {
-    archdioceseId: String(user.archdioceseId || parish?.archdioceseId || "madras-mylapore"),
-    parishName: String(user.parishName || parish?.displayName || parishId),
-    tenantId: String(user.tenantId || parish?.archdioceseId || "madras-mylapore"),
-    parishId,
-    choirId: String(user.choirId || (parish ? `${parish.id}-choir` : `${parishId}-choir`)),
-  };
+  // Always derive the tenant envelope from the parish catalog so imports land
+  // in the same parishId/tenantId/choirId bucket the client listeners query.
+  // Preferring stale JWT choirId/tenantId previously wrote "successful" docs
+  // that never appeared in the Attendance UI.
+  return tenantFromParishId(parishId);
 }
 
 function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionBody {
@@ -1234,9 +1231,12 @@ async function loadParishMembers(
   db: Firestore,
   tenant: TenantEnvelope,
 ): Promise<Member[]> {
+  // Match /api/members/roster: parishId only. A strict tenantId filter dropped
+  // legacy members whose tenantId drifted, which made every mark resolve to
+  // zero attendance writes while the API still returned ok: true.
   const snap = await db.collection("members")
     .where("parishId", "==", tenant.parishId)
-    .where("tenantId", "==", tenant.tenantId)
+    .limit(500)
     .get();
   return snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Member));
 }
@@ -1298,10 +1298,21 @@ async function upsertAttendanceSessions(opts: {
   tenant: TenantEnvelope;
   members: Member[];
   sessions: AttendanceSessionBody[];
-}): Promise<{ imported: number; skipped: number; writtenRecords: number }> {
+}): Promise<{
+  imported: number;
+  skipped: number;
+  emptySkipped: number;
+  sessionsWritten: number;
+  attendanceWritten: number;
+  writtenRecords: number;
+  unknownMemberIds: string[];
+  membersLoaded: number;
+  parishId: string;
+}> {
   const { db, adminUid, tenant, members, sessions } = opts;
   const memberById = new Map(members.map((m) => [m.id, m]));
   const now = new Date().toISOString();
+  const unknownMemberIds = new Set<string>();
 
   const massIds: string[] = [];
   const rehearsalIds: string[] = [];
@@ -1310,7 +1321,10 @@ async function upsertAttendanceSessions(opts: {
     const entityId = activityEntityId(session.kind, session.date);
     const recordIds = Object.entries(session.marks)
       .filter(([, status]) => status)
-      .map(([memberId]) => attendanceRecordId(entityId, memberId));
+      .map(([memberId]) => {
+        if (!memberById.has(memberId)) unknownMemberIds.add(memberId);
+        return attendanceRecordId(entityId, memberId);
+      });
     if (session.kind === "practice") rehearsalIds.push(entityId);
     else massIds.push(entityId);
     attendanceIds.push(...recordIds);
@@ -1325,6 +1339,7 @@ async function upsertAttendanceSessions(opts: {
 
   let imported = 0;
   let skipped = 0;
+  let emptySkipped = 0;
   let writtenRecords = 0;
   let batch = db.batch();
   let ops = 0;
@@ -1336,18 +1351,30 @@ async function upsertAttendanceSessions(opts: {
   };
 
   for (const { session, entityId, recordIds } of prepared) {
+    const incomingMarks = Object.entries(session.marks)
+      .filter(([, status]) => status) as [string, AttendanceStatus][];
+    const resolvableMarks = incomingMarks.filter(([memberId]) => memberById.has(memberId));
+
+    if (resolvableMarks.length === 0) {
+      emptySkipped += 1;
+      continue;
+    }
+
     const attendanceExisting = new Map<string, DocumentData>();
     for (const id of recordIds) {
       const docData = attendanceExistingAll.get(id);
       if (docData) attendanceExisting.set(id, docData);
     }
 
-    if (sessionMarksMatchExisting(session.marks, attendanceExisting, entityId)) {
+    const resolvedMarks: Record<string, AttendanceStatus | null> = {};
+    for (const [memberId, status] of resolvableMarks) resolvedMarks[memberId] = status;
+
+    if (sessionMarksMatchExisting(resolvedMarks, attendanceExisting, entityId)) {
       skipped += 1;
       continue;
     }
 
-    const attendingIds = attendingMemberIdsFromMarks(session.marks);
+    const attendingIds = attendingMemberIdsFromMarks(resolvedMarks);
     const parentPrev = session.kind === "practice"
       ? rehearsalExisting.get(entityId)
       : massExisting.get(entityId);
@@ -1395,12 +1422,12 @@ async function upsertAttendanceSessions(opts: {
       entityId,
       entityName,
       session.date,
-      session.marks,
+      resolvedMarks,
       members,
     );
 
     const ensured = new Map(records.map((r) => [r.id, r]));
-    for (const [memberId, status] of Object.entries(session.marks)) {
+    for (const [memberId, status] of Object.entries(resolvedMarks)) {
       if (!status || ensured.has(attendanceRecordId(entityId, memberId))) continue;
       const member = memberById.get(memberId);
       if (!member) continue;
@@ -1420,11 +1447,21 @@ async function upsertAttendanceSessions(opts: {
 
     for (const record of ensured.values()) {
       const prev = attendanceExistingAll.get(record.id);
+      // Keep attendance mark in `status` (Present/Absent/…) — same dual-use as
+      // the rest of the app. Soft-delete uses status === 'deleted'.
       batch.set(
         db.collection("attendance").doc(record.id),
         stripUndefinedDeep({
+          ...envelopeForWrite(tenant, adminUid, "active", prev, now),
           ...record,
-          ...envelopeForWrite(tenant, adminUid, record.status, prev, now),
+          // Re-assert mark after envelope so Present/Absent is not overwritten
+          // by lifecycle "active". Client filters only exclude status === 'deleted'.
+          status: record.status,
+          parishId: tenant.parishId,
+          tenantId: tenant.tenantId,
+          archdioceseId: tenant.archdioceseId,
+          choirId: tenant.choirId,
+          parishName: tenant.parishName,
         }),
         { merge: true },
       );
@@ -1438,7 +1475,17 @@ async function upsertAttendanceSessions(opts: {
   }
 
   await commitBatch();
-  return { imported, skipped, writtenRecords };
+  return {
+    imported,
+    skipped,
+    emptySkipped,
+    sessionsWritten: imported,
+    attendanceWritten: writtenRecords,
+    writtenRecords,
+    unknownMemberIds: [...unknownMemberIds].slice(0, 50),
+    membersLoaded: members.length,
+    parishId: tenant.parishId,
+  };
 }
 
 app.post("/api/attendance/session", requireFirebaseAuth, requireAdminRole, async (req, res) => {
@@ -1461,7 +1508,8 @@ app.post("/api/attendance/session", requireFirebaseAuth, requireAdminRole, async
     });
     console.log(
       `[Attendance] session upsert kind=${session.kind} date=${session.date} `
-      + `imported=${result.imported} skipped=${result.skipped} by=${adminUid}`,
+      + `parish=${result.parishId} imported=${result.imported} skipped=${result.skipped} `
+      + `records=${result.attendanceWritten} members=${result.membersLoaded} by=${adminUid}`,
     );
     return res.json({ ok: true, ...result });
   } catch (error: any) {
@@ -1481,7 +1529,18 @@ app.post("/api/attendance/import", requireFirebaseAuth, requireAdminRole, async 
       return res.status(400).json({ error: "sessions array is required." });
     }
     if (sessionsRaw.length === 0) {
-      return res.json({ ok: true, imported: 0, skipped: 0, writtenRecords: 0 });
+      return res.json({
+        ok: true,
+        imported: 0,
+        skipped: 0,
+        emptySkipped: 0,
+        sessionsWritten: 0,
+        attendanceWritten: 0,
+        writtenRecords: 0,
+        unknownMemberIds: [],
+        membersLoaded: 0,
+        parishId: typeof body.parishId === "string" ? body.parishId : "",
+      });
     }
     if (sessionsRaw.length > 800) {
       return res.status(400).json({ error: "Too many sessions in one import (max 800)." });
@@ -1492,6 +1551,9 @@ app.post("/api/attendance/import", requireFirebaseAuth, requireAdminRole, async 
     const adminUid = (req as any).user.uid as string;
     const db = admin.firestore();
     const members = await loadParishMembers(db, tenant);
+    const clientUnmatched = Array.isArray(body.unmatchedNames)
+      ? body.unmatchedNames.filter((n: unknown) => typeof n === "string").slice(0, 100)
+      : [];
     const result = await upsertAttendanceSessions({
       db,
       adminUid,
@@ -1500,11 +1562,28 @@ app.post("/api/attendance/import", requireFirebaseAuth, requireAdminRole, async 
       sessions,
     });
 
+    const ok = result.attendanceWritten > 0 || result.skipped > 0;
     console.log(
-      `[Attendance] import parish=${tenant.parishId} sessions=${sessions.length} `
-      + `imported=${result.imported} skipped=${result.skipped} records=${result.writtenRecords} by=${adminUid}`,
+      `[Attendance] import parish=${result.parishId} sessionsIn=${sessions.length} `
+      + `sessionsWritten=${result.sessionsWritten} skipped=${result.skipped} emptySkipped=${result.emptySkipped} `
+      + `attendanceWritten=${result.attendanceWritten} membersLoaded=${result.membersLoaded} `
+      + `unknownIds=${result.unknownMemberIds.length} clientUnmatched=${clientUnmatched.length} by=${adminUid}`,
     );
-    return res.json({ ok: true, ...result });
+
+    return res.json({
+      ok,
+      ...result,
+      unmatchedNames: clientUnmatched,
+      error: !ok
+        ? (
+          members.length === 0
+            ? "No members found for this parish — cannot match CSV names to roster IDs."
+            : result.emptySkipped > 0
+              ? "Import wrote 0 attendance records. CSV names did not match any roster members (or marks were empty)."
+              : "Import wrote 0 attendance records."
+        )
+        : undefined,
+    });
   } catch (error: any) {
     console.error("[Attendance] import failed:", error?.message || error);
     return res.status(400).json({ error: error?.message || "Failed to import attendance." });

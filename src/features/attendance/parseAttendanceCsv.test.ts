@@ -14,6 +14,8 @@ const roster = [
   { id: 'm2', firstName: 'Sharon', lastName: 'Gabriel' },
   { id: 'm3', firstName: 'Jansi', lastName: 'Joseph' },
   { id: 'm4', firstName: 'Pravin', lastName: 'Antony' },
+  { id: 'm5', firstName: 'Diana', lastName: 'Mary' },
+  { id: 'm6', firstName: 'Jenifer', lastName: 'Justin' },
 ];
 
 describe('stripCsvBom', () => {
@@ -101,6 +103,11 @@ describe('matchMemberByName', () => {
 
   it('returns null for unknown or ambiguous names', () => {
     expect(matchMemberByName('Unknown Person', roster)).toBeNull();
+  });
+
+  it('matches known CSV aliases and spelling variants', () => {
+    expect(matchMemberByName('Diana Irudhayaraj', roster)).toBe('m5');
+    expect(matchMemberByName('Jeniefer S', roster)).toBe('m6');
   });
 });
 
