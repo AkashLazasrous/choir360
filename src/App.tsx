@@ -14,7 +14,7 @@ import { useSyncedCollection } from './hooks/useSyncedCollection';
 import { useMembersWithPrivateData } from './hooks/useMembersWithPrivateData';
 import { hasMinimumRole, useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
-import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, type TenantContext } from './services/recordMetadata';
+import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, updateRecordMetadata, type TenantContext } from './services/recordMetadata';
 import {
   attendingMemberIdsFromMarks,
   buildAttendanceRecords,
@@ -467,19 +467,39 @@ function AppInner() {
 
   const handleEditMember = async (updated: Member): Promise<{ ok: boolean; error?: string }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
-    const result = await memberSync.upsert(
-      {
-        ...updated,
-        ...createRecordMetadata(authState.user?.uid ?? 'admin', updated.status, tenantContext),
-      },
-      authState.user?.uid,
-    );
-    if (result.ok) {
+    // Admin Desk edits go through the API (Admin SDK). Client Firestore upserts
+    // were denied because createRecordMetadata rewrote immutable audit/tenant fields.
+    try {
+      const response = await apiFetch(`/api/members/${encodeURIComponent(updated.id)}/profile`, {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName: updated.firstName,
+          lastName: updated.lastName,
+          gender: updated.gender,
+          dob: updated.dob,
+          mobile: updated.mobile,
+          whatsapp: updated.whatsapp,
+          email: updated.email,
+          address: updated.address,
+          memberType: updated.memberType,
+          voiceType: updated.voiceType,
+          experience: updated.experience,
+          skills: updated.skills,
+          emergencyContact: updated.emergencyContact,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = payload?.error ?? 'Could not save profile.';
+        showToast({ tone: 'error', message: msg });
+        return { ok: false, error: msg };
+      }
       showToast({ message: `Profile updated for ${updated.firstName} ${updated.lastName}.` });
-    } else {
-      showToast({ tone: 'error', message: result.error ?? 'Could not save profile.' });
+      return { ok: true };
+    } catch {
+      showToast({ tone: 'error', message: 'Could not save profile.' });
+      return { ok: false, error: 'Could not save profile.' };
     }
-    return result;
   };
 
   const handleRemoveMember = async (member: Member): Promise<{ ok: boolean; error?: string }> => {
@@ -807,7 +827,7 @@ function AppInner() {
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
                     members={members} events={events} masses={masses} payments={payments} attendanceRecords={attendanceRecords}
-                    onUpdateMemberDetails={(updated) => void memberSync.upsert({ ...updated, ...createRecordMetadata(authState.user?.uid ?? updated.id, updated.status, tenantContext) }, authState.user?.uid)}
+                    onUpdateMemberDetails={(updated) => void memberSync.upsert(updateRecordMetadata(updated, authState.user?.uid ?? updated.id), authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);
                       if (event) void eventSync.patch(eventId, { rsvps: { ...event.rsvps, [memberId]: status } }, authState.user?.uid);

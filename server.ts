@@ -934,6 +934,112 @@ app.post("/api/members/:id/status", requireFirebaseAuth, requireAdminRole, async
 });
 
 // ---------------------------------------------------------------------------
+// ADMIN: update member profile (public + private fields) via Admin SDK
+// ---------------------------------------------------------------------------
+app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+
+    const memberId = requireString(req.params.id, "id", 128);
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const db = admin.firestore();
+    const memberRef = db.collection("members").doc(memberId);
+    const privateRef = db.collection("privateMembers").doc(memberId);
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      return res.status(404).json({ error: "Member not found." });
+    }
+
+    const existing = memberSnap.data() || {};
+    const role = String((req as any).user?.role || "");
+    const tokenParishId = String((req as any).user?.parishId || "").trim();
+    const elevated = ["super_admin", "diocese_admin"].includes(role);
+    if (!elevated && tokenParishId && String(existing.parishId || "") !== tokenParishId) {
+      return res.status(403).json({ error: "You can only edit members in your active parish." });
+    }
+
+    const firstName = requireString(body.firstName, "firstName", 80);
+    const lastName = requireString(body.lastName, "lastName", 80);
+    const email = requireString(body.email, "email", 200).toLowerCase();
+    const mobileRaw = requireString(body.mobile, "mobile", 40);
+    const mobile = normalizeMobile(mobileRaw);
+    if (!mobile) {
+      return res.status(400).json({ error: "Enter a valid mobile number." });
+    }
+
+    const memberType = typeof body.memberType === "string" ? body.memberType.trim().slice(0, 40) : "Singer";
+    const voiceType = memberType === "Singer"
+      ? (typeof body.voiceType === "string" ? body.voiceType.trim().slice(0, 40) : "None")
+      : "None";
+    const gender = typeof body.gender === "string" ? body.gender.trim().slice(0, 40) : "";
+    const dob = typeof body.dob === "string" ? body.dob.trim().slice(0, 40) : "";
+    const whatsappRaw = typeof body.whatsapp === "string" ? body.whatsapp.trim().slice(0, 40) : mobileRaw;
+    const address = typeof body.address === "string" ? body.address.trim().slice(0, 500) : "";
+    const skills = typeof body.skills === "string" ? body.skills.trim().slice(0, 500) : "";
+    const experience = Number.isFinite(Number(body.experience)) ? Math.max(0, Math.min(60, Number(body.experience))) : 0;
+    const emergency = body.emergencyContact && typeof body.emergencyContact === "object"
+      ? body.emergencyContact
+      : {};
+    const emergencyName = typeof emergency.name === "string" ? emergency.name.trim().slice(0, 80) : "";
+    const emergencyRelationship = typeof emergency.relationship === "string" ? emergency.relationship.trim().slice(0, 80) : "";
+    const emergencyPhone = typeof emergency.phone === "string" ? emergency.phone.trim().slice(0, 40) : "";
+
+    const now = new Date().toISOString();
+    const adminUid = (req as any).user.uid as string;
+
+    const publicPatch = {
+      firstName,
+      lastName,
+      gender,
+      memberType,
+      voiceType,
+      skills,
+      experience,
+      updatedAt: now,
+      updatedBy: adminUid,
+    };
+
+    const privatePatch = {
+      dob,
+      mobile: mobileRaw.trim(),
+      mobileNormalized: mobile,
+      whatsapp: whatsappRaw || mobileRaw.trim(),
+      email,
+      address,
+      emergencyContact: {
+        name: emergencyName,
+        relationship: emergencyRelationship,
+        phone: emergencyPhone || mobileRaw.trim(),
+      },
+      status: existing.status || "Active Member",
+      updatedAt: now,
+      updatedBy: adminUid,
+      // Ensure private doc has tenant envelope if it was never created
+      archdioceseId: existing.archdioceseId || null,
+      parishName: existing.parishName || null,
+      tenantId: existing.tenantId || null,
+      parishId: existing.parishId || null,
+      choirId: existing.choirId || null,
+      createdAt: existing.createdAt || now,
+      createdBy: existing.createdBy || adminUid,
+    };
+
+    const batch = db.batch();
+    batch.set(memberRef, publicPatch, { merge: true });
+    batch.set(privateRef, privatePatch, { merge: true });
+    await batch.commit();
+
+    console.log(`[Members] profile updated id=${memberId} by=${adminUid}`);
+    return res.json({ ok: true, memberId });
+  } catch (error: any) {
+    console.error("[Members] profile update failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Failed to update member profile." });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // ADMIN: soft-remove member from parish roster
 // ---------------------------------------------------------------------------
 app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async (req, res) => {
