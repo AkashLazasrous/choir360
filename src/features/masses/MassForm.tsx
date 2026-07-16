@@ -97,7 +97,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
   return (
     <div className="apple-card font-apple p-6 space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-[rgba(0,0,0,0.08)]">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18392f]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0e3d4c]">
           <BookOpen className="w-4 h-4 text-[#f5c24c]" />
         </div>
         <div>

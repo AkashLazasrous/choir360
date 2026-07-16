@@ -52,18 +52,18 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const parishLabel    = selectedParish?.parishName ?? 'Parish';
 
   const voiceParts = [
-    { label: 'Soprano', count: sopranos, grad: 'from-pink-500 to-rose-500',    light: 'apple-badge', text: 'text-pink-700' },
-    { label: 'Alto',    count: altos,    grad: 'from-[#18392f] to-[#0f2b22]', light: 'apple-badge-forest', text: 'text-[#18392f]' },
+    { label: 'Soprano', count: sopranos, grad: 'from-pink-400 to-orange-300', light: 'apple-badge', text: 'text-pink-700' },
+    { label: 'Alto',    count: altos,    grad: 'from-sky-400 to-teal-400', light: 'apple-badge-maldives', text: 'text-[#0e3d4c]' },
     { label: 'Tenor',   count: tenors,   grad: 'from-amber-400 to-[#f5c24c]', light: 'apple-badge-gold', text: 'text-[#8a6a10]' },
-    { label: 'Bass',    count: basses,   grad: 'from-slate-600 to-slate-800', light: 'apple-badge-muted', text: 'text-[#1d1d1f]' },
+    { label: 'Bass',    count: basses,   grad: 'from-slate-800 to-black', light: 'apple-badge-muted', text: 'text-[#0f172a]' },
   ];
 
   const topStats = [
-    { label: 'Active Choralists', value: activeMembers.length, sub: `${pendingCount} pending`, icon: Users, grad: 'from-[#18392f] to-[#0f2b22]', bar: Math.round((activeMembers.length / Math.max(members.length, 1)) * 100) },
-    { label: 'Gross Received',    value: formatINR(totalReceived), sub: `${payments.filter(p=>p.status==='Received').length} payments cleared`, icon: IndianRupee, grad: 'from-[#18392f] to-[#1e4035]', bar: totalProposed > 0 ? Math.round((totalReceived / totalProposed) * 100) : 0 },
-    { label: 'Dues Outstanding',  value: formatINR(totalPending), sub: `${payments.filter(p=>p.status==='Pending').length} open invoices`, icon: TrendingUp, grad: 'from-rose-500 to-red-600', bar: totalProposed > 0 ? Math.round((totalPending / totalProposed) * 100) : 0 },
+    { label: 'Active Choralists', value: activeMembers.length, sub: `${pendingCount} pending`, icon: Users, grad: 'from-sky-500 to-teal-500', bar: Math.round((activeMembers.length / Math.max(members.length, 1)) * 100) },
+    { label: 'Gross Received',    value: formatINR(totalReceived), sub: `${payments.filter(p=>p.status==='Received').length} payments cleared`, icon: IndianRupee, grad: 'from-violet-500 to-fuchsia-500', bar: totalProposed > 0 ? Math.round((totalReceived / totalProposed) * 100) : 0 },
+    { label: 'Dues Outstanding',  value: formatINR(totalPending), sub: `${payments.filter(p=>p.status==='Pending').length} open invoices`, icon: TrendingUp, grad: 'from-rose-500 via-orange-500 to-amber-400', bar: totalProposed > 0 ? Math.round((totalPending / totalProposed) * 100) : 0 },
     attendanceRecords.length > 0
-      ? { label: 'Avg Attendance', value: `${avgAttendance}%`, sub: `${parishAttendance.totalSessions} sessions · 30d ${parishAttendance.trendLast30Days}%`, icon: UserCheck, grad: 'from-emerald-500 to-[#18392f]', bar: avgAttendance }
+      ? { label: 'Avg Attendance', value: `${avgAttendance}%`, sub: `${parishAttendance.totalSessions} sessions · 30d ${parishAttendance.trendLast30Days}%`, icon: UserCheck, grad: 'from-teal-700 to-lime-400', bar: avgAttendance }
       : { label: 'Liturgy Log', value: masses.length, sub: `${masses.filter(m => specialMassCategories.includes(m.category)).length} special masses`, icon: Music2, grad: 'from-amber-400 to-[#f5c24c]', bar: Math.min(100, masses.length * 5) },
   ];
 
@@ -115,7 +115,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         <div className="apple-card relative overflow-hidden p-6">
           <div className="relative">
             <div className="flex items-center gap-2 mb-5 pb-4 border-b border-[rgba(0,0,0,0.08)]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#18392f]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0e3d4c]">
                 <Layers className="h-4 w-4 text-[#f5c24c]" />
               </div>
               <div>
@@ -251,14 +251,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
                     <td className="px-4 py-3 text-[#86868b]">{row.memberType} · {row.voiceType}</td>
                     <td className="px-4 py-3 tabular-nums">
-                      <span className="font-semibold text-[#18392f]">{row.massAttended}</span>
+                      <span className="font-semibold text-[#0e3d4c]">{row.massAttended}</span>
                       <span className="text-[#86868b]"> / {row.massLogged}</span>
                     </td>
                     <td className="px-4 py-3 tabular-nums">{row.present}</td>
                     <td className="px-4 py-3 tabular-nums text-[#8a6a10]">{row.late}</td>
                     <td className="px-4 py-3 tabular-nums text-[#d70015]">{row.absent}</td>
                     <td className="px-4 py-3 tabular-nums">{row.excused}</td>
-                    <td className="px-4 py-3 tabular-nums font-semibold text-[#18392f]">{row.finalPercent}%</td>
+                    <td className="px-4 py-3 tabular-nums font-semibold text-[#0e3d4c]">{row.finalPercent}%</td>
                     <td className="px-4 py-3 tabular-nums font-medium">{formatINR(row.totalShareINR)}</td>
                   </tr>
                 ))}
@@ -282,7 +282,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               const isSpecial = ['Special Mass', 'Death Mass', 'Death Anniversary Mass'].includes(m.category);
               return (
                 <div key={m.id} className="apple-list-row rounded-xl border border-[rgba(0,0,0,0.08)]">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-semibold ${i === 0 ? 'bg-[#18392f] text-[#f5c24c]' : isSpecial ? 'apple-badge-gold' : 'apple-badge-muted'}`}>
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-semibold ${i === 0 ? 'bg-[#0e3d4c] text-[#f5c24c]' : isSpecial ? 'apple-badge-gold' : 'apple-badge-muted'}`}>
                     {i + 1}
                   </div>
                   <div className="min-w-0 flex-1">

@@ -215,7 +215,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
         <h5 className="flex min-w-0 items-center gap-2 text-[16px] font-semibold tracking-[-0.015em]">
           {item.kind === 'mass'
             ? <Music className="h-4 w-4 shrink-0 text-[#f5c24c]" />
-            : <Users className="h-4 w-4 shrink-0 text-[#18392f]" />}
+            : <Users className="h-4 w-4 shrink-0 text-[#0e3d4c]" />}
           <span className="truncate">{item.name}</span>
         </h5>
         <span className={`shrink-0 ${item.kind === 'mass' ? 'apple-badge-gold' : 'apple-badge-forest'}`}>
@@ -237,7 +237,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
       {/* 1. Header controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between border-b border-[rgba(0,0,0,0.08)] pb-3 gap-3">
         <div className="flex items-center gap-2">
-          <CalendarIcon className="w-5 h-5 text-[#18392f]" />
+          <CalendarIcon className="w-5 h-5 text-[#0e3d4c]" />
           <div>
             <h2 className="apple-title">{dict.calendarTitle}</h2>
             <p className="apple-caption">Universal diocesan calendar integration and Google/Outlook sync links</p>
@@ -261,7 +261,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                 <div className="absolute right-0 top-[calc(100%+4px)] z-20 min-w-[12rem] overflow-hidden rounded-2xl border border-black/[0.08] bg-white py-1 shadow-lg">
                   <button type="button" onClick={() => { handleSyncCalendar('Google'); setSyncMenuOpen(false); }}
                     className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
-                    <ExternalLink className="h-4 w-4 text-[#18392f]" /> Google Calendar
+                    <ExternalLink className="h-4 w-4 text-[#0e3d4c]" /> Google Calendar
                   </button>
                   <button type="button" onClick={() => { handleSyncCalendar('Outlook'); setSyncMenuOpen(false); }}
                     className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px]">
@@ -275,7 +275,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
             onClick={() => handleSyncCalendar('Google')}
             className="btn-pill btn-pill-secondary btn-pill-sm hidden items-center gap-1 md:inline-flex"
           >
-            <ExternalLink className="h-3.5 w-3.5 text-[#18392f]" />
+            <ExternalLink className="h-3.5 w-3.5 text-[#0e3d4c]" />
             Sync Google
           </button>
           <button
@@ -374,9 +374,9 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                   if (dayItems.length > 0) {
                     cellClass = hasMass
                       ? 'bg-[rgba(245,194,76,0.16)] text-[#8a6a10] border border-[rgba(245,194,76,0.35)]'
-                      : 'bg-[rgba(24,57,47,0.08)] text-[#18392f] border border-[rgba(24,57,47,0.18)]';
+                      : 'bg-[rgba(14,61,76,0.08)] text-[#0e3d4c] border border-[rgba(14,61,76,0.18)]';
                   }
-                  if (isSelected) cellClass += ' ring-2 ring-[#18392f]';
+                  if (isSelected) cellClass += ' ring-2 ring-[#0e3d4c]';
                   else if (isToday) cellClass += ' ring-2 ring-black/15';
 
                   return (
@@ -387,7 +387,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                       title={dayItems.map((i) => `${i.time} ${i.name}`).join('\n') || undefined}
                       className={`flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl transition md:aspect-auto md:h-20 md:items-stretch md:justify-start md:p-2 ${cellClass}`}
                     >
-                      <span className={`text-[14px] font-semibold md:text-left md:text-[13px] ${isToday ? 'text-[#18392f]' : ''}`}>
+                      <span className={`text-[14px] font-semibold md:text-left md:text-[13px] ${isToday ? 'text-[#0e3d4c]' : ''}`}>
                         {dayNum}
                       </span>
                       {/* Phone: dots only. Desktop month: event labels. */}
@@ -395,7 +395,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                         {dayItems.slice(0, 3).map((item) => (
                           <span
                             key={`${item.kind}-${item.id}`}
-                            className={`h-1.5 w-1.5 rounded-full ${item.kind === 'mass' ? 'bg-[#f5c24c]' : 'bg-[#18392f]'}`}
+                            className={`h-1.5 w-1.5 rounded-full ${item.kind === 'mass' ? 'bg-[#f5c24c]' : 'bg-[#0e3d4c]'}`}
                           />
                         ))}
                       </span>
@@ -404,7 +404,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                           <span
                             key={`${item.kind}-${item.id}`}
                             className={`truncate rounded px-0.5 text-left text-[11px] font-medium leading-tight ${
-                              item.kind === 'mass' ? 'bg-[rgba(245,194,76,0.25)]' : 'bg-[rgba(24,57,47,0.15)]'
+                              item.kind === 'mass' ? 'bg-[rgba(245,194,76,0.25)]' : 'bg-[rgba(14,61,76,0.15)]'
                             }`}
                           >
                             {item.name}
@@ -507,7 +507,7 @@ export const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           {/* ADMIN CONSOLE: LOG EVENT REHEARSALS (ROLE DESKTOP) */}
           <div className="apple-card p-6 space-y-4" id="rehearsal-creator">
             <h4 className="apple-title flex items-center gap-1 text-sm">
-              <PlusCircle className="w-4 h-4 text-[#18392f]" />
+              <PlusCircle className="w-4 h-4 text-[#0e3d4c]" />
               Log Choral Event / Rehearsal
             </h4>
 

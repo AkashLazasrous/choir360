@@ -1,25 +1,26 @@
-/* Choir360 × Apple HIG language: paper surfaces, liquid glass, pill CTAs, SF type.
-   Brand fill remains sacred forest + amber gold (Apple blue only for text links). */
+/* Choir360 — world-class liturgical UI: Deep Sea chrome, Maldives actions,
+   Tranquil paper, Hydrogen accents. Named gradients for intentional moments. */
 
 :root {
-  --choir-forest: #18392f;
-  --choir-forest-deep: #0f2b22;
-  --choir-forest-mid: #1e4035;
+  /* Core brand (Deep Sea Space × Maldives) */
+  --choir-forest: #0e3d4c;
+  --choir-forest-deep: #050a14;
+  --choir-forest-mid: #134556;
   --choir-gold: #f5c24c;
   --choir-gold-soft: #fbbf24;
-  --choir-paper: #f5f5f7;
-  --choir-paper-warm: #fbfbfd;
-  --choir-ink: #1d1d1f;
-  --choir-ink-secondary: #86868b;
-  --choir-ink-tertiary: #6e6e73;
-  --choir-separator: rgba(0, 0, 0, 0.08);
+  --choir-paper: #f3f8fa;
+  --choir-paper-warm: #eef7f4;
+  --choir-ink: #0f172a;
+  --choir-ink-secondary: #64748b;
+  --choir-ink-tertiary: #94a3b8;
+  --choir-separator: rgba(14, 61, 76, 0.1);
   --choir-separator-dark: rgba(255, 255, 255, 0.12);
-  --choir-fill: rgba(120, 120, 128, 0.12);
-  --choir-fill-secondary: rgba(120, 120, 128, 0.08);
-  --choir-blue: #2997ff;
-  --choir-mist: rgba(24, 57, 47, 0.06);
-  --choir-glass: rgba(255, 255, 255, 0.72);
-  --choir-glass-dark: rgba(22, 22, 23, 0.72);
+  --choir-fill: rgba(14, 61, 76, 0.08);
+  --choir-fill-secondary: rgba(14, 61, 76, 0.05);
+  --choir-blue: #38bdf8;
+  --choir-mist: rgba(45, 212, 191, 0.08);
+  --choir-glass: rgba(255, 255, 255, 0.76);
+  --choir-glass-dark: rgba(5, 10, 20, 0.72);
   --choir-blur: 20px;
   --choir-radius-pill: 980px;
   --choir-radius-sm: 0.75rem;
@@ -33,6 +34,28 @@
   --choir-title: 1.375rem;
   --choir-body: 1.0625rem;
   --choir-caption: 0.8125rem;
+
+  /* Named award gradients */
+  --grad-hydrogen: linear-gradient(135deg, #e0f7ff 0%, #7dd3fc 48%, #22d3ee 100%);
+  --grad-instagram: linear-gradient(135deg, #833ab4 0%, #e1306c 42%, #fd1d1d 68%, #fcb045 100%);
+  --grad-deep-sea: linear-gradient(160deg, #0a1628 0%, #071018 42%, #020617 72%, #000000 100%);
+  --grad-tranquil: linear-gradient(160deg, #ecfdf5 0%, #e0f2fe 55%, #eff6ff 100%);
+  --grad-sunset: linear-gradient(135deg, #ef4444 0%, #f97316 40%, #e879f9 100%);
+  --grad-maldives: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 52%, #14b8a6 100%);
+  --grad-roseanna: linear-gradient(135deg, #fbcfe8 0%, #fdba74 100%);
+  --grad-neon-lagoon: linear-gradient(160deg, #042f2e 0%, #0f766e 48%, #4ade80 100%);
+  --grad-cinnamint: linear-gradient(135deg, #c2410c 0%, #5eead4 100%);
+  --grad-disco: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  --grad-gold: linear-gradient(135deg, #fde68a 0%, #f5c24c 45%, #f59e0b 100%);
+  --grad-primary-cta: var(--grad-maldives);
+  --grad-hero-scrim: linear-gradient(
+    180deg,
+    rgba(5, 10, 20, 0.58) 0%,
+    rgba(10, 22, 40, 0.32) 38%,
+    rgba(5, 10, 20, 0.78) 72%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+
   /* Mobile chrome contract */
   --app-header-h: 3rem; /* 48px — matches h-12 */
   --bottom-nav-h: 3.25rem; /* 52px */
@@ -129,8 +152,18 @@
 }
 
 .apple-section-dark {
-  background: #000;
+  background: var(--grad-deep-sea);
   color: #f5f5f7;
+}
+
+.apple-section-tranquil {
+  background: var(--grad-tranquil);
+  color: var(--choir-ink);
+}
+
+.apple-section-hydrogen {
+  background: var(--grad-hydrogen);
+  color: #0c4a6e;
 }
 
 .apple-section-dark .apple-display,
@@ -154,8 +187,83 @@
 
 /* ── Surfaces ─────────────────────────────────────────────────────────────── */
 .choir-paper-bg {
-  background: var(--choir-paper);
+  background: var(--grad-tranquil);
   color: var(--choir-ink);
+}
+
+/* Gradient utilities — use intentionally, one job per surface */
+.grad-hydrogen { background: var(--grad-hydrogen); }
+.grad-instagram { background: var(--grad-instagram); }
+.grad-deep-sea { background: var(--grad-deep-sea); }
+.grad-tranquil { background: var(--grad-tranquil); }
+.grad-sunset { background: var(--grad-sunset); }
+.grad-maldives { background: var(--grad-maldives); }
+.grad-roseanna { background: var(--grad-roseanna); }
+.grad-neon-lagoon { background: var(--grad-neon-lagoon); }
+.grad-cinnamint { background: var(--grad-cinnamint); }
+.grad-disco { background: var(--grad-disco); }
+.grad-gold { background: var(--grad-gold); }
+
+.grad-text-maldives {
+  background: var(--grad-maldives);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grad-text-sunset {
+  background: var(--grad-sunset);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grad-icon-well {
+  background: var(--grad-maldives);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(20, 184, 166, 0.28);
+}
+
+.grad-icon-well-sunset {
+  background: var(--grad-sunset);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.28);
+}
+
+.grad-icon-well-disco {
+  background: var(--grad-disco);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(236, 72, 153, 0.28);
+}
+
+.grad-icon-well-neon {
+  background: var(--grad-neon-lagoon);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(74, 222, 128, 0.22);
+}
+
+.grad-icon-well-roseanna {
+  background: var(--grad-roseanna);
+  color: #7c2d12;
+  box-shadow: 0 8px 24px rgba(251, 207, 232, 0.45);
+}
+
+.grad-icon-well-instagram {
+  background: var(--grad-instagram);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(225, 48, 108, 0.28);
+}
+
+.grad-icon-well-cinnamint {
+  background: var(--grad-cinnamint);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(194, 65, 12, 0.22);
+}
+
+.grad-icon-well-hydrogen {
+  background: var(--grad-hydrogen);
+  color: #0c4a6e;
+  box-shadow: 0 8px 24px rgba(34, 211, 238, 0.25);
 }
 
 .apple-card {
@@ -217,7 +325,7 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--choir-radius-xl);
-  background: var(--choir-forest-deep);
+  background: var(--grad-deep-sea);
   color: #f5f5f7;
 }
 
@@ -225,7 +333,7 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--choir-radius-xl);
-  background: linear-gradient(180deg, #1a3d32 0%, #0f2b22 100%);
+  background: linear-gradient(160deg, #134556 0%, #0a1628 48%, #050a14 100%);
   color: #f5f5f7;
 }
 
@@ -282,22 +390,25 @@
 }
 
 .btn-pill-primary {
-  background: var(--choir-forest);
+  background: var(--grad-maldives);
   color: #fff;
+  box-shadow: 0 10px 28px rgba(20, 184, 166, 0.28);
 }
 
 .btn-pill-primary:hover:not(:disabled) {
-  background: var(--choir-forest-deep);
+  filter: brightness(1.05);
+  box-shadow: 0 12px 32px rgba(20, 184, 166, 0.36);
 }
 
 .btn-pill-gold {
-  background: var(--choir-gold);
-  color: var(--choir-forest-deep);
+  background: var(--grad-gold);
+  color: #1c1917;
   font-weight: 600;
+  box-shadow: 0 10px 28px rgba(245, 194, 76, 0.32);
 }
 
 .btn-pill-gold:hover:not(:disabled) {
-  background: #f8ce6a;
+  filter: brightness(1.04);
 }
 
 .btn-pill-ghost {
@@ -306,7 +417,7 @@
 }
 
 .btn-pill-ghost:hover:not(:disabled) {
-  background: rgba(24, 57, 47, 0.06);
+  background: rgba(14, 61, 76, 0.06);
 }
 
 .btn-pill-secondary {
@@ -392,8 +503,8 @@
 .apple-select:focus,
 .apple-textarea:focus {
   background: #fff;
-  border-color: var(--choir-forest);
-  box-shadow: 0 0 0 3px rgba(24, 57, 47, 0.12);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.22);
 }
 
 .apple-textarea {
@@ -458,7 +569,7 @@
 }
 
 .apple-badge-forest {
-  background: rgba(24, 57, 47, 0.1);
+  background: rgba(14, 61, 76, 0.1);
   color: var(--choir-forest);
 }
 
@@ -468,8 +579,23 @@
 }
 
 .apple-badge-blue {
-  background: rgba(41, 151, 255, 0.12);
-  color: #0071e3;
+  background: rgba(56, 189, 248, 0.16);
+  color: #0369a1;
+}
+
+.apple-badge-maldives {
+  background: rgba(45, 212, 191, 0.16);
+  color: #0f766e;
+}
+
+.apple-badge-sunset {
+  color: #fff;
+  background: var(--grad-sunset);
+}
+
+.apple-badge-disco {
+  color: #fff;
+  background: var(--grad-disco);
 }
 
 .apple-badge-muted {
@@ -704,7 +830,7 @@
   height: 20rem;
   left: -3rem;
   top: -3rem;
-  background: rgba(245, 194, 76, 0.22);
+  background: rgba(56, 189, 248, 0.28);
   animation: choirAmbientDrift 16s ease-in-out infinite alternate;
 }
 
@@ -713,7 +839,7 @@
   height: 24rem;
   right: -5rem;
   bottom: -6rem;
-  background: rgba(24, 57, 47, 0.35);
+  background: rgba(232, 121, 249, 0.18);
   animation: choirAmbientDrift 20s ease-in-out infinite alternate-reverse;
 }
 

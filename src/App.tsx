@@ -98,10 +98,10 @@ const languages: { id: Language; label: string }[] = [
 const ModuleSkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3].map((i) => (
-      <div key={i} className="animate-pulse rounded-3xl border border-[#18392f]/08 bg-white/70 p-6">
-        <div className="h-4 w-1/3 rounded-full bg-[#18392f]/10" />
-        <div className="mt-3 h-3 w-2/3 rounded-full bg-[#18392f]/[0.06]" />
-        <div className="mt-2 h-3 w-1/2 rounded-full bg-[#18392f]/[0.06]" />
+      <div key={i} className="animate-pulse rounded-3xl border border-[#0e3d4c]/08 bg-white/70 p-6">
+        <div className="h-4 w-1/3 rounded-full bg-[#0e3d4c]/10" />
+        <div className="mt-3 h-3 w-2/3 rounded-full bg-[#0e3d4c]/[0.06]" />
+        <div className="mt-2 h-3 w-1/2 rounded-full bg-[#0e3d4c]/[0.06]" />
       </div>
     ))}
   </div>
@@ -544,7 +544,7 @@ function AppInner() {
           </button>
 
           <button onClick={() => navigate('landing')} className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-300 text-[#0f2b22]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-300 text-[#050a14]">
               <Music2 className="h-4 w-4" />
             </div>
             <div className="text-left">
@@ -626,7 +626,7 @@ function AppInner() {
         <button
           type="button"
           aria-label="Close navigation"
-          className="fixed inset-0 z-30 bg-[#0f2b22]/40 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-[#050a14]/40 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileNavOpen(false)}
         />
       )}
@@ -690,7 +690,7 @@ function AppInner() {
                     {isActive && (
                       <motion.span
                         layoutId="sidebar-active-pill"
-                        className="absolute inset-0 rounded-full bg-[#18392f]"
+                        className="absolute inset-0 rounded-full bg-[#0e3d4c]"
                         transition={{ type: 'spring', stiffness: 420, damping: 36 }}
                       />
                     )}
@@ -903,7 +903,7 @@ function AppInner() {
       {/* Mobile bottom nav — 5 primary tabs + More drawer */}
       {mobileMoreOpen && (
         <div className="fixed inset-0 z-[55] lg:hidden" onClick={() => setMobileMoreOpen(false)}>
-          <div className="absolute inset-0 bg-[#0f2b22]/35 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-[#050a14]/35 backdrop-blur-sm" />
           <div
             className="app-more-sheet absolute left-0 right-0 rounded-t-2xl border-t border-black/5 bg-white/95 shadow-xl backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
@@ -936,9 +936,9 @@ function AppInner() {
                   const isActive = activeTab === id;
                   return (
                     <button key={id} onClick={() => { navigate(id); setMobileMoreOpen(false); }}
-                      className={'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' + (isActive ? 'bg-[#18392f]/10' : 'hover:bg-black/[0.03]')}>
-                      <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')} />
-                      <span className={'text-center text-[11px] font-medium leading-tight ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
+                      className={'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' + (isActive ? 'bg-[#0e3d4c]/10' : 'hover:bg-black/[0.03]')}>
+                      <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
+                      <span className={'text-center text-[11px] font-medium leading-tight ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{label}</span>
                     </button>
                   );
                 })}
@@ -964,19 +964,19 @@ function AppInner() {
                 {isActive && (
                   <motion.span
                     layoutId="bottomnav-active-bar"
-                    className="absolute top-0 h-[2px] w-8 rounded-full bg-[#18392f]"
+                    className="absolute top-0 h-[2px] w-8 rounded-full bg-[#0e3d4c]"
                     transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                   />
                 )}
-                <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')} />
-                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#18392f]' : 'text-[#86868b]')}>{label}</span>
+                <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
+                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{label}</span>
               </button>
             );
           })}
         <button onClick={() => setMobileMoreOpen((o) => !o)}
           className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5">
-          <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')} />
-          <span className={'text-[11px] font-medium ' + (mobileMoreOpen ? 'text-[#18392f]' : 'text-[#86868b]')}>More</span>
+          <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
+          <span className={'text-[11px] font-medium ' + (mobileMoreOpen ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>More</span>
         </button>
       </nav>
       <div className="app-bottom-spacer lg:hidden" aria-hidden="true" />

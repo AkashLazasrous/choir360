@@ -68,7 +68,7 @@ export const CatholicKnowledgeHub: React.FC = () => {
                 aria-label={t.label}
                 className={`flex min-h-[44px] shrink-0 snap-start items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition ${
                   tab === t.id
-                    ? 'bg-[#18392f] text-white shadow-sm'
+                    ? 'bg-[#0e3d4c] text-white shadow-sm'
                     : 'border border-black/[0.08] bg-white text-[#1d1d1f]'
                 }`}
               >

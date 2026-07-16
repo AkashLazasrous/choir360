@@ -154,7 +154,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
     <div className="apple-card font-apple space-y-5 p-6" id="admin-dashboard-view">
       <div className="flex flex-col items-start justify-between gap-3 border-b border-black/[0.06] pb-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#18392f]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0e3d4c]">
             <ClipboardCheck className="h-5 w-5 text-amber-300" />
           </div>
           <div>
@@ -233,7 +233,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
 
       {loading && apiMembers === null ? (
         <div className="apple-empty">
-          <RefreshCw className="h-8 w-8 animate-spin text-[#18392f]" />
+          <RefreshCw className="h-8 w-8 animate-spin text-[#0e3d4c]" />
           <h3>Loading applications…</h3>
           <p>Fetching the parish roster from the server.</p>
         </div>
@@ -255,7 +255,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {sorted.map((m) => {
             const statusCfg = {
-              'Active Member': { bg: 'bg-[rgba(24,57,47,0.06)]', border: 'border-[rgba(24,57,47,0.14)]', badge: 'apple-badge-forest', dot: 'bg-[#18392f]' },
+              'Active Member': { bg: 'bg-[rgba(14,61,76,0.06)]', border: 'border-[rgba(14,61,76,0.14)]', badge: 'apple-badge-forest', dot: 'bg-[#0e3d4c]' },
               Admin: { bg: 'bg-[rgba(245,194,76,0.12)]', border: 'border-[rgba(245,194,76,0.35)]', badge: 'apple-badge-gold', dot: 'bg-[#f5c24c]' },
               Pending: { bg: 'bg-[rgba(245,194,76,0.1)]', border: 'border-[rgba(245,194,76,0.28)]', badge: 'apple-badge-gold', dot: 'bg-[#e8a820]' },
               Rejected: { bg: 'bg-[rgba(255,59,48,0.06)]', border: 'border-[rgba(255,59,48,0.2)]', badge: 'apple-badge-danger', dot: 'bg-[#d70015]' },

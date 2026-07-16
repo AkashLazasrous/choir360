@@ -137,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/8 p-3">
                   <div className="flex -space-x-2">
                     {activeMembers.slice(0, 5).map((m) => (
-                      <img key={m.id} src={m.photoUrl} alt="" className="h-8 w-8 rounded-full border-2 border-[#0f2b22] object-cover" />
+                      <img key={m.id} src={m.photoUrl} alt="" className="h-8 w-8 rounded-full border-2 border-[#050a14] object-cover" />
                     ))}
                   </div>
                   <div>
@@ -191,7 +191,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         ].map((stat, i) => (
           <Reveal key={stat.label} delay={i * 0.05}>
             <article className="apple-card flex h-full flex-col p-5">
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(24,57,47,0.08)] text-[#18392f]">
+              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(14,61,76,0.08)] text-[#0e3d4c]">
                 <stat.icon className="h-4 w-4" />
               </div>
               <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#1d1d1f]">
@@ -202,7 +202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="mt-auto pt-4">
                 <div className="h-1 w-full overflow-hidden rounded-full bg-black/[0.06]">
                   <div
-                    className="h-full rounded-full bg-[#18392f] transition-all duration-700"
+                    className="h-full rounded-full bg-[#0e3d4c] transition-all duration-700"
                     style={{ width: `${stat.bar}%` }}
                   />
                 </div>
@@ -239,7 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 onClick={() => onNavigate('masses')}
                 className="apple-empty w-full rounded-2xl border border-dashed border-black/10 bg-[#f5f5f7]"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#18392f]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0e3d4c]">
                   <BookOpen className="h-5 w-5" />
                 </div>
                 <h3>No masses logged yet</h3>
@@ -257,7 +257,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       className="apple-list-row w-full text-left"
                     >
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        i === 0 ? 'bg-[#18392f] text-amber-300' : isSpecial ? 'bg-[rgba(245,194,76,0.22)] text-[#8a6a10]' : 'bg-black/[0.06] text-[#86868b]'
+                        i === 0 ? 'bg-[#0e3d4c] text-amber-300' : isSpecial ? 'bg-[rgba(245,194,76,0.22)] text-[#8a6a10]' : 'bg-black/[0.06] text-[#86868b]'
                       }`}>
                         <BookOpen className="h-3.5 w-3.5" />
                       </div>
@@ -334,7 +334,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={() => onNavigate(nav)}
                   className="apple-card flex flex-col items-start gap-2 p-4 text-left transition active:scale-[0.98]"
                 >
-                  <Icon className="h-5 w-5 text-[#18392f]" />
+                  <Icon className="h-5 w-5 text-[#0e3d4c]" />
                   <div>
                     <p className="text-[15px] font-semibold text-[#1d1d1f]">{label}</p>
                     <p className="mt-0.5 text-[12px] text-[#86868b]">{sub}</p>
@@ -366,16 +366,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </article>
 
-          <article className="overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-[#f5c24c] to-[#e8a820] p-6 text-[#0f2b22]">
+          <article className="overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-[#f5c24c] to-[#e8a820] p-6 text-[#050a14]">
             <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/10">
               <BookOpenText className="h-5 w-5" />
             </div>
-            <p className="text-[13px] font-medium text-[#0f2b22]/80">Daily word</p>
+            <p className="text-[13px] font-medium text-[#050a14]/80">Daily word</p>
             <h3 className="mt-1.5 text-[17px] font-semibold leading-snug tracking-[-0.02em]">
               &ldquo;Your Father knows what you need.&rdquo;
             </h3>
-            <p className="mt-1.5 text-[13px] text-[#0f2b22]/70">Matthew 6:7–15 · Daily readings</p>
-            <button type="button" onClick={() => onNavigate('bible')} className="mt-4 text-[15px] font-medium text-[#0f2b22] underline-offset-2 hover:underline">
+            <p className="mt-1.5 text-[13px] text-[#050a14]/70">Matthew 6:7–15 · Daily readings</p>
+            <button type="button" onClick={() => onNavigate('bible')} className="mt-4 text-[15px] font-medium text-[#050a14] underline-offset-2 hover:underline">
               Read reflection ›
             </button>
           </article>

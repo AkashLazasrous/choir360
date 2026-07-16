@@ -25,7 +25,7 @@ export function DailyReadingTabs<T extends string>({ tabs, activeTab, onSelect }
             onClick={() => onSelect(tab.key)}
             className={`rounded-lg px-3 py-2 text-left text-[13px] font-bold transition ${
               activeTab === tab.key
-                ? 'bg-[#18392f] text-white'
+                ? 'bg-[#0e3d4c] text-white'
                 : tab.disabled
                   ? 'text-slate-300 hover:bg-slate-50'
                   : 'text-slate-700 hover:bg-slate-50'
