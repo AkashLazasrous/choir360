@@ -4,7 +4,7 @@
  * and decoding="async" for off-main-thread decoding.
  * Falls back to a placeholder avatar on error.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -26,9 +26,13 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 }) => {
   const [imgSrc, setImgSrc] = useState(src);
 
+  useEffect(() => {
+    setImgSrc(src);
+  }, [src]);
+
   return (
     <img
-      src={imgSrc}
+      src={imgSrc || fallback}
       alt={alt}
       loading="lazy"
       decoding="async"

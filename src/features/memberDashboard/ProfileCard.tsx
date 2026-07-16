@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Save } from 'lucide-react';
 import { Member } from '../../types';
-import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
+import { pickCloudinaryPhotoUrl, ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { auth } from '../../services/firebase';
 
 interface ProfileCardProps {
@@ -22,6 +22,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
   const [editAddress, setEditAddress] = useState(member.address);
   const [editSkills, setEditSkills] = useState(member.skills);
   const [editPhotoUrl, setEditPhotoUrl] = useState(member.photoUrl);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     if (isEditing) return;
@@ -37,6 +38,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
 
   const handleEditRequest = (e: React.FormEvent) => {
     e.preventDefault();
+    if (photoBusy) return;
     onUpdateMemberDetails({
       ...member,
       firstName: editFirstName,
@@ -78,8 +80,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
                 memberId={member.id}
                 uploadedByUserId={auth?.currentUser?.uid ?? member.id}
                 currentPhotoUrl={editPhotoUrl}
+                onBusyChange={setPhotoBusy}
                 onUploadComplete={(record) => {
-                  const url = record.optimizedUrl || record.secureUrl;
+                  const url = pickCloudinaryPhotoUrl(record);
                   if (url) setEditPhotoUrl(url);
                 }}
               />
@@ -118,9 +121,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
           <button
             type="submit"
             id="save-profile-request-btn"
+            disabled={photoBusy}
             className="btn-pill btn-pill-primary w-full"
           >
-            <Save className="w-3.5 h-3.5" /> Submit Edit for Admin Approval
+            <Save className="w-3.5 h-3.5" />
+            {photoBusy ? 'Uploading photo…' : 'Submit Edit for Admin Approval'}
           </button>
         </form>
       ) : (

@@ -3,16 +3,16 @@
  *
  * Flow:
  *  1. User selects a file  →  validated immediately (type / size / dimensions)
- *  2. Valid file           →  Base64 preview rendered instantly (no server call yet)
- *  3. User clicks "Upload" →  image is compressed, uploaded to Cloudinary via
- *                             signed backend endpoint, metadata saved to Firestore
- *  4. Success              →  preview updated with Cloudinary optimized URL
+ *  2. Valid file           →  Base64 preview + automatic Cloudinary upload
+ *  3. Success              →  preview updated with Cloudinary URL; parent gets onUploadComplete
  *
  * Base64 data is used ONLY for the in-browser preview and is never persisted.
+ * Parents should disable Save while `onBusyChange(true)` so a pending upload
+ * cannot be skipped.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Camera, CheckCircle, Loader2, RefreshCw, Upload, X } from 'lucide-react';
+import { AlertTriangle, Camera, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import { fileToBase64 } from '../../utils/fileToBase64';
 import { validateImageFile } from '../../utils/imageValidation';
 import { compressImage } from '../../utils/imageCompression';
@@ -25,14 +25,20 @@ export interface ProfilePhotoUploadProps {
   currentPhotoUrl?: string;
   onUploadComplete: (record: CloudinaryMediaRecord) => void;
   onError?: (message: string) => void;
+  /** True while validating/compressing/uploading — parent should block Save. */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type UploadPhase =
   | 'idle'
-  | 'preview'
   | 'uploading'
   | 'success'
   | 'error';
+
+/** Prefer Cloudinary's canonical secure_url; optimizedUrl is a client-built variant. */
+export function pickCloudinaryPhotoUrl(record: CloudinaryMediaRecord): string {
+  return (record.secureUrl || record.optimizedUrl || record.thumbnailUrl || '').trim();
+}
 
 export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
   memberId,
@@ -40,64 +46,44 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
   currentPhotoUrl,
   onUploadComplete,
   onError,
+  onBusyChange,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [phase, setPhase] = useState<UploadPhase>('idle');
   const [displayUrl, setDisplayUrl] = useState(currentPhotoUrl ?? '');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   // Keep preview in sync when the parent photo URL changes (e.g. opening editor for another member).
   useEffect(() => {
-    if (phase === 'preview' || phase === 'uploading') return;
+    if (phase === 'uploading') return;
     setDisplayUrl(currentPhotoUrl ?? '');
   }, [currentPhotoUrl, phase]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    onBusyChange?.(phase === 'uploading');
+  }, [phase, onBusyChange]);
 
-    setErrorMsg('');
-    setProgressMsg('Validating…');
-    setPhase('preview');
-
-    try {
-      await validateImageFile(file);
-      const base64 = await fileToBase64(file);
-      setDisplayUrl(base64);
-      setSelectedFile(file);
-      setProgressMsg('');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Validation failed.';
-      setErrorMsg(msg);
-      onError?.(msg);
-      setPhase('error');
-      setProgressMsg('');
-      if (inputRef.current) inputRef.current.value = '';
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
+  const uploadFile = async (file: File) => {
     setPhase('uploading');
     setProgressMsg('Compressing image…');
 
     try {
-      const compressed = await compressImage(selectedFile);
+      const compressed = await compressImage(file);
 
       setProgressMsg('Uploading…');
       const record = await uploadMediaToCloudinary(compressed, {
         moduleName: 'members',
         relatedRecordId: memberId,
         uploadedByUserId,
-        originalFileName: selectedFile.name,
-        mimeType: selectedFile.type,
-        sizeBytes: selectedFile.size,
+        originalFileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
       });
 
-      setDisplayUrl(record.optimizedUrl || record.secureUrl);
+      const url = pickCloudinaryPhotoUrl(record);
+      setDisplayUrl(url || record.secureUrl);
       setPhase('success');
       setProgressMsg('');
       onUploadComplete(record);
@@ -110,10 +96,33 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErrorMsg('');
+    setProgressMsg('Validating…');
+    setPhase('uploading');
+
+    try {
+      await validateImageFile(file);
+      const base64 = await fileToBase64(file);
+      setDisplayUrl(base64);
+      setProgressMsg('');
+      await uploadFile(file);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Validation failed.';
+      setErrorMsg(msg);
+      onError?.(msg);
+      setPhase('error');
+      setProgressMsg('');
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
   const handleReset = () => {
     setPhase('idle');
     setDisplayUrl(currentPhotoUrl ?? '');
-    setSelectedFile(null);
     setErrorMsg('');
     setProgressMsg('');
     if (inputRef.current) inputRef.current.value = '';
@@ -154,7 +163,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             className="hidden"
-            onChange={handleFileChange}
+            onChange={(e) => void handleFileChange(e)}
             disabled={phase === 'uploading'}
           />
 
@@ -165,29 +174,8 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             className="btn-pill btn-pill-primary w-fit"
           >
             <Camera className="h-4 w-4" />
-            {displayUrl && phase === 'idle' ? 'Change Photo' : 'Choose File'}
+            {displayUrl && phase === 'idle' ? 'Change Photo' : phase === 'uploading' ? 'Uploading…' : 'Choose File'}
           </button>
-
-          {phase === 'preview' && selectedFile && (
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={handleUpload}
-                className="btn-pill btn-pill-gold"
-              >
-                <Upload className="h-4 w-4" />
-                Upload
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="btn-pill btn-pill-secondary"
-              >
-                <X className="h-4 w-4" />
-                Cancel
-              </button>
-            </div>
-          )}
 
           {phase === 'error' && (
             <button
@@ -211,12 +199,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
       {phase === 'success' && (
         <p className="flex items-center gap-1.5 text-[13px] font-medium text-[#18392f]">
           <CheckCircle className="h-3.5 w-3.5 text-[#30d158]" />
-          Photo uploaded successfully.
-        </p>
-      )}
-      {phase === 'preview' && selectedFile && !progressMsg && (
-        <p className="text-[12px] text-[#86868b]">
-          Selected: {selectedFile.name}
+          Photo uploaded successfully. Save the profile to keep it.
         </p>
       )}
       {errorMsg && (
@@ -228,7 +211,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
 
       <p className="text-[12px] leading-relaxed text-[#86868b]">
         JPEG, PNG, WebP, or HEIC · max 8 MB · max 6000 px per side.
-        Photos upload to Cloudinary; metadata is saved to Firebase.
+        Photos upload to Cloudinary automatically after you choose a file.
       </p>
     </div>
   );

@@ -509,6 +509,33 @@ function AppInner() {
         showToast({ tone: 'error', message: msg });
         return { ok: false, error: msg };
       }
+
+      // Keep local roster in sync immediately. Also write public fields (incl.
+      // photoUrl) via client SDK so photos persist even if Render's API build
+      // predates the photoUrl profile patch.
+      const savedPhotoUrl =
+        (typeof payload?.photoUrl === 'string' && payload.photoUrl.trim())
+          || updated.photoUrl
+          || '';
+      const publicFields: Partial<Member> & { updatedAt: string } = {
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        gender: updated.gender,
+        relationshipStatus: updated.relationshipStatus || '',
+        memberType: updated.memberType,
+        voiceType: updated.voiceType,
+        skills: updated.skills,
+        experience: updated.experience,
+        photoUrl: savedPhotoUrl,
+        updatedAt: new Date().toISOString(),
+      };
+      memberSync.applyLocal(updated.id, publicFields);
+      const clientWrite = await memberSync.patch(updated.id, publicFields, authState.user?.uid);
+      if (!clientWrite.ok) {
+        // patch() rolls back optimistic state on failure — restore card UI.
+        memberSync.applyLocal(updated.id, publicFields);
+      }
+
       showToast({ message: `Profile updated for ${updated.firstName} ${updated.lastName}.` });
       return { ok: true };
     } catch {

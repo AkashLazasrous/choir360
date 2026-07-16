@@ -19,7 +19,7 @@ import {
   RELATIONSHIP_STATUSES,
   SPECIAL_SKILLS,
 } from '../../data/registrationOptions';
-import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
+import { pickCloudinaryPhotoUrl, ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { useParish } from '../parish/ParishContext';
 import { activeParishes, findParishById } from '../../data/madrasMylaporeParishes';
 import { apiFetch } from '../../services/apiClient';
@@ -118,8 +118,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
 
     const finalPhotoUrl =
-      cloudinaryRecord?.optimizedUrl ||
-      cloudinaryRecord?.secureUrl ||
+      (cloudinaryRecord ? pickCloudinaryPhotoUrl(cloudinaryRecord) : '') ||
       photoUrl;
 
     setIsSubmitting(true);
@@ -546,7 +545,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <ProfilePhotoUpload
             memberId={email.trim() ? `pending-${email.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 'pending-registration'}
             uploadedByUserId="public_user"
-            currentPhotoUrl={cloudinaryRecord?.optimizedUrl || cloudinaryRecord?.secureUrl || photoUrl}
+            currentPhotoUrl={
+              (cloudinaryRecord ? pickCloudinaryPhotoUrl(cloudinaryRecord) : '') || photoUrl
+            }
             onUploadComplete={(record) => setCloudinaryRecord(record)}
           />
         </div>

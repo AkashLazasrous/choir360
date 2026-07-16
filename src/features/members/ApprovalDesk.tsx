@@ -87,7 +87,41 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
     void loadRoster();
   }, [loadRoster]);
 
-  const members = (apiMembers ?? liveMembers).filter((m) => (m.status as string) !== 'deleted');
+  // Prefer API roster for PII, but overlay fresher public fields (esp. photoUrl)
+  // from the Firestore listener so Admin SDK / client patches show immediately.
+  const members = useMemo(() => {
+    const ts = (m: Member) => String((m as Member & { updatedAt?: string }).updatedAt || '');
+    const liveById = new Map(liveMembers.map((m) => [m.id, m]));
+    const base = apiMembers ?? liveMembers;
+    return base
+      .map((m) => {
+        const live = liveById.get(m.id);
+        if (!live) return m;
+        const liveTs = ts(live);
+        const apiTs = ts(m);
+        const liveIsFresher = Boolean(liveTs && (!apiTs || liveTs >= apiTs));
+        if (!liveIsFresher) {
+          return {
+            ...m,
+            photoUrl: m.photoUrl || live.photoUrl || '',
+          };
+        }
+        return {
+          ...m,
+          photoUrl: live.photoUrl || m.photoUrl || '',
+          firstName: live.firstName || m.firstName,
+          lastName: live.lastName || m.lastName,
+          gender: live.gender || m.gender,
+          memberType: live.memberType || m.memberType,
+          voiceType: live.voiceType || m.voiceType,
+          skills: live.skills ?? m.skills,
+          experience: live.experience ?? m.experience,
+          status: live.status || m.status,
+          relationshipStatus: live.relationshipStatus || m.relationshipStatus,
+        };
+      })
+      .filter((m) => (m.status as string) !== 'deleted');
+  }, [apiMembers, liveMembers]);
 
   const sorted = useMemo(
     () =>
@@ -114,6 +148,15 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
       setEditError(result.error ?? 'Could not save profile.');
       return;
     }
+    // Optimistic local roster update so the card photo flips before refetch.
+    const stamped = { ...updated, updatedAt: new Date().toISOString() } as Member & { updatedAt: string };
+    setApiMembers((prev) => {
+      if (!prev) return [stamped];
+      const exists = prev.some((m) => m.id === stamped.id);
+      return exists
+        ? prev.map((m) => (m.id === stamped.id ? { ...m, ...stamped } : m))
+        : [stamped, ...prev];
+    });
     setEditingMember(null);
     window.setTimeout(() => void loadRoster(), 600);
   };
@@ -268,7 +311,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="relative shrink-0">
                     <img
-                      src={m.photoUrl}
+                      src={m.photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
                       alt={m.firstName}
                       referrerPolicy="no-referrer"
                       className="h-11 w-11 rounded-xl border-2 border-white object-cover shadow-sm"

@@ -369,7 +369,7 @@ app.post("/api/members/register", registerLimiter, async (req, res) => {
     const voiceType = typeof req.body?.voiceType === "string" ? req.body.voiceType.trim().slice(0, 40) : "None";
     const memberType = typeof req.body?.memberType === "string" ? req.body.memberType.trim().slice(0, 40) : "Singer";
     const skills = typeof req.body?.skills === "string" ? req.body.skills.trim().slice(0, 300) : "";
-    const photoUrl = typeof req.body?.photoUrl === "string" ? req.body.photoUrl.trim().slice(0, 500) : "";
+    const photoUrl = typeof req.body?.photoUrl === "string" ? req.body.photoUrl.trim().slice(0, 2000) : "";
     const experience = Number(req.body?.experience ?? 0);
     const bloodGroup = typeof req.body?.bloodGroup === "string" ? req.body.bloodGroup.trim().slice(0, 20) : "";
     const relationshipStatus = typeof req.body?.relationshipStatus === "string"
@@ -989,7 +989,8 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
     const bloodGroup = typeof body.bloodGroup === "string" ? body.bloodGroup.trim().slice(0, 20) : "";
     const relationshipStatus = typeof body.relationshipStatus === "string"
       ? body.relationshipStatus.trim().slice(0, 40) : "";
-    const photoUrlRaw = typeof body.photoUrl === "string" ? body.photoUrl.trim().slice(0, 500) : "";
+    // Cloudinary secure_url values can exceed 500 chars with long public_ids.
+    const photoUrlRaw = typeof body.photoUrl === "string" ? body.photoUrl.trim().slice(0, 2000) : "";
     const photoUrl = photoUrlRaw
       || (typeof existing.photoUrl === "string" ? existing.photoUrl : "")
       || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
@@ -1048,8 +1049,8 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
     batch.set(privateRef, privatePatch, { merge: true });
     await batch.commit();
 
-    console.log(`[Members] profile updated id=${memberId} by=${adminUid}`);
-    return res.json({ ok: true, memberId });
+    console.log(`[Members] profile updated id=${memberId} by=${adminUid} photo=${photoUrl.slice(0, 80)}`);
+    return res.json({ ok: true, memberId, photoUrl });
   } catch (error: any) {
     console.error("[Members] profile update failed:", error?.message || error);
     return res.status(400).json({ error: error?.message || "Failed to update member profile." });

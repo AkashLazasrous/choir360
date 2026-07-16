@@ -7,7 +7,7 @@ import {
   RELATIONSHIP_STATUSES,
   SPECIAL_SKILLS,
 } from '../../data/registrationOptions';
-import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
+import { pickCloudinaryPhotoUrl, ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
 import { auth } from '../../services/firebase';
 import { normalizeMobile } from '../../utils/memberAuth';
 
@@ -34,6 +34,7 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
   onSave,
 }) => {
   const [form, setForm] = useState<Member>(member);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     setForm(member);
@@ -45,6 +46,7 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (photoBusy || saving) return;
     const updated: Member = {
       ...form,
       mobileNormalized: normalizeMobile(form.mobile),
@@ -95,8 +97,9 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
               memberId={member.id}
               uploadedByUserId={auth?.currentUser?.uid ?? 'admin'}
               currentPhotoUrl={form.photoUrl}
+              onBusyChange={setPhotoBusy}
               onUploadComplete={(record) => {
-                const url = record.optimizedUrl || record.secureUrl;
+                const url = pickCloudinaryPhotoUrl(record);
                 if (url) set('photoUrl', url);
               }}
             />
@@ -227,9 +230,13 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
 
           <div className="flex flex-shrink-0 gap-2 border-t border-black/[0.06] bg-white px-6 py-4">
             <button type="button" onClick={onClose} className="btn-pill btn-pill-secondary flex-1">Cancel</button>
-            <button type="submit" disabled={saving} className="btn-pill btn-pill-primary flex flex-1 items-center justify-center gap-2">
+            <button
+              type="submit"
+              disabled={saving || photoBusy}
+              className="btn-pill btn-pill-primary flex flex-1 items-center justify-center gap-2"
+            >
               <Save className="h-4 w-4" />
-              {saving ? 'Saving…' : 'Save profile'}
+              {photoBusy ? 'Uploading photo…' : saving ? 'Saving…' : 'Save profile'}
             </button>
           </div>
         </form>

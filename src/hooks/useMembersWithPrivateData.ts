@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useSyncedCollection } from './useSyncedCollection';
 import { TenantContext } from '../services/recordMetadata';
@@ -240,6 +240,49 @@ export function useMembersWithPrivateData(
     }
   };
 
+  /** Update in-memory roster only (no Firestore write). Used after API saves. */
+  const applyLocal = useCallback((id: string, patchData: Partial<Member & TenantScopedRecord>) => {
+    const privatePatch: Record<string, unknown> = {};
+    const publicPatch: Record<string, unknown> = {};
+    const privateKeySet: readonly string[] = PRIVATE_FIELD_KEYS;
+
+    for (const [key, value] of Object.entries(patchData)) {
+      if (privateKeySet.includes(key)) {
+        privatePatch[key] = value;
+      } else {
+        publicPatch[key] = value;
+      }
+    }
+
+    if (Object.keys(publicPatch).length) {
+      publicCollection.setRecords((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? { ...item, ...publicPatch } as PublicMember
+            : item,
+        ),
+      );
+    }
+
+    if (Object.keys(privatePatch).length) {
+      if (canReadParishPrivate) {
+        privateCollection.setRecords((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? { ...item, ...privatePatch } as PrivateMemberRecord
+              : item,
+          ),
+        );
+      } else if (id === viewerUid) {
+        setOwnPrivate((prev) =>
+          prev && prev.id === id
+            ? { ...prev, ...privatePatch }
+            : prev,
+        );
+      }
+    }
+  }, [canReadParishPrivate, privateCollection, publicCollection, viewerUid]);
+
   // Only surface errors that block the public roster (or admin private roster).
   // Member own-private errors are rare; parish-wide private permission errors
   // must never appear for choir_member (that was the "Sync blocked" bug).
@@ -250,6 +293,6 @@ export function useMembersWithPrivateData(
     records,
     isLive: publicCollection.isLive,
     syncError,
-    actions: { upsert, patch },
+    actions: { upsert, patch, applyLocal },
   };
 }
