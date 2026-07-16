@@ -1503,13 +1503,81 @@
   }
 }
 
+/* Freeze decorative motion while rasterizing / printing the pass */
+.digital-pass--exporting,
+.digital-pass--exporting .digital-pass__sheen,
+.digital-pass--exporting .digital-pass__glow,
+.digital-pass--exporting::before {
+  animation: none !important;
+  transition: none !important;
+}
+
+.digital-pass--exporting {
+  transform: none !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.35) inset !important;
+}
+
+/**
+ * Ctrl/Cmd+P fallback: isolate the wallet pass and size the page to
+ * badge / wallet-pass proportions (≈ 63.5mm × aspect-matched height).
+ * Prefer the in-app Download PNG / Print buttons (clean window + PNG).
+ */
 @media print {
-  .digital-pass-stage {
-    animation: none !important;
+  @page {
+    size: 63.5mm 89mm;
+    margin: 0;
   }
 
-  .digital-pass {
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 63.5mm !important;
+    height: 89mm !important;
+    overflow: hidden !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #choir-id-card,
+  #choir-id-card * {
+    visibility: visible !important;
+  }
+
+  .app-header,
+  .app-bottom-nav,
+  aside,
+  .digital-pass-actions,
+  .digital-pass-achievements,
+  #digital-pass-achievements {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .digital-pass-stage {
+    animation: none !important;
+    position: static !important;
+    max-width: none !important;
+    margin: 0 !important;
+    perspective: none !important;
+  }
+
+  #choir-id-card.digital-pass {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 63.5mm !important;
+    max-width: 63.5mm !important;
+    height: 89mm !important;
+    margin: 0 !important;
+    border-radius: 4mm !important;
     box-shadow: none !important;
+    transform: none !important;
     break-inside: avoid;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;

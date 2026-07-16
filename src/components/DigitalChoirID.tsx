@@ -10,8 +10,14 @@
  * Achievement badges are computed from member data passed in.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Award, Camera, CheckCircle, Download, QrCode, RefreshCw, Shield } from 'lucide-react';
+import { Award, Camera, CheckCircle, Download, Loader2, Printer, QrCode, RefreshCw, Shield } from 'lucide-react';
 import type { Member } from '../types';
+import {
+  buildChoirIdFilename,
+  captureChoirIdCard,
+  downloadDataUrl,
+  printChoirIdCardImage,
+} from '../utils/exportChoirIdCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,7 +116,7 @@ function deriveAchievements(member: Member): Achievement[] {
 function drawQrCanvas(canvas: HTMLCanvasElement, data: string): void {
   // Minimal QR-like grid: encode data as a simple visual pattern.
   // In production, replace with qrcode.js or similar.
-  const SIZE  = 200;
+  const SIZE  = 280;
   const CELLS = 21;                        // QR version-1 cell grid
   const MOD   = Math.floor(SIZE / CELLS);
   const ctx   = canvas.getContext('2d')!;
@@ -177,9 +183,13 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
   const [qrPayload, setQrPayload] = useState('');
   const [checkedIn, setCheckedIn] = useState(false);
   const [copied, setCopied]       = useState(false);
+  const [exporting, setExporting] = useState<'png' | 'print' | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const achievements = deriveAchievements(member);
   const earned       = achievements.filter(a => a.earned);
+  const fullName     = `${member.firstName} ${member.lastName}`.trim();
+  const voiceBadge   = VOICE_COLOR[member.voiceType] ?? 'bg-[#0e3d4c]';
 
   // Generate QR on mount and refresh
   const generateQr = () => {
@@ -214,6 +224,32 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
     }
   };
 
+  const exportCard = async (mode: 'png' | 'print') => {
+    const card = cardRef.current;
+    if (!card || exporting) return;
+
+    setExportError(null);
+    setExporting(mode);
+    try {
+      const result = await captureChoirIdCard(card);
+      if (mode === 'png') {
+        downloadDataUrl(result.dataUrl, buildChoirIdFilename(member));
+      } else {
+        printChoirIdCardImage(
+          result.dataUrl,
+          result.widthMm,
+          result.heightMm,
+          `Choir360 ID — ${fullName}`,
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not export Digital ID.';
+      setExportError(message);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   const resetTilt = () => {
     const el = cardRef.current;
     if (!el) return;
@@ -230,9 +266,6 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
     const py = (e.clientY - rect.top) / rect.height - 0.5;
     el.style.transform = `rotateY(${px * 8}deg) rotateX(${py * -6}deg)`;
   };
-
-  const voiceBadge = VOICE_COLOR[member.voiceType] ?? 'bg-[#0e3d4c]';
-  const fullName = `${member.firstName} ${member.lastName}`.trim();
 
   return (
     <div className="space-y-5 font-apple" id="digital-choir-id-root">
@@ -352,19 +385,33 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         </button>
         <button
           type="button"
-          onClick={() => {
-            const card = document.getElementById('choir-id-card');
-            if (card) {
-              alert('Print mode: Use Ctrl/Cmd+P or browser Print to save as PDF. The card will print cleanly.');
-              window.print();
-            }
-          }}
+          onClick={() => void exportCard('png')}
+          disabled={exporting !== null}
           className="btn-pill btn-pill-secondary flex items-center justify-center gap-2"
         >
-          <Download className="w-4 h-4" />
-          Print / Save
+          {exporting === 'png'
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <Download className="w-4 h-4" />}
+          {exporting === 'png' ? 'Saving…' : 'Download PNG'}
+        </button>
+        <button
+          type="button"
+          onClick={() => void exportCard('print')}
+          disabled={exporting !== null}
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2"
+        >
+          {exporting === 'print'
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <Printer className="w-4 h-4" />}
+          {exporting === 'print' ? 'Preparing…' : 'Print'}
         </button>
       </div>
+
+      {exportError && (
+        <p className="text-center text-xs text-rose-600 max-w-[380px] mx-auto" role="alert">
+          {exportError}
+        </p>
+      )}
 
       {/* ── Achievement Badges ────────────────────────────────────────────── */}
       <div className="digital-pass-achievements" id="digital-pass-achievements">
