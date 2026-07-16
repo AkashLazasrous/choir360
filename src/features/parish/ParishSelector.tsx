@@ -109,9 +109,14 @@ export const ParishOnboardingModal: React.FC = () => {
 // =============================================================================
 // Inline sidebar card for parish display + change
 // =============================================================================
-export const ParishSidebarCard: React.FC<{ songCount?: number; syncStatus: React.ReactNode }> = ({
+export const ParishSidebarCard: React.FC<{
+  songCount?: number;
+  syncStatus: React.ReactNode;
+  changeParishLabel?: string;
+}> = ({
   songCount,
   syncStatus,
+  changeParishLabel = 'Change Parish',
 }) => {
   const { selectedParish, needsParishSelection, clearParish, archdioceseName } = useParish();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -183,7 +188,7 @@ export const ParishSidebarCard: React.FC<{ songCount?: number; syncStatus: React
         onClick={() => setDropdownOpen((o) => !o)}
         className="mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-white transition"
       >
-        {needsParishSelection ? 'Select Parish' : 'Change Parish'}
+        {needsParishSelection ? changeParishLabel : changeParishLabel}
         <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
       </button>
 

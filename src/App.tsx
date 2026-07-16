@@ -16,6 +16,13 @@ import { hasMinimumRole, useFirebaseAuth } from './hooks/useFirebaseAuth';
 import { useRoleGuard } from './hooks/useRoleGuard';
 import { createRecordMetadata, DEFAULT_TENANT_CONTEXT, updateRecordMetadata, type TenantContext } from './services/recordMetadata';
 import {
+  applyDocumentLanguage,
+  loadStoredLanguage,
+  NAV_LABEL_KEYS,
+  storeLanguage,
+  t,
+} from './i18n/ui';
+import {
   attendingMemberIdsFromMarks,
   buildAttendanceRecords,
   buildMassFromActivity,
@@ -71,20 +78,20 @@ const GamificationProfileView = React.lazy(() => import('./components/Gamificati
 const ActivityAttendance = React.lazy(() => import('./features/attendance/ActivityAttendance').then((m) => ({ default: m.ActivityAttendance })));
 
 // ─── Nav Config ──────────────────────────────────────────────────────────────
-const navItems: { id: Tab; label: string; icon: React.ElementType; minRole: Role }[] = [
-  { id: 'landing',             label: 'Overview',         icon: LayoutDashboard, minRole: 'public_user' },
-  { id: 'calendar',            label: 'Calendar',         icon: CalendarDays,    minRole: 'public_user' },
-  { id: 'masses',              label: 'Liturgy & Masses', icon: Church,          minRole: 'choir_member' },
-  { id: 'attendance',          label: 'Attendance',       icon: ClipboardList,   minRole: 'choir_member' },
-  { id: 'bible',               label: 'Bible',            icon: BookText,        minRole: 'public_user' },
-  { id: 'song_library',        label: 'Music Library',    icon: Music2,          minRole: 'public_user' },
-  { id: 'registration',        label: 'People',           icon: UsersRound,      minRole: 'public_user' },
-  { id: 'dashboard_member',    label: 'My Ministry',      icon: HeartHandshake,  minRole: 'choir_member' },
-  { id: 'catholic_hub',        label: 'Catholic Hub',     icon: BookOpen,        minRole: 'public_user' },
-  { id: 'liturgical_planner',  label: 'AI Mass Planner',  icon: Sparkles,        minRole: 'choir_member' },
-  { id: 'gamification',        label: 'My Achievements',  icon: Star,            minRole: 'choir_member' },
-  { id: 'analytics',           label: 'Insights',         icon: BarChart3,       minRole: 'choir_admin' },
-  { id: 'rehearsals',          label: 'Rehearsals',       icon: Music2,          minRole: 'choir_member' },
+const navItems: { id: Tab; icon: React.ElementType; minRole: Role }[] = [
+  { id: 'landing',             icon: LayoutDashboard, minRole: 'public_user' },
+  { id: 'calendar',            icon: CalendarDays,    minRole: 'public_user' },
+  { id: 'masses',              icon: Church,          minRole: 'choir_member' },
+  { id: 'attendance',          icon: ClipboardList,   minRole: 'choir_member' },
+  { id: 'bible',               icon: BookText,        minRole: 'public_user' },
+  { id: 'song_library',        icon: Music2,          minRole: 'public_user' },
+  { id: 'registration',        icon: UsersRound,      minRole: 'public_user' },
+  { id: 'dashboard_member',    icon: HeartHandshake,  minRole: 'choir_member' },
+  { id: 'catholic_hub',        icon: BookOpen,        minRole: 'public_user' },
+  { id: 'liturgical_planner',  icon: Sparkles,        minRole: 'choir_member' },
+  { id: 'gamification',        icon: Star,            minRole: 'choir_member' },
+  { id: 'analytics',           icon: BarChart3,       minRole: 'choir_admin' },
+  { id: 'rehearsals',          icon: Music2,          minRole: 'choir_member' },
 ];
 
 const languages: { id: Language; label: string }[] = [
@@ -194,7 +201,12 @@ function AppInner() {
   }, [authState.claims, selectedParish, archdioceseId]);
 
 
-  const [currentLang, setCurrentLang] = useState<Language>('en');
+  const [currentLang, setCurrentLang] = useState<Language>(() => loadStoredLanguage());
+
+  useEffect(() => {
+    applyDocumentLanguage(currentLang);
+    storeLanguage(currentLang);
+  }, [currentLang]);
   // The URL is the source of truth for the active tab (deep links + back/forward).
   const [activeTab, setActiveTab] = useState<Tab>(() => tabFromPath(window.location.pathname));
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -525,7 +537,8 @@ function AppInner() {
 
   const currentMember = members.find((m) => m.id === authState.user?.uid);
 
-  const activeLabel = navItems.find((item) => item.id === activeTab)?.label ?? 'Overview';
+  const navLabel = (id: Tab) => t(currentLang, NAV_LABEL_KEYS[id] ?? 'navOverview');
+  const activeLabel = navLabel(activeTab);
   const pendingCount = members.filter((m) => m.status === 'Pending').length;
 
   return (
@@ -549,7 +562,7 @@ function AppInner() {
             </div>
             <div className="text-left">
               <p className="text-[17px] font-semibold leading-none tracking-[-0.02em]">Choir360</p>
-              <p className="mt-0.5 hidden text-[10px] font-normal text-[#a1a1a6] sm:block">Catholic Music Ecosystem</p>
+              <p className="mt-0.5 hidden text-[10px] font-normal text-[#a1a1a6] sm:block">{t(currentLang, 'ecosystem')}</p>
             </div>
           </button>
 
@@ -561,8 +574,8 @@ function AppInner() {
                 onChange={(e) => { setGlobalSearchQuery(e.target.value); setIsSearchResultsOpen(true); }}
                 onFocus={() => setIsSearchResultsOpen(true)}
                 className="w-full bg-transparent px-2.5 py-2 text-[13px] outline-none placeholder:text-[#86868b]"
-                placeholder="Search"
-                aria-label="Global search"
+                placeholder={t(currentLang, 'search')}
+                aria-label={t(currentLang, 'search')}
               />
               <Command className="h-3 w-3 text-[#636366]" />
             </div>
@@ -642,17 +655,16 @@ function AppInner() {
         >
           <ParishSidebarCard
             songCount={0}
+            changeParishLabel={t(currentLang, 'changeParish')}
             syncStatus={
               <>
                 Sync:{' '}
                 <span className={membersLive ? 'text-emerald-700' : syncEnabled ? 'text-amber-700' : 'text-slate-400'}>
                   {membersLive
-                    ? 'Firebase live'
+                    ? t(currentLang, 'syncLive')
                     : syncEnabled
-                    ? 'Connecting…'
-                    : authState.user?.isAnonymous
-                    ? 'Guest mode'
-                    : 'Sign in required'}
+                    ? t(currentLang, 'syncConnecting')
+                    : t(currentLang, 'syncSignIn')}
                 </span>
                 {membersSyncError && (
                   <span className="block truncate text-rose-600" title={membersSyncError}>
@@ -665,6 +677,7 @@ function AppInner() {
 
           <div className="mt-4">
             <AuthPanel
+              lang={currentLang}
               user={authState.user}
               isConfigured={authState.isConfigured}
               authError={authState.authError}
@@ -695,7 +708,7 @@ function AppInner() {
                       />
                     )}
                     <item.icon className={'relative h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-[#86868b]' : 'text-[#d2d2d7]')} />
-                    <span className="relative">{item.label}</span>
+                    <span className="relative">{navLabel(item.id)}</span>
                     {item.id === 'registration' && pendingCount > 0 && (
                       <span className="relative ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">{pendingCount}</span>
                     )}
@@ -739,7 +752,7 @@ function AppInner() {
                   events={events} announcements={announcements}
                   onNavigate={navigate} />
               ) : (
-                <MarketingLanding onNavigate={navigate} parishName={selectedParish?.parishName} />
+                <MarketingLanding lang={currentLang} onNavigate={navigate} parishName={selectedParish?.parishName} />
               )
             )}
             {activeTab === 'calendar' && (
@@ -921,19 +934,20 @@ function AppInner() {
             </div>
             <div className="grid grid-cols-4 gap-1 p-3 pb-4">
               {([
-                { id: 'bible' as Tab,             Icon: BookText,       label: 'Bible' },
-                { id: 'catholic_hub' as Tab,       Icon: BookOpen,       label: 'Catholic' },
-                { id: 'rehearsals' as Tab,         Icon: Sparkles,       label: 'Rehearsals' },
-                { id: 'attendance' as Tab,         Icon: ClipboardList,  label: 'Attendance' },
-                { id: 'dashboard_member' as Tab,   Icon: HeartHandshake, label: 'Ministry' },
-                { id: 'liturgical_planner' as Tab, Icon: Sparkles,       label: 'Planner' },
-                { id: 'gamification' as Tab,       Icon: Star,           label: 'Achievements' },
-                { id: 'ai_hub' as Tab,             Icon: Command,        label: 'AI Hub' },
-                { id: 'analytics' as Tab,          Icon: BarChart3,      label: 'Insights' },
-              ] as { id: Tab; Icon: React.ElementType; label: string }[])
+                { id: 'bible' as Tab,             Icon: BookText },
+                { id: 'catholic_hub' as Tab,       Icon: BookOpen },
+                { id: 'rehearsals' as Tab,         Icon: Sparkles },
+                { id: 'attendance' as Tab,         Icon: ClipboardList },
+                { id: 'dashboard_member' as Tab,   Icon: HeartHandshake },
+                { id: 'liturgical_planner' as Tab, Icon: Sparkles },
+                { id: 'gamification' as Tab,       Icon: Star },
+                { id: 'ai_hub' as Tab,             Icon: Command },
+                { id: 'analytics' as Tab,          Icon: BarChart3 },
+              ] as { id: Tab; Icon: React.ElementType }[])
                 .filter(({ id }) => guard.canAccess(TAB_REQUIRED_ROLE[id]))
-                .map(({ id, Icon, label }) => {
+                .map(({ id, Icon }) => {
                   const isActive = activeTab === id;
+                  const label = id === 'ai_hub' ? 'AI Hub' : navLabel(id);
                   return (
                     <button key={id} onClick={() => { navigate(id); setMobileMoreOpen(false); }}
                       className={'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' + (isActive ? 'bg-[#0e3d4c]/10' : 'hover:bg-black/[0.03]')}>
@@ -948,14 +962,14 @@ function AppInner() {
       )}
       <nav className="app-bottom-nav glass-panel fixed bottom-0 left-0 right-0 z-50 flex border-t border-black/5 lg:hidden">
         {([
-          { id: 'landing' as Tab,      Icon: LayoutDashboard, label: 'Home' },
-          { id: 'calendar' as Tab,     Icon: CalendarDays,    label: 'Calendar' },
-          { id: 'masses' as Tab,       Icon: Church,          label: 'Masses' },
-          { id: 'song_library' as Tab, Icon: Music2,          label: 'Songs' },
-          { id: 'registration' as Tab, Icon: UsersRound,      label: 'People' },
-        ] as { id: Tab; Icon: React.ElementType; label: string }[])
+          { id: 'landing' as Tab,      Icon: LayoutDashboard },
+          { id: 'calendar' as Tab,     Icon: CalendarDays },
+          { id: 'masses' as Tab,       Icon: Church },
+          { id: 'song_library' as Tab, Icon: Music2 },
+          { id: 'registration' as Tab, Icon: UsersRound },
+        ] as { id: Tab; Icon: React.ElementType }[])
           .filter(({ id }) => guard.canAccess(TAB_REQUIRED_ROLE[id]))
-          .map(({ id, Icon, label }) => {
+          .map(({ id, Icon }) => {
             const isActive = activeTab === id;
             return (
               <button key={id} onClick={() => navigate(id)}
@@ -969,7 +983,7 @@ function AppInner() {
                   />
                 )}
                 <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
-                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{label}</span>
+                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{navLabel(id)}</span>
               </button>
             );
           })}

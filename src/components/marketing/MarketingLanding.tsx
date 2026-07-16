@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   BarChart3, BookOpen, CalendarDays, ChevronDown, Church,
   Command, Music2, ShieldCheck, Trophy, UsersRound,
 } from 'lucide-react';
-import { Tab } from '../../types';
+import { Language, Tab } from '../../types';
+import { t } from '../../i18n/ui';
 import { Reveal } from '../interactions/Reveal';
 import { CountUp } from '../interactions/CountUp';
 import { ProductSubnav } from '../interactions/ProductSubnav';
@@ -11,56 +12,62 @@ import { AppleButton } from '../interactions/AppleButton';
 import { SpotlightCard } from '../interactions/SpotlightCard';
 
 interface MarketingLandingProps {
+  lang: Language;
   onNavigate: (tab: Tab) => void;
   parishName?: string;
 }
 
-const SUBNAV_LINKS = [
-  { id: 'design', label: 'Design' },
-  { id: 'modules', label: 'Modules' },
-  { id: 'how-it-works', label: 'How it works' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'faq', label: 'FAQ' },
-];
-
-const FEATURES = [
-  { icon: Church, title: 'Masses & Accounts', body: 'Log every liturgy, propose payment shares, and track collections to the rupee.', well: 'grad-icon-well' },
-  { icon: Music2, title: 'Song Library', body: 'Searchable Tamil hymns with lyrics and categories — including Jebathotta Jeyageethangal.', well: 'grad-icon-well-sunset' },
-  { icon: UsersRound, title: 'Member Management', body: 'Self-service registration, voice-part rosters, private contacts kept private.', well: 'grad-icon-well-hydrogen' },
-  { icon: CalendarDays, title: 'Unified Calendar', body: 'Masses, rehearsals, and parish events so nobody misses a call time.', well: 'grad-icon-well-cinnamint' },
-  { icon: Trophy, title: 'Attendance', body: 'Mark attendance in one tap. Celebrate consistency with streaks and badges.', well: 'grad-icon-well-neon' },
-  { icon: Command, title: 'AI Hub', body: 'Draft announcements, suggest hymns, answer choir questions.', well: 'grad-icon-well-disco' },
-  { icon: BookOpen, title: 'Catholic Hub', body: 'Daily gospel, Tamil prayers, saints, and the liturgical year.', well: 'grad-icon-well-roseanna' },
-  { icon: BarChart3, title: 'Insights', body: 'Choir health, attendance trends, and financial summaries.', well: 'grad-icon-well-instagram' },
-];
-
-const STEPS = [
-  { n: '01', title: 'Register', body: 'Voice part and parish in under two minutes on any phone.' },
-  { n: '02', title: 'Get approved', body: 'Your choir admin reviews — you are notified the moment it happens.' },
-  { n: '03', title: 'Sing', body: 'Masses, rehearsals, lyrics, and attendance from one calm desk.' },
-];
-
-const FAQS = [
-  { q: 'Is Choir360 free for our parish?', a: 'Yes. Free for parish choirs — no subscriptions, seat limits, or locked features.' },
-  { q: 'Who can see my personal details?', a: 'Only you and your choir administrators. Contact details are stored separately and protected by per-parish security rules.' },
-  { q: 'Does it work on mobile?', a: 'Yes — mobile-first, with bottom navigation, large touch targets, and offline-friendly lyrics.' },
-  { q: 'Can we manage money for special masses?', a: 'Yes. Propose amounts, split singer and instrumentalist shares, and track what has been received.' },
-  { q: 'Tamil and English together?', a: 'Song library, prayers, and readings support both — with phonetic search (type “anbe” to find அன்பே).' },
-];
-
-export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, parishName }) => {
+export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavigate, parishName }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const subnavLinks = useMemo(() => [
+    { id: 'design', label: t(lang, 'mktDesign') },
+    { id: 'modules', label: t(lang, 'mktModules') },
+    { id: 'how-it-works', label: t(lang, 'mktHow') },
+    { id: 'pricing', label: t(lang, 'mktPricing') },
+    { id: 'faq', label: t(lang, 'mktFaq') },
+  ], [lang]);
+
+  const features = useMemo(() => [
+    { icon: Church, title: t(lang, 'mktFeatMasses'), body: t(lang, 'mktFeatMassesBody'), well: 'grad-icon-well' },
+    { icon: Music2, title: t(lang, 'mktFeatSongs'), body: t(lang, 'mktFeatSongsBody'), well: 'grad-icon-well-sunset' },
+    { icon: UsersRound, title: t(lang, 'mktFeatMembers'), body: t(lang, 'mktFeatMembersBody'), well: 'grad-icon-well-hydrogen' },
+    { icon: CalendarDays, title: t(lang, 'mktFeatCalendar'), body: t(lang, 'mktFeatCalendarBody'), well: 'grad-icon-well-cinnamint' },
+    { icon: Trophy, title: t(lang, 'mktFeatAttendance'), body: t(lang, 'mktFeatAttendanceBody'), well: 'grad-icon-well-neon' },
+    { icon: Command, title: t(lang, 'mktFeatAi'), body: t(lang, 'mktFeatAiBody'), well: 'grad-icon-well-disco' },
+    { icon: BookOpen, title: t(lang, 'mktFeatCatholic'), body: t(lang, 'mktFeatCatholicBody'), well: 'grad-icon-well-roseanna' },
+    { icon: BarChart3, title: t(lang, 'mktFeatInsights'), body: t(lang, 'mktFeatInsightsBody'), well: 'grad-icon-well-instagram' },
+  ], [lang]);
+
+  const steps = useMemo(() => [
+    { n: '01', title: t(lang, 'mktStep1'), body: t(lang, 'mktStep1Body') },
+    { n: '02', title: t(lang, 'mktStep2'), body: t(lang, 'mktStep2Body') },
+    { n: '03', title: t(lang, 'mktStep3'), body: t(lang, 'mktStep3Body') },
+  ], [lang]);
+
+  const faqs = useMemo(() => [
+    { q: t(lang, 'mktFaq1q'), a: t(lang, 'mktFaq1a') },
+    { q: t(lang, 'mktFaq2q'), a: t(lang, 'mktFaq2a') },
+    { q: t(lang, 'mktFaq3q'), a: t(lang, 'mktFaq3a') },
+    { q: t(lang, 'mktFaq4q'), a: t(lang, 'mktFaq4a') },
+    { q: t(lang, 'mktFaq5q'), a: t(lang, 'mktFaq5a') },
+  ], [lang]);
+
+  const designCards = useMemo(() => [
+    { before: t(lang, 'mktBefore1'), after: t(lang, 'mktAfter1'), accent: 'grad-icon-well-hydrogen' },
+    { before: t(lang, 'mktBefore2'), after: t(lang, 'mktAfter2'), accent: 'grad-icon-well-sunset' },
+    { before: t(lang, 'mktBefore3'), after: t(lang, 'mktAfter3'), accent: 'grad-icon-well' },
+  ], [lang]);
 
   return (
     <div className="font-apple -mx-4 animate-fade-in grad-tranquil text-[#0f172a] sm:-mx-6 lg:-mx-8">
       <ProductSubnav
         title="Choir360"
-        links={SUBNAV_LINKS}
-        ctaLabel="Join"
+        links={subnavLinks}
+        ctaLabel={t(lang, 'mktJoin')}
         onCta={() => onNavigate('registration')}
       />
 
-      {/* Hero — full-bleed liturgy photo + Deep Sea scrim */}
       <section className="relative min-h-[min(92svh,860px)] overflow-hidden bg-[#050a14] text-[#f5f5f7]">
         <img
           src="/images/landing-hero.png"
@@ -81,61 +88,56 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         <div className="choir-hero-ambient opacity-50" aria-hidden />
 
         <div className="apple-content relative z-10 flex min-h-[min(92svh,860px)] flex-col items-center justify-end px-6 pb-16 pt-28 text-center sm:justify-center sm:pb-20 sm:pt-24">
-          <p className="text-[17px] font-semibold tracking-[0.02em] text-transparent bg-clip-text drop-shadow-[0_1px_12px_rgba(0,0,0,0.35)]" style={{ backgroundImage: 'var(--grad-gold)', WebkitBackgroundClip: 'text' }}>
+          <p
+            className="text-[17px] font-semibold tracking-[0.02em] text-transparent drop-shadow-[0_1px_12px_rgba(0,0,0,0.35)]"
+            style={{ backgroundImage: 'var(--grad-gold)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}
+          >
             Choir360
           </p>
           <h1 className="mt-3 max-w-3xl text-[clamp(2.75rem,8vw,5rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)]">
-            Your choir&apos;s ministry.<br className="hidden sm:block" /> Beautifully organised.
+            {t(lang, 'mktHeroTitle1')}<br className="hidden sm:block" /> {t(lang, 'mktHeroTitle2')}
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-[19px] font-normal leading-snug tracking-[-0.01em] text-[#e8e8ed]/[0.92] drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)]">
-            Masses, rehearsals, hymns, attendance, and accounts —
-            so your parish choir spends less time coordinating and more time singing.
+            {t(lang, 'mktHeroDesc')}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
-              Join your choir
+              {t(lang, 'mktJoinChoir')}
             </AppleButton>
             <AppleButton variant="link" onClick={() => onNavigate('song_library')} className="!text-[#7dd3fc] hover:!text-white">
-              Browse songs ›
+              {t(lang, 'mktBrowseSongs')}
             </AppleButton>
           </div>
         </div>
       </section>
 
-      {/* Trust strip — Hydrogen mist */}
       <Reveal>
         <section className="border-b border-black/5 grad-hydrogen py-6">
           <div className="apple-content flex flex-wrap items-center justify-center gap-x-10 gap-y-3 px-6 text-center text-[12px] font-medium text-[#0c4a6e]/80">
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-[#0e7490]" />
-              Per-parish data isolation
+              {t(lang, 'mktTrust')}
             </span>
-            <span>Archdiocese of Madras–Mylapore</span>
-            {parishName && <span>Serving {parishName}</span>}
+            <span>{t(lang, 'mktArchdiocese')}</span>
+            {parishName && <span>{t(lang, 'mktServing')} {parishName}</span>}
           </div>
         </section>
       </Reveal>
 
-      {/* Design */}
       <section id="design" className="apple-section scroll-mt-28">
         <Reveal>
           <div className="apple-content text-center">
-            <p className="apple-eyebrow grad-text-maldives">Design</p>
+            <p className="apple-eyebrow grad-text-maldives">{t(lang, 'mktDesignEyebrow')}</p>
             <h2 className="apple-display mt-2">
-              From WhatsApp chaos<br />to one calm desk.
+              {t(lang, 'mktDesignTitle1')}<br />{t(lang, 'mktDesignTitle2')}
             </h2>
             <p className="apple-subhead mx-auto mt-5 max-w-2xl">
-              Liturgy times, lyric sheets, and payment splits used to live in group chats and paper.
-              Choir360 brings the whole ministry into one place — clear, fast, and built for parish life.
+              {t(lang, 'mktDesignBody')}
             </p>
           </div>
         </Reveal>
         <div className="apple-content mt-16 grid gap-4 px-0 sm:grid-cols-3">
-          {[
-            { before: 'Mass times buried in chats', after: 'A calendar every member can check, next liturgy on top.', accent: 'grad-icon-well-hydrogen' },
-            { before: 'Photocopied sheets going missing', after: 'Searchable lyrics on any phone — even mid-mass.', accent: 'grad-icon-well-sunset' },
-            { before: 'Payment splits on paper', after: 'Automatic singer and instrumentalist shares, tracked.', accent: 'grad-icon-well' },
-          ].map(({ before, after, accent }, i) => (
+          {designCards.map(({ before, after, accent }, i) => (
             <Reveal key={before} delay={i * 0.06}>
               <div className="rounded-[28px] bg-white/90 px-7 py-8 text-left shadow-[0_2px_12px_rgba(14,61,76,0.06)] ring-1 ring-black/[0.03] backdrop-blur-sm">
                 <div className={`mb-4 h-1.5 w-12 rounded-full ${accent}`} />
@@ -147,19 +149,18 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         </div>
       </section>
 
-      {/* Stats — Deep Sea Space */}
       <Reveal>
         <section className="apple-section apple-section-dark">
           <div className="apple-content text-center">
             <p className="text-[17px] font-semibold text-transparent" style={{ backgroundImage: 'var(--grad-gold)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>
-              Built for ministry scale
+              {t(lang, 'mktStatsEyebrow')}
             </p>
-            <h2 className="apple-headline mt-2">Everything you need. Nothing you don&apos;t.</h2>
+            <h2 className="apple-headline mt-2">{t(lang, 'mktStatsTitle')}</h2>
             <div className="mt-12 grid grid-cols-1 gap-8 sm:mt-16 sm:grid-cols-3 sm:gap-6">
               {[
-                { val: 1000, suffix: '+', label: 'Hymns & songs', tint: 'grad-text-maldives' },
-                { val: 12, suffix: '', label: 'Ministry modules', tint: 'grad-text-sunset' },
-                { val: 5, suffix: '', label: 'Languages', tint: 'grad-text-maldives' },
+                { val: 1000, suffix: '+', label: t(lang, 'mktStatHymns'), tint: 'grad-text-maldives' },
+                { val: 12, suffix: '', label: t(lang, 'mktStatModules'), tint: 'grad-text-sunset' },
+                { val: 5, suffix: '', label: t(lang, 'mktStatLanguages'), tint: 'grad-text-maldives' },
               ].map(({ val, suffix, label, tint }) => (
                 <div key={label} className="text-center">
                   <p className={`text-[clamp(2.5rem,8vw,4rem)] font-semibold tracking-[-0.04em] ${tint}`}>
@@ -173,19 +174,18 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         </section>
       </Reveal>
 
-      {/* Modules grid */}
       <section id="modules" className="apple-section scroll-mt-28">
         <Reveal>
           <div className="apple-content text-center">
-            <p className="apple-eyebrow grad-text-maldives">Modules</p>
-            <h2 className="apple-headline mt-2">One platform for the whole choir.</h2>
+            <p className="apple-eyebrow grad-text-maldives">{t(lang, 'mktModulesEyebrow')}</p>
+            <h2 className="apple-headline mt-2">{t(lang, 'mktModulesTitle')}</h2>
             <p className="apple-subhead mx-auto mt-4 max-w-xl">
-              Every capability included — free for every parish.
+              {t(lang, 'mktModulesBody')}
             </p>
           </div>
         </Reveal>
         <div className="apple-content mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map(({ icon: Icon, title, body, well }, i) => (
+          {features.map(({ icon: Icon, title, body, well }, i) => (
             <Reveal key={title} delay={(i % 4) * 0.04}>
               <SpotlightCard className="h-full rounded-[22px] bg-white/90 p-6 shadow-[0_2px_12px_rgba(14,61,76,0.06)] ring-1 ring-black/[0.03]">
                 <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-full ${well}`}>
@@ -199,21 +199,20 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         </div>
         <div className="mt-10 text-center">
           <AppleButton variant="link" onClick={() => onNavigate('catholic_hub')} className="!text-[#0284c7]">
-            Explore Catholic Hub ›
+            {t(lang, 'mktExploreHub')}
           </AppleButton>
         </div>
       </section>
 
-      {/* How it works — Neon Lagoon cinematic */}
       <section id="how-it-works" className="apple-section scroll-mt-28 grad-neon-lagoon text-[#f5f5f7]">
         <Reveal>
           <div className="apple-content text-center">
-            <p className="text-[17px] font-semibold text-[#bbf7d0]">How it works</p>
-            <h2 className="apple-headline mt-2 !text-white">Singing within minutes.</h2>
+            <p className="text-[17px] font-semibold text-[#bbf7d0]">{t(lang, 'mktHowEyebrow')}</p>
+            <h2 className="apple-headline mt-2 !text-white">{t(lang, 'mktHowTitle')}</h2>
           </div>
         </Reveal>
         <div className="apple-content mt-16 grid gap-12 sm:grid-cols-3">
-          {STEPS.map(({ n, title, body }, i) => (
+          {steps.map(({ n, title, body }, i) => (
             <Reveal key={n} delay={i * 0.08}>
               <div className="text-left sm:text-center">
                 <p className="text-[40px] font-semibold tracking-[-0.04em] text-white/25">{n}</p>
@@ -225,43 +224,40 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         </div>
         <div className="mt-14 text-center">
           <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
-            Start registration
+            {t(lang, 'mktStartReg')}
           </AppleButton>
         </div>
       </section>
 
-      {/* Pricing — Roseanna soft band */}
       <section id="pricing" className="apple-section scroll-mt-28 grad-roseanna">
         <Reveal>
           <div className="apple-content text-center">
-            <p className="apple-eyebrow text-[#9a3412]">Pricing</p>
+            <p className="apple-eyebrow text-[#9a3412]">{t(lang, 'mktPricingEyebrow')}</p>
             <h2 className="apple-display mt-2">
-              Free.<br />For every parish.
+              {t(lang, 'mktPricingTitle1')}<br />{t(lang, 'mktPricingTitle2')}
             </h2>
             <p className="apple-subhead mx-auto mt-5 max-w-lg !text-[#7c2d12]/80">
-              A ministry tool, not a product. Masses, songs, accounts, AI hub, insights —
-              included for every choir at no cost.
+              {t(lang, 'mktPricingBody')}
             </p>
             <p className="mt-8 text-[40px] font-semibold tracking-[-0.04em] grad-text-sunset">₹0</p>
-            <p className="mt-1 text-[14px] text-[#9a3412]/70">per month, forever</p>
+            <p className="mt-1 text-[14px] text-[#9a3412]/70">{t(lang, 'mktPerMonth')}</p>
             <div className="mt-8">
               <AppleButton variant="primary" onClick={() => onNavigate('registration')}>
-                Get started
+                {t(lang, 'mktGetStarted')}
               </AppleButton>
             </div>
           </div>
         </Reveal>
       </section>
 
-      {/* FAQ */}
       <section id="faq" className="apple-section scroll-mt-28 !pt-0">
         <Reveal>
           <div className="apple-content">
             <div className="text-center">
-              <h2 className="apple-headline">Questions. Answered.</h2>
+              <h2 className="apple-headline">{t(lang, 'mktFaqTitle')}</h2>
             </div>
             <div className="mx-auto mt-12 max-w-2xl space-y-2">
-              {FAQS.map(({ q, a }, i) => (
+              {faqs.map(({ q, a }, i) => (
                 <div key={q} className="overflow-hidden rounded-[18px] bg-white/90 shadow-[0_1px_4px_rgba(14,61,76,0.05)] ring-1 ring-black/[0.03]">
                   <button
                     type="button"
@@ -282,7 +278,6 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
         </Reveal>
       </section>
 
-      {/* Final CTA — Maldives + Deep Sea blend */}
       <Reveal>
         <section className="px-6 pb-24">
           <div className="apple-content relative overflow-hidden rounded-[28px] grad-deep-sea px-8 py-16 text-center text-[#f5f5f7] sm:px-12">
@@ -295,17 +290,17 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ onNavigate, 
               }}
             />
             <h2 className="relative text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.03em]">
-              Ready to lift your voice?
+              {t(lang, 'mktCtaTitle')}
             </h2>
             <p className="relative mx-auto mt-3 max-w-md text-[17px] text-[#94a3b8]">
-              Join your parish choir on Choir360 — registration takes two minutes.
+              {t(lang, 'mktCtaBody')}
             </p>
             <div className="relative mt-8 flex flex-wrap justify-center gap-4">
               <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
-                Register as a member
+                {t(lang, 'mktRegisterMember')}
               </AppleButton>
               <AppleButton variant="link" onClick={() => onNavigate('calendar')} className="!text-[#7dd3fc]">
-                See the calendar ›
+                {t(lang, 'mktSeeCalendar')}
               </AppleButton>
             </div>
           </div>
