@@ -11,7 +11,7 @@
  * Base64 data is used ONLY for the in-browser preview and is never persisted.
  */
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Camera, CheckCircle, Loader2, RefreshCw, Upload, X } from 'lucide-react';
 import { fileToBase64 } from '../../utils/fileToBase64';
 import { validateImageFile } from '../../utils/imageValidation';
@@ -48,6 +48,12 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [progressMsg, setProgressMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Keep preview in sync when the parent photo URL changes (e.g. opening editor for another member).
+  useEffect(() => {
+    if (phase === 'preview' || phase === 'uploading') return;
+    setDisplayUrl(currentPhotoUrl ?? '');
+  }, [currentPhotoUrl, phase]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

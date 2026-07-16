@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Save } from 'lucide-react';
 import { Member } from '../../types';
+import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
+import { auth } from '../../services/firebase';
 
 interface ProfileCardProps {
   member: Member;
@@ -19,6 +21,19 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
   const [editEmail, setEditEmail] = useState(member.email);
   const [editAddress, setEditAddress] = useState(member.address);
   const [editSkills, setEditSkills] = useState(member.skills);
+  const [editPhotoUrl, setEditPhotoUrl] = useState(member.photoUrl);
+
+  useEffect(() => {
+    if (isEditing) return;
+    setEditFirstName(member.firstName);
+    setEditLastName(member.lastName);
+    setEditMobile(member.mobile);
+    setEditWhatsapp(member.whatsapp);
+    setEditEmail(member.email);
+    setEditAddress(member.address);
+    setEditSkills(member.skills);
+    setEditPhotoUrl(member.photoUrl);
+  }, [member, isEditing]);
 
   const handleEditRequest = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +46,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
       email: editEmail,
       address: editAddress,
       skills: editSkills,
+      photoUrl: editPhotoUrl,
     });
     setIsEditing(false);
     onEditRequested();
@@ -54,6 +70,21 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ member, onUpdateMember
 
       {isEditing ? (
         <form onSubmit={handleEditRequest} className="space-y-4 text-xs" id="profile-edit-form">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Profile Photo</label>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <ProfilePhotoUpload
+                key={member.id}
+                memberId={member.id}
+                uploadedByUserId={auth?.currentUser?.uid ?? member.id}
+                currentPhotoUrl={editPhotoUrl}
+                onUploadComplete={(record) => {
+                  const url = record.optimizedUrl || record.secureUrl;
+                  if (url) setEditPhotoUrl(url);
+                }}
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase">First Name</label>

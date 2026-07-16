@@ -989,6 +989,10 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
     const bloodGroup = typeof body.bloodGroup === "string" ? body.bloodGroup.trim().slice(0, 20) : "";
     const relationshipStatus = typeof body.relationshipStatus === "string"
       ? body.relationshipStatus.trim().slice(0, 40) : "";
+    const photoUrlRaw = typeof body.photoUrl === "string" ? body.photoUrl.trim().slice(0, 500) : "";
+    const photoUrl = photoUrlRaw
+      || (typeof existing.photoUrl === "string" ? existing.photoUrl : "")
+      || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
     const emergency = body.emergencyContact && typeof body.emergencyContact === "object"
       ? body.emergencyContact
       : {};
@@ -1008,6 +1012,7 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
       voiceType,
       skills,
       experience,
+      photoUrl,
       updatedAt: now,
       updatedBy: adminUid,
     };

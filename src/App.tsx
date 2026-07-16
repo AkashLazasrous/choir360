@@ -499,6 +499,7 @@ function AppInner() {
           voiceType: updated.voiceType,
           experience: updated.experience,
           skills: updated.skills,
+          photoUrl: updated.photoUrl || '',
           emergencyContact: updated.emergencyContact,
         }),
       });

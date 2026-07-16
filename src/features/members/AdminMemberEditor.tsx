@@ -7,6 +7,8 @@ import {
   RELATIONSHIP_STATUSES,
   SPECIAL_SKILLS,
 } from '../../data/registrationOptions';
+import { ProfilePhotoUpload } from '../../components/media/ProfilePhotoUpload';
+import { auth } from '../../services/firebase';
 import { normalizeMobile } from '../../utils/memberAuth';
 
 const MEMBER_TYPES: MemberType[] = [
@@ -86,6 +88,20 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
 
         <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-4">
+          <div className="rounded-2xl border border-black/[0.06] bg-[#f5f5f7] p-4">
+            <p className="apple-label mb-3">Profile photo</p>
+            <ProfilePhotoUpload
+              key={member.id}
+              memberId={member.id}
+              uploadedByUserId={auth?.currentUser?.uid ?? 'admin'}
+              currentPhotoUrl={form.photoUrl}
+              onUploadComplete={(record) => {
+                const url = record.optimizedUrl || record.secureUrl;
+                if (url) set('photoUrl', url);
+              }}
+            />
+          </div>
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="space-y-1.5">
               <span className="apple-label">First name</span>
