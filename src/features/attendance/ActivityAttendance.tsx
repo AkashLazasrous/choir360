@@ -30,6 +30,7 @@ import {
   parseAttendanceMatrixCsv,
 } from './parseAttendanceCsv';
 import { dedupeImportSessions } from '../../utils/attendanceActivity';
+import { AttendanceLeaderboard } from './AttendanceLeaderboard';
 
 const STATUSES: AttendanceStatus[] = ['Present', 'Absent', 'Late', 'Excused'];
 
@@ -317,6 +318,13 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               </div>
             </div>
           )}
+
+          <AttendanceLeaderboard
+            attendanceRecords={attendanceRecords}
+            members={members}
+            viewerMemberId={viewerMemberId}
+            limit={isAdmin ? undefined : 12}
+          />
 
           <div className="apple-card overflow-hidden p-0">
             <div className="border-b border-black/[0.06] px-5 py-3">

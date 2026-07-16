@@ -10,6 +10,7 @@ import { PracticeConsole } from '../features/memberDashboard/PracticeConsole';
 import { PrayerWall } from '../features/memberDashboard/PrayerWall';
 import { computeMemberRosterStats } from '../utils/attendanceStats';
 import { formatINR } from '../utils/currency';
+import { AttendanceLeaderboard } from '../features/attendance/AttendanceLeaderboard';
 
 interface DashboardMemberProps {
   currentLang: Language;
@@ -145,6 +146,13 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
 
         {/* Middle and Right: Mass Earnings and RSVPs */}
         <div className="lg:col-span-2 space-y-8" id="member-earnings-events">
+          <AttendanceLeaderboard
+            attendanceRecords={attendanceRecords}
+            members={members}
+            viewerMemberId={member?.id ?? memberId}
+            limit={8}
+            compact
+          />
           <EarningsAndEvents
             currentLang={currentLang}
             memberId={memberId}

@@ -6,6 +6,7 @@ import { formatINR } from '../utils/currency';
 import { calculateChoirHealth, isActiveMember, sumProposed, sumReceived } from '../utils/choirStats';
 import { computeParishStats } from '../utils/attendanceStats';
 import { useParish } from '../features/parish/ParishContext';
+import { AttendanceLeaderboard } from '../features/attendance/AttendanceLeaderboard';
 
 interface AnalyticsDashboardProps {
   currentLang: Language;
@@ -216,6 +217,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      <AttendanceLeaderboard
+        attendanceRecords={attendanceRecords}
+        members={members}
+      />
 
       {/* ── Member roster stats ─────────────────────────────────────────────── */}
       {parishAttendance.rosterStats.length > 0 && (
