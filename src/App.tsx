@@ -243,12 +243,16 @@ function AppInner() {
   const { records: attendanceRecords, actions: attendanceSync } =
     useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext);
 
+  // Wait for Firebase session restore before kicking unsigned users off
+  // protected deep links (otherwise a hard refresh on /attendance etc. races
+  // auth and bounces to Overview).
   useEffect(() => {
+    if (!authState.isReady) return;
     if (!authState.user && TAB_REQUIRED_ROLE[activeTab] !== 'public_user') {
       setActiveTab('landing');
       replaceTabPath('landing');
     }
-  }, [authState.user, activeTab]);
+  }, [authState.isReady, authState.user, activeTab]);
 
   // Browser back/forward: follow the URL without pushing new history entries.
   useEffect(() => {
@@ -703,6 +707,11 @@ function AppInner() {
 
           <PageTransition pageKey={activeTab}>
           <Suspense fallback={<ModuleSkeleton />}>
+            {/* Hold protected deep links until auth+claims finish restoring. */}
+            {authState.isConfigured && !authState.isReady && TAB_REQUIRED_ROLE[activeTab] !== 'public_user' ? (
+              <ModuleSkeleton />
+            ) : (
+            <>
             {/* Signed-out visitors get the marketing page; members get the ops dashboard. */}
             {activeTab === 'landing' && (
               authState.user ? (
@@ -863,6 +872,8 @@ function AppInner() {
                   <GamificationProfileView member={currentMember} allMembers={members} />
                 ) : <ModuleSkeleton />
               ) : <AccessDenied requiredRole="choir_member" />
+            )}
+            </>
             )}
           </Suspense>
           </PageTransition>

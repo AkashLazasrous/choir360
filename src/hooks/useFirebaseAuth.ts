@@ -89,14 +89,23 @@ export function useFirebaseAuth() {
 
       unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
         setUser(firebaseUser);
-        setIsReady(true);
         setAuthError(null);
+        // Resolve claims before marking ready so deep links / role guards
+        // do not bounce or flash Access Denied during session restore.
         if (firebaseUser) {
-          const token = await firebaseUser.getIdTokenResult();
-          setClaims(token.claims as AuthClaims);
+          try {
+            const token = await firebaseUser.getIdTokenResult();
+            if (!isMounted) return;
+            setClaims(token.claims as AuthClaims);
+          } catch {
+            if (!isMounted) return;
+            setClaims({});
+          }
         } else {
           setClaims({});
         }
+        if (!isMounted) return;
+        setIsReady(true);
       });
     };
 
