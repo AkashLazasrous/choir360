@@ -10,7 +10,7 @@
  * Achievement badges are computed from member data passed in.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Award, Camera, CheckCircle, Download, QrCode, RefreshCw, Shield, Star, Zap } from 'lucide-react';
+import { Award, Camera, CheckCircle, Download, QrCode, RefreshCw, Shield } from 'lucide-react';
 import type { Member } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -138,12 +138,6 @@ function drawQrCanvas(canvas: HTMLCanvasElement, data: string): void {
 
       if (inFinder) {
         // Draw finder pattern
-        const fr = row < 8 ? row : row - (CELLS - 8);
-        const fc = col < 8 ? col : (col < 8 ? col : col - (CELLS - 8));
-        const localR = row < 8 ? row : row - (CELLS - 8);
-        const localC = col >= CELLS - 8 && row < 8 ? col - (CELLS - 8) : col >= 0 && col < 8 ? col : col - (CELLS - 8);
-
-        // Simple 7×7 finder box outline
         const rr = row % (CELLS - 1);
         const cc = col % (CELLS - 1);
         const isOuter = rr <= 1 || rr >= 6 || cc <= 1 || cc >= 6;
@@ -166,11 +160,11 @@ function drawQrCanvas(canvas: HTMLCanvasElement, data: string): void {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const VOICE_COLOR: Record<string, string> = {
-  Soprano: 'bg-pink-500',
-  Alto:    'bg-[#18392f]',
+  Soprano: 'bg-rose-500',
+  Alto:    'bg-[#0e3d4c]',
   Tenor:   'bg-sky-500',
   Bass:    'bg-slate-700',
-  None:    'bg-[#18392f]',
+  None:    'bg-[#134556]',
 };
 
 export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
@@ -178,10 +172,11 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
   choirId = 'global-choir',
   onCheckIn,
 }) => {
-  const canvasRef              = useRef<HTMLCanvasElement>(null);
+  const canvasRef                 = useRef<HTMLCanvasElement>(null);
+  const cardRef                   = useRef<HTMLDivElement>(null);
   const [qrPayload, setQrPayload] = useState('');
   const [checkedIn, setCheckedIn] = useState(false);
-  const [copied, setCopied]    = useState(false);
+  const [copied, setCopied]       = useState(false);
 
   const achievements = deriveAchievements(member);
   const earned       = achievements.filter(a => a.earned);
@@ -219,122 +214,144 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
     }
   };
 
-  const voiceBadge = VOICE_COLOR[member.voiceType] ?? 'bg-emerald-600';
+  const resetTilt = () => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.transform = '';
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (e.pointerType === 'touch') return;
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.transform = `rotateY(${px * 8}deg) rotateX(${py * -6}deg)`;
+  };
+
+  const voiceBadge = VOICE_COLOR[member.voiceType] ?? 'bg-[#0e3d4c]';
+  const fullName = `${member.firstName} ${member.lastName}`.trim();
 
   return (
-    <div className="space-y-6 font-apple" id="digital-choir-id-root">
+    <div className="space-y-5 font-apple" id="digital-choir-id-root">
 
-      {/* ── Card ──────────────────────────────────────────────────────────── */}
-      <div
-        className="apple-hero-soft relative overflow-hidden p-6 select-none"
-        id="choir-id-card"
-        style={{ maxWidth: 380, margin: '0 auto' }}
-      >
-        <div className="choir-hero-ambient" aria-hidden />
-        {/* Background pattern */}
-        <div className="pointer-events-none absolute inset-0 opacity-5"
-          style={{ backgroundImage: 'repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 0,transparent 50%)', backgroundSize: '12px 12px' }}
-        />
+      {/* ── Wallet pass card ──────────────────────────────────────────────── */}
+      <div className="digital-pass-stage">
+        <div
+          ref={cardRef}
+          className="digital-pass"
+          id="choir-id-card"
+          onPointerMove={handlePointerMove}
+          onPointerLeave={resetTilt}
+        >
+          <div className="digital-pass__mesh" aria-hidden />
+          <div className="digital-pass__glow digital-pass__glow--tl" aria-hidden />
+          <div className="digital-pass__glow digital-pass__glow--br" aria-hidden />
+          <div className="digital-pass__sheen" aria-hidden />
 
-        {/* Header */}
-        <div className="relative mb-5 flex items-center justify-between">
-          <div>
-            <p className="apple-caption font-mono text-[#f5c24c]">Choir360 Digital ID</p>
-            <p className="apple-caption font-mono">{member.choirName}</p>
-          </div>
-          <div className="apple-badge-forest flex items-center gap-1 px-2 py-1">
-            <Shield className="w-3 h-3" />
-            <span className="text-[9px] font-medium">Verified</span>
-          </div>
-        </div>
-
-        {/* Photo + Info */}
-        <div className="relative flex items-center gap-4 mb-5">
-          <div className="relative shrink-0">
-            <img
-              src={member.photoUrl}
-              alt={member.firstName}
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-[#f5c24c]"
-              referrerPolicy="no-referrer"
-            />
-            <span className={`absolute -bottom-1 -right-1 text-[8px] font-bold text-white px-1.5 py-0.5 rounded-full ${voiceBadge}`}>
-              {member.voiceType}
-            </span>
-          </div>
-
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight leading-tight text-[#f5f5f7]">
-              {member.firstName} {member.lastName}
-            </h2>
-            <p className="apple-caption text-[#a1a1a6]">{member.memberType} • {member.voiceType}</p>
-            <p className="font-mono apple-caption text-[#f5c24c] mt-1">{member.id}</p>
-            <div className="mt-1 flex flex-wrap gap-1">
-              <span className={`apple-badge text-[9px] ${
-                member.status === 'Active Member'
-                  ? 'apple-badge-forest'
-                  : 'apple-badge-gold'
-              }`}>
-                {member.status}
-              </span>
-              {member.experience > 0 && (
-                <span className="apple-badge-muted text-[9px]">
-                  {member.experience}y exp
-                </span>
-              )}
+          {/* Header */}
+          <div className="relative mb-5 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="digital-pass__brand">Choir360</p>
+              <p className="digital-pass__choir truncate">{member.choirName}</p>
+            </div>
+            <div className="digital-pass__verified shrink-0">
+              <Shield className="w-3 h-3" aria-hidden />
+              Verified
             </div>
           </div>
-        </div>
 
-        {/* QR Code */}
-        <div className="flex items-center gap-4 rounded-2xl border border-white/10 p-4 mb-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div className="rounded-xl bg-white p-1.5 shrink-0">
-            <canvas ref={canvasRef} className="block rounded" style={{ width: 72, height: 72 }} />
-          </div>
-          <div className="min-w-0 text-xs text-[#a1a1a6] space-y-1">
-            <p className="font-semibold text-[#f5f5f7] text-sm">Scan to Check-in</p>
-            <p className="text-[10px] text-slate-400 font-mono break-all leading-relaxed">
-              {qrPayload.slice(0, 48)}…
-            </p>
-            <p className="text-[9px] text-slate-500">Valid for this session. Refresh for a new token.</p>
-          </div>
-        </div>
+          {/* Photo + identity */}
+          <div className="relative flex items-center gap-4 mb-5">
+            <div className="digital-pass__photo-ring shrink-0">
+              <img
+                src={member.photoUrl}
+                alt={fullName}
+                referrerPolicy="no-referrer"
+              />
+              <span className={`digital-pass__voice ${voiceBadge}`}>
+                {member.voiceType}
+              </span>
+            </div>
 
-        {/* Parish */}
-        <div className="text-[10px] text-slate-500 font-mono border-t border-white/10 pt-3 flex justify-between">
-          <span>{member.parish}</span>
-          <span>Joined {member.joiningDate}</span>
+            <div className="min-w-0">
+              <h2 className="digital-pass__name truncate">{fullName}</h2>
+              <p className="digital-pass__meta">
+                {member.memberType} · {member.voiceType}
+              </p>
+              <p className="digital-pass__id truncate">{member.id}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span
+                  className={`digital-pass__chip ${
+                    member.status === 'Active Member' ? 'digital-pass__chip--active' : ''
+                  }`}
+                >
+                  {member.status}
+                </span>
+                {member.experience > 0 && (
+                  <span className="digital-pass__chip">{member.experience}y exp</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* QR zone */}
+          <div className="digital-pass__qr relative mb-1">
+            <div className="digital-pass__qr-well">
+              <canvas ref={canvasRef} aria-label="Check-in QR code" />
+            </div>
+            <div className="min-w-0">
+              <p className="digital-pass__qr-title">Scan to Check-in</p>
+              <p className="digital-pass__qr-hint">
+                Present this code at rehearsal or liturgy for attendance.
+              </p>
+              <p className="digital-pass__qr-session">
+                Session token · refresh for a new code
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="digital-pass__footer relative">
+            <span className="truncate">{member.parish}</span>
+            <span className="shrink-0">Joined {member.joiningDate}</span>
+          </div>
         </div>
       </div>
 
       {/* ── Actions ───────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3" style={{ maxWidth: 380, margin: '0 auto' }}>
+      <div className="digital-pass-actions">
         <button
+          type="button"
           onClick={generateQr}
-          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh QR
         </button>
         <button
+          type="button"
           onClick={handleCheckIn}
           disabled={checkedIn}
-          className={`btn-pill flex items-center justify-center gap-2 text-xs ${
-            checkedIn
-              ? 'apple-badge-forest'
-              : 'btn-pill-primary'
+          className={`btn-pill flex items-center justify-center gap-2 ${
+            checkedIn ? 'apple-badge-forest' : 'btn-pill-primary'
           }`}
         >
           {checkedIn ? <CheckCircle className="w-4 h-4" /> : <QrCode className="w-4 h-4" />}
           {checkedIn ? 'Checked In!' : 'Manual Check-in'}
         </button>
         <button
+          type="button"
           onClick={handleCopyId}
-          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2"
         >
-          {copied ? <CheckCircle className="w-4 h-4 text-[#18392f]" /> : <Camera className="w-4 h-4" />}
+          {copied ? <CheckCircle className="w-4 h-4 text-[#0e3d4c]" /> : <Camera className="w-4 h-4" />}
           {copied ? 'Copied!' : 'Copy ID Link'}
         </button>
         <button
+          type="button"
           onClick={() => {
             const card = document.getElementById('choir-id-card');
             if (card) {
@@ -342,7 +359,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
               window.print();
             }
           }}
-          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2 text-xs"
+          className="btn-pill btn-pill-secondary flex items-center justify-center gap-2"
         >
           <Download className="w-4 h-4" />
           Print / Save
@@ -350,8 +367,8 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
       </div>
 
       {/* ── Achievement Badges ────────────────────────────────────────────── */}
-      <div className="apple-card p-5" style={{ maxWidth: 380, margin: '0 auto' }}>
-        <h3 className="apple-title flex items-center gap-2 text-sm mb-4">
+      <div className="digital-pass-achievements" id="digital-pass-achievements">
+        <h3 className="apple-title flex items-center gap-2 text-sm mb-3.5">
           <Award className="w-4 h-4 text-[#f5c24c]" />
           Achievements
           <span className="ml-auto apple-badge-forest text-[10px]">
@@ -363,18 +380,18 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
           {achievements.map((a) => (
             <div
               key={a.id}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 transition ${
-                a.earned ? a.color : 'apple-inset opacity-50'
+              className={`digital-pass-achievement ${
+                a.earned ? 'digital-pass-achievement--earned' : 'digital-pass-achievement--locked'
               }`}
             >
               <span className={`text-lg leading-none ${a.earned ? '' : 'grayscale opacity-30'}`}>
                 {a.icon}
               </span>
               <div className="min-w-0">
-                <p className={`text-[10px] font-bold leading-tight truncate ${a.earned ? '' : 'text-slate-300'}`}>
+                <p className={`text-[10px] font-bold leading-tight truncate ${a.earned ? 'text-[var(--choir-ink)]' : 'text-slate-400'}`}>
                   {a.label}
                 </p>
-                <p className={`text-[9px] leading-tight truncate ${a.earned ? 'opacity-70' : 'text-slate-300'}`}>
+                <p className={`text-[9px] leading-tight truncate ${a.earned ? 'text-[var(--choir-ink-secondary)]' : 'text-slate-300'}`}>
                   {a.description}
                 </p>
               </div>
@@ -383,7 +400,7 @@ export const DigitalChoirID: React.FC<DigitalChoirIDProps> = ({
         </div>
 
         {earned.length === 0 && (
-          <p className="text-center text-xs text-slate-400 py-4">
+          <p className="text-center text-xs text-[var(--choir-ink-secondary)] py-4">
             No badges yet — keep attending and serving!
           </p>
         )}
