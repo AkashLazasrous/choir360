@@ -70,7 +70,7 @@ export const AppAccountSheet: React.FC<AppAccountSheetProps> = ({
           transition={{ type: 'spring', stiffness: 380, damping: 36 }}
         >
           <div className="flex flex-col items-center bg-[linear-gradient(160deg,#134556_0%,#0a1628_55%,#050a14_100%)] px-4 pb-5 pt-3 text-[#f5f5f7]">
-            <div className="h-1 w-10 rounded-full bg-white/25" aria-hidden />
+            <div className="app-sheet-grabber app-sheet-grabber-on-dark" aria-hidden />
             <div className="mt-3 flex w-full items-start justify-between">
               <div>
                 <p className="text-[20px] font-semibold tracking-[-0.025em]">You & parish</p>

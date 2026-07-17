@@ -235,32 +235,29 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
   };
 
   return (
-    <div className="md-oled-surface font-apple relative -mx-3 space-y-4 px-3 py-3 sm:-mx-4 sm:px-4 lg:hidden">
-      {/* Pattern 5 — OLED dark mobile dashboard surface */}
-      <header className="space-y-1">
+    <div className="md-oled-surface font-apple relative -mx-3 space-y-3 px-3 py-3 sm:-mx-4 sm:px-4 lg:hidden">
+      {/* First viewport: brand greeting + streak only — one composition */}
+      <header className="space-y-2 pb-1">
         <p className="text-[12px] font-medium text-[#86868b]">{greeting}</p>
-        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+        <h2 className="text-[26px] font-semibold leading-[1.1] tracking-[-0.035em] text-[#f5f5f7]">
           {variant === 'admin' ? 'Choir overview' : 'Your ministry'}
         </h2>
-        <p className="text-[13px] text-[#a1a1a6]">
+        <p className="text-[13px] leading-snug text-[#a1a1a6]">
           {variant === 'admin'
             ? `${active.length} active · ${masses.length} masses`
             : member
               ? `${member.firstName} · ${member.voiceType}`
               : 'Member desk'}
         </p>
+        <StreakBanner
+          days={streak}
+          onClick={() => onNavigate(variant === 'admin' ? 'attendance' : 'gamification')}
+        />
       </header>
 
-      {/* Pattern 8 */}
-      <StreakBanner
-        days={streak}
-        onClick={() => onNavigate(variant === 'admin' ? 'attendance' : 'gamification')}
-      />
-
-      {/* Pattern 9 */}
+      {/* Below fold: metrics, charts, bento */}
       <ContextualAlerts alerts={alerts} onNavigate={onNavigate} mode="strip" />
 
-      {/* Pattern 2 + 3 */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b]">
@@ -274,7 +271,6 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         />
       </div>
 
-      {/* Pattern 4 */}
       <div className="rounded-[1.25rem] border border-white/8 bg-black/50 p-3">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b]">
@@ -285,7 +281,6 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         <ScrubChart points={chartPoints} title="Attendance" />
       </div>
 
-      {/* Pattern 1 + 6 */}
       <BentoGrid
         variant={variant}
         members={members}
@@ -314,13 +309,10 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         </button>
       )}
 
-      {/* Spacer for FAB + bottom nav */}
       <div className="h-16" aria-hidden />
 
-      {/* Pattern 7 */}
       <QuickActionFab variant={variant} onNavigate={onNavigate} />
 
-      {/* Pattern 6 sheets */}
       {sheet && (
         <DashboardSheet
           open={!!sheet}

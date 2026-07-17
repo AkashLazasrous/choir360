@@ -61,12 +61,12 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   return (
     <div className="space-y-5 animate-fade-in sm:space-y-6" id="member-dashboard-subcontainer">
 
-      {/* Sub-tab switcher — segmented control */}
-      <div className="flex w-full gap-1 rounded-2xl bg-[#0e3d4c]/[0.06] p-1 sm:w-fit">
+      {/* Sub-tab — compact on phone so Home stays the first composition */}
+      <div className="flex w-full gap-1 rounded-2xl bg-[#0e3d4c]/[0.06] p-1 sm:w-fit lg:mt-0">
         <button
           type="button"
           onClick={() => setDashTab('overview')}
-          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition sm:flex-none ${
+          className={`flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-semibold transition sm:min-h-[44px] sm:flex-none sm:px-4 sm:py-2 sm:text-[13px] ${
             dashTab === 'overview'
               ? 'bg-white text-[#0e3d4c] shadow-sm'
               : 'text-[#86868b] hover:text-[#1d1d1f]'
@@ -77,7 +77,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         <button
           type="button"
           onClick={() => setDashTab('id_card')}
-          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition sm:flex-none ${
+          className={`flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-semibold transition sm:min-h-[44px] sm:flex-none sm:px-4 sm:py-2 sm:text-[13px] ${
             dashTab === 'id_card'
               ? 'bg-white text-[#0e3d4c] shadow-sm'
               : 'text-[#86868b] hover:text-[#1d1d1f]'

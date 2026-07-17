@@ -35,6 +35,9 @@
   --choir-title: 1.375rem;
   --choir-body: 1.0625rem;
   --choir-caption: 0.8125rem;
+  /* Mobile type — slightly larger for thumb readability */
+  --choir-mobile-body: 0.9375rem; /* 15px */
+  --choir-mobile-title: 1.5rem; /* 24px */
 
   /* Named award gradients */
   --grad-hydrogen: linear-gradient(135deg, #e0f7ff 0%, #7dd3fc 48%, #22d3ee 100%);
@@ -77,19 +80,31 @@
 }
 
 /* ── Typography ───────────────────────────────────────────────────────────── */
+/* UI: DM Sans + Tamil. Cinzel only via .font-display for brand moments. */
 .font-apple,
 .shell-nav-label,
 .font-ui {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-    "Segoe UI", "Space Grotesk", "Noto Sans Tamil", ui-sans-serif, system-ui, sans-serif;
+  font-family: "DM Sans", "Noto Sans Tamil", "Latha", "Vijaya", "Nirmala UI",
+    ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.015em;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Display serif reserved for rare liturgical titles only */
+/* Display serif reserved for rare brand / liturgical titles only */
 .font-display {
-  font-family: var(--font-serif);
+  font-family: "Cinzel", Georgia, Cambria, serif;
   letter-spacing: -0.02em;
+}
+
+@media (max-width: 1023px) {
+  .apple-skin {
+    font-size: var(--choir-mobile-body);
+  }
+
+  .apple-title {
+    font-size: var(--choir-mobile-title);
+    letter-spacing: -0.03em;
+  }
 }
 
 .apple-eyebrow {

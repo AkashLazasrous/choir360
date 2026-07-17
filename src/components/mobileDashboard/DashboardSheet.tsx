@@ -62,7 +62,7 @@ export const DashboardSheet: React.FC<DashboardSheetProps> = ({
             }}
           >
             <div className="flex flex-col items-center bg-[linear-gradient(160deg,#134556_0%,#0a1628_55%,#000000_100%)] px-4 pb-4 pt-3 text-[#f5f5f7]">
-              <div className="h-1 w-10 rounded-full bg-white/25" aria-hidden />
+              <div className="app-sheet-grabber app-sheet-grabber-on-dark" aria-hidden />
               <div className="mt-3 flex w-full items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[18px] font-semibold tracking-[-0.025em]">{title}</p>

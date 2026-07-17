@@ -103,6 +103,28 @@
     0 -8px 32px rgba(5, 10, 20, 0.06);
 }
 
+/* Frosted light tab bar — continuous with Deep Sea header language */
+.app-bottom-nav-frosted {
+  border-top: 1px solid var(--choir-separator);
+  background: rgba(243, 248, 250, 0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--choir-blur));
+  backdrop-filter: saturate(180%) blur(var(--choir-blur));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -12px 40px rgba(5, 10, 20, 0.08);
+}
+
+.app-sheet-grabber {
+  height: 0.25rem;
+  width: 2.5rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.18);
+}
+
+.app-sheet-grabber-on-dark {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .app-tab-btn {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Menu, X } from 'lucide-react';
+import { LayoutGrid, X } from 'lucide-react';
 import type { Tab } from '../../types';
 import {
   BOTTOM_NAV_SHORT_LABEL,
@@ -52,7 +52,7 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
               role="dialog"
               aria-modal="true"
               aria-label="More destinations"
-              className="app-more-sheet absolute left-0 right-0 overflow-hidden rounded-t-[1.75rem] border-t border-black/5 bg-[#f8fbfd]/96 shadow-[0_-12px_48px_rgba(5,10,20,0.18)] backdrop-blur-2xl"
+              className="app-more-sheet absolute left-0 right-0 overflow-hidden rounded-t-[1.75rem] border-t border-[var(--choir-separator)] bg-[var(--choir-paper)]/96 shadow-[0_-12px_48px_rgba(5,10,20,0.18)] backdrop-blur-2xl"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -60,21 +60,21 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col items-center pt-2.5">
-                <div className="h-1 w-10 rounded-full bg-black/15" aria-hidden />
+                <div className="app-sheet-grabber" aria-hidden />
               </div>
               <div className="flex items-center justify-between px-5 pb-2 pt-3">
                 <div>
-                  <p className="text-[20px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">
+                  <p className="text-[20px] font-semibold tracking-[-0.025em] text-[var(--choir-ink)]">
                     More
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#86868b]">
+                  <p className="mt-0.5 text-[12px] text-[var(--choir-ink-secondary)]">
                     Ministry tools & library
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => onMoreOpenChange(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.04] text-[#86868b] transition active:scale-95"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--choir-fill)] text-[var(--choir-ink-secondary)] transition active:scale-95"
                   aria-label="Close more menu"
                 >
                   <X className="h-5 w-5" />
@@ -118,7 +118,7 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
       </AnimatePresence>
 
       <nav
-        className="app-bottom-nav glass-panel fixed bottom-0 left-0 right-0 z-50 flex border-t border-black/[0.06] lg:hidden"
+        className="app-bottom-nav app-bottom-nav-frosted fixed bottom-0 left-0 right-0 z-50 flex lg:hidden"
         aria-label="Primary"
       >
         {primary.map(({ id, icon: Icon }) => {
@@ -138,28 +138,30 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
               {isActive && (
                 <motion.span
                   layoutId="bottomnav-active-pill"
-                  className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[#0e3d4c]/10"
+                  className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[var(--choir-forest)]/12"
                   transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                 />
               )}
               <span className="relative flex flex-col items-center gap-0.5">
                 <Icon
                   className={
-                    'h-[22px] w-[22px] transition-colors ' +
-                    (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')
+                    'h-6 w-6 transition-colors ' +
+                    (isActive ? 'text-[var(--choir-forest)]' : 'text-[var(--choir-ink-tertiary)]')
                   }
-                  strokeWidth={isActive ? 2.25 : 1.75}
+                  strokeWidth={isActive ? 2.4 : 1.6}
                 />
                 <span
                   className={
-                    'text-[10px] font-semibold tracking-[-0.01em] ' +
-                    (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')
+                    'text-[10px] tracking-[-0.01em] ' +
+                    (isActive
+                      ? 'font-bold text-[var(--choir-forest)]'
+                      : 'font-medium text-[var(--choir-ink-tertiary)]')
                   }
                 >
                   {short}
                 </span>
                 {id === 'registration' && pendingPeopleCount > 0 && (
-                  <span className="absolute -right-2 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-[#050a14]">
+                  <span className="absolute -right-2 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--choir-gold)] px-1 text-[9px] font-bold text-[var(--choir-forest-deep)]">
                     {pendingPeopleCount}
                   </span>
                 )}
@@ -178,22 +180,24 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
           {moreActive && !primaryIds.includes(activeTab) && (
             <motion.span
               layoutId="bottomnav-active-pill"
-              className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[#0e3d4c]/10"
+              className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[var(--choir-forest)]/12"
               transition={{ type: 'spring', stiffness: 420, damping: 34 }}
             />
           )}
           <span className="relative flex flex-col items-center gap-0.5">
-            <Menu
+            <LayoutGrid
               className={
-                'h-[22px] w-[22px] ' +
-                (moreActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')
+                'h-6 w-6 ' +
+                (moreActive ? 'text-[var(--choir-forest)]' : 'text-[var(--choir-ink-tertiary)]')
               }
-              strokeWidth={moreActive ? 2.25 : 1.75}
+              strokeWidth={moreActive ? 2.4 : 1.6}
             />
             <span
               className={
-                'text-[10px] font-semibold tracking-[-0.01em] ' +
-                (moreActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')
+                'text-[10px] tracking-[-0.01em] ' +
+                (moreActive
+                  ? 'font-bold text-[var(--choir-forest)]'
+                  : 'font-medium text-[var(--choir-ink-tertiary)]')
               }
             >
               More

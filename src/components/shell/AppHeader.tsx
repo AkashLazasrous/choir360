@@ -46,7 +46,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onSearchQueryChange,
   searchResultsSlot,
   searchContainerRef,
-  notificationDot = true,
+  notificationDot = false,
   contextualAlerts = [],
   onAlertNavigate,
   avatarUrl,
@@ -70,8 +70,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           className="flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-full pr-1 transition active:opacity-80"
           aria-label="Choir360 home"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-amber-400 text-[#050a14] shadow-[0_0_0_1px_rgba(245,194,76,0.35)]">
-            <Music2 className="h-3.5 w-3.5" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-amber-400 text-[#050a14] shadow-[0_0_0_1px_rgba(245,194,76,0.35)] ring-2 ring-amber-300/20">
+            <Music2 className="h-3.5 w-3.5" strokeWidth={2.25} />
           </div>
           <div className="hidden min-w-0 text-left sm:block">
             <p className="truncate text-[15px] font-semibold leading-none tracking-[-0.02em] lg:text-[17px]">
@@ -188,21 +188,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             <button
               type="button"
               className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-white/10"
-              aria-label={hasAlerts ? `${contextualAlerts.length} alerts` : 'Notifications'}
+              aria-label={hasAlerts ? `${contextualAlerts.length} alerts` : 'No alerts'}
               aria-expanded={alertsOpen}
               onClick={() => setAlertsOpen((o) => !o)}
             >
-              <Bell className="h-4 w-4" />
-              {(hasAlerts || notificationDot) && (
-                <span
-                  className={
-                    hasAlerts
-                      ? 'absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-300 px-1 text-[9px] font-bold text-[#050a14]'
-                      : 'absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300'
-                  }
-                >
-                  {hasAlerts ? contextualAlerts.length : null}
+              <Bell
+                className={'h-5 w-5 ' + (hasAlerts ? 'text-amber-200' : 'text-[#a1a1a6]')}
+                strokeWidth={hasAlerts ? 2.25 : 1.75}
+              />
+              {hasAlerts && (
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-300 px-1 text-[9px] font-bold text-[#050a14]">
+                  {contextualAlerts.length}
                 </span>
+              )}
+              {!hasAlerts && notificationDot && (
+                <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
               )}
             </button>
             <AnimatePresence>
