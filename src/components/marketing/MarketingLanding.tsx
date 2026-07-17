@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   BarChart3, BookOpen, CalendarDays, ChevronDown, Church,
-  Command, Music2, ShieldCheck, Trophy, UsersRound,
+  Command, Music2, ShieldCheck, Trophy, UsersRound, ArrowUpRight,
 } from 'lucide-react';
 import { Language, Tab } from '../../types';
 import { t } from '../../i18n/ui';
@@ -41,14 +41,14 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
   ], [lang]);
 
   const ministries = useMemo(() => [
-    { filter: 'liturgy' as const, icon: Church, title: t(lang, 'mktFeatMasses'), body: t(lang, 'mktFeatMassesBody'), tab: 'masses' as Tab },
-    { filter: 'music' as const, icon: Music2, title: t(lang, 'mktFeatSongs'), body: t(lang, 'mktFeatSongsBody'), tab: 'song_library' as Tab },
-    { filter: 'people' as const, icon: UsersRound, title: t(lang, 'mktFeatMembers'), body: t(lang, 'mktFeatMembersBody'), tab: 'registration' as Tab },
-    { filter: 'liturgy' as const, icon: CalendarDays, title: t(lang, 'mktFeatCalendar'), body: t(lang, 'mktFeatCalendarBody'), tab: 'calendar' as Tab },
-    { filter: 'ops' as const, icon: Trophy, title: t(lang, 'mktFeatAttendance'), body: t(lang, 'mktFeatAttendanceBody'), tab: 'attendance' as Tab },
-    { filter: 'ops' as const, icon: Command, title: t(lang, 'mktFeatAi'), body: t(lang, 'mktFeatAiBody'), tab: 'ai_hub' as Tab },
-    { filter: 'music' as const, icon: BookOpen, title: t(lang, 'mktFeatCatholic'), body: t(lang, 'mktFeatCatholicBody'), tab: 'catholic_hub' as Tab },
-    { filter: 'ops' as const, icon: BarChart3, title: t(lang, 'mktFeatInsights'), body: t(lang, 'mktFeatInsightsBody'), tab: 'analytics' as Tab },
+    { filter: 'liturgy' as const, icon: Church, title: t(lang, 'mktFeatMasses'), body: t(lang, 'mktFeatMassesBody'), tab: 'masses' as Tab, year: '01' },
+    { filter: 'music' as const, icon: Music2, title: t(lang, 'mktFeatSongs'), body: t(lang, 'mktFeatSongsBody'), tab: 'song_library' as Tab, year: '02' },
+    { filter: 'people' as const, icon: UsersRound, title: t(lang, 'mktFeatMembers'), body: t(lang, 'mktFeatMembersBody'), tab: 'registration' as Tab, year: '03' },
+    { filter: 'liturgy' as const, icon: CalendarDays, title: t(lang, 'mktFeatCalendar'), body: t(lang, 'mktFeatCalendarBody'), tab: 'calendar' as Tab, year: '04' },
+    { filter: 'ops' as const, icon: Trophy, title: t(lang, 'mktFeatAttendance'), body: t(lang, 'mktFeatAttendanceBody'), tab: 'attendance' as Tab, year: '05' },
+    { filter: 'ops' as const, icon: Command, title: t(lang, 'mktFeatAi'), body: t(lang, 'mktFeatAiBody'), tab: 'ai_hub' as Tab, year: '06' },
+    { filter: 'music' as const, icon: BookOpen, title: t(lang, 'mktFeatCatholic'), body: t(lang, 'mktFeatCatholicBody'), tab: 'catholic_hub' as Tab, year: '07' },
+    { filter: 'ops' as const, icon: BarChart3, title: t(lang, 'mktFeatInsights'), body: t(lang, 'mktFeatInsightsBody'), tab: 'analytics' as Tab, year: '08' },
   ], [lang]);
 
   const filtered = filter === 'all' ? ministries : ministries.filter((m) => m.filter === filter);
@@ -75,15 +75,24 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
     { id: 'ops', label: 'Ops' },
   ];
 
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    const scroller = document.querySelector('.app-main');
+    if (el && scroller) {
+      const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 24;
+      scroller.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       {showVeil && (
         <div className="website-enter-veil" role="dialog" aria-label="Enter Choir360">
           <p className="website-brand">Choir360</p>
           <h1>Choir360</h1>
-          <p className="mt-4 max-w-md text-center text-[15px] text-white/50">
-            {t(lang, 'mktHeroDesc')}
-          </p>
+          <p className="website-veil-sub">{t(lang, 'mktHeroDesc')}</p>
           <button type="button" className="website-enter-btn" onClick={enter}>
             Enter
           </button>
@@ -96,7 +105,28 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
           <span id="website-scroll-progress" />
         </div>
 
-        <section className="website-hero">
+        {/* Sticky chapter rail — Unseen-style */}
+        <nav className="website-chapters" aria-label="Sections">
+          {[
+            { id: 'website-hero', label: 'Intro' },
+            { id: 'modules', label: 'Work' },
+            { id: 'how-it-works', label: 'Process' },
+            { id: 'pricing', label: 'Pricing' },
+            { id: 'faq', label: 'FAQ' },
+            { id: 'contact', label: 'Contact' },
+          ].map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              data-chapter={c.id}
+              onClick={() => scrollTo(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </nav>
+
+        <section id="website-hero" className="website-hero">
           <img
             data-hero-parallax
             className="website-hero-media"
@@ -105,23 +135,25 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
             fetchPriority="high"
             decoding="async"
           />
-          <div className="absolute inset-0" style={{ background: 'var(--grad-hero-scrim)' }} aria-hidden />
+          <div className="website-hero-scrim" aria-hidden />
           <div className="website-hero-copy">
             <p className="website-brand" data-reveal>Choir360</p>
-            <h1 className="website-display" data-reveal>
-              {t(lang, 'mktHeroTitle1')}{' '}
-              <span className="text-amber-300">{t(lang, 'mktHeroTitle2')}</span>
+            <h1 className="website-display">
+              <span data-split="words">{t(lang, 'mktHeroTitle1')}</span>
+              <br />
+              <span className="website-display-accent" data-split="words">{t(lang, 'mktHeroTitle2')}</span>
             </h1>
             <p className="website-lede" data-reveal>{t(lang, 'mktHeroDesc')}</p>
-            <div className="mt-8 flex flex-wrap gap-4" data-reveal>
+            <div className="website-hero-cta" data-reveal>
               <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
                 {t(lang, 'mktJoinChoir')}
               </AppleButton>
-              <AppleButton variant="link" onClick={() => onNavigate('song_library')} className="!text-[#7dd3fc]">
-                {t(lang, 'mktBrowseSongs')}
-              </AppleButton>
+              <button type="button" className="website-text-link" onClick={() => scrollTo('modules')}>
+                Selected ministries <ArrowUpRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
+          <p className="website-hero-scroll" aria-hidden>Scroll</p>
         </section>
 
         <div className="website-metrics" data-reveal>
@@ -130,7 +162,7 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
             { val: 12, suffix: '', label: t(lang, 'mktStatModules') },
             { val: 5, suffix: '', label: t(lang, 'mktStatLanguages') },
           ].map(({ val, suffix, label }) => (
-            <div key={label}>
+            <div key={label} className="website-metric">
               <p className="website-metric-val">
                 <CountUp value={val} />
                 {suffix}
@@ -140,12 +172,14 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
           ))}
         </div>
 
-        <section id="modules" className="website-section scroll-mt-24">
-          <p className="website-eyebrow" data-reveal>{t(lang, 'mktModulesEyebrow')}</p>
-          <h2 className="website-title" data-reveal>{t(lang, 'mktModulesTitle')}</h2>
-          <p className="mt-4 max-w-xl text-[16px] text-white/50" data-reveal>
-            {t(lang, 'mktModulesBody')}
-          </p>
+        <section id="modules" className="website-section website-section--work">
+          <div className="website-section-head">
+            <p className="website-eyebrow" data-reveal>{t(lang, 'mktModulesEyebrow')}</p>
+            <h2 className="website-title" data-reveal>{t(lang, 'mktModulesTitle')}</h2>
+            <p className="website-section-lede" data-reveal>
+              {t(lang, 'mktModulesBody')}
+            </p>
+          </div>
 
           <div className="website-filters" data-reveal>
             {filters.map((f) => (
@@ -161,7 +195,7 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
           </div>
 
           <div className="website-project-grid">
-            {filtered.map(({ icon: Icon, title, body, tab }) => (
+            {filtered.map(({ icon: Icon, title, body, tab, year }) => (
               <button
                 key={title}
                 type="button"
@@ -169,28 +203,37 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
                 data-reveal
                 onClick={() => onNavigate(tab)}
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-amber-300">
-                  <Icon className="h-5 w-5" />
+                <span className="website-project-meta">
+                  <span className="website-project-index">{year}</span>
+                  <Icon className="h-5 w-5 text-amber-300" />
                 </span>
                 <h3>{title}</h3>
                 <p>{body}</p>
+                <span className="website-project-go">
+                  Open <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
               </button>
             ))}
           </div>
         </section>
 
-        <section id="how-it-works" className="website-section-full border-t border-white/8 bg-[#050a14]">
+        <section id="how-it-works" className="website-section-full website-chapter-dark" data-how-chapter>
           <div className="website-section !py-0">
             <p className="website-eyebrow" data-reveal>{t(lang, 'mktHowEyebrow')}</p>
-            <h2 className="website-title" data-reveal>{t(lang, 'mktHowTitle')}</h2>
-            <div className="website-steps mt-16">
-              {steps.map(({ n, title, body }) => (
-                <div key={n} data-reveal>
-                  <p className="website-step-n">{n}</p>
-                  <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-white">{title}</h3>
-                  <p className="mt-2 text-[15px] leading-relaxed text-white/50">{body}</p>
-                </div>
-              ))}
+            <h2 className="website-title website-title--wide" data-split="words">{t(lang, 'mktHowTitle')}</h2>
+            <div className="website-how-layout mt-16">
+              <div className="website-how-rail" aria-hidden>
+                <span data-how-progress />
+              </div>
+              <div className="website-steps">
+                {steps.map(({ n, title, body }) => (
+                  <div key={n} className="website-step" data-how-step data-reveal>
+                    <p className="website-step-n">{n}</p>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="mt-14" data-reveal>
               <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
@@ -200,14 +243,14 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
           </div>
         </section>
 
-        <section id="pricing" className="website-section text-center">
+        <section id="pricing" className="website-section website-pricing">
           <p className="website-eyebrow" data-reveal>{t(lang, 'mktPricingEyebrow')}</p>
-          <h2 className="website-title mx-auto" data-reveal>
+          <h2 className="website-title mx-auto text-center" data-reveal>
             {t(lang, 'mktPricingTitle1')} {t(lang, 'mktPricingTitle2')}
           </h2>
-          <p className="mx-auto mt-4 max-w-lg text-white/50" data-reveal>{t(lang, 'mktPricingBody')}</p>
-          <p className="mt-10 text-[72px] font-semibold tracking-[-0.05em] text-amber-300" data-reveal>₹0</p>
-          <p className="text-[13px] uppercase tracking-[0.14em] text-white/40">{t(lang, 'mktPerMonth')}</p>
+          <p className="website-section-lede mx-auto text-center" data-reveal>{t(lang, 'mktPricingBody')}</p>
+          <p className="website-price" data-reveal>₹0</p>
+          <p className="website-price-sub">{t(lang, 'mktPerMonth')}</p>
           <div className="mt-8" data-reveal>
             <AppleButton variant="gold" onClick={() => onNavigate('registration')}>
               {t(lang, 'mktGetStarted')}
@@ -217,37 +260,33 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
 
         <section id="faq" className="website-section !pt-0">
           <h2 className="website-title text-center" data-reveal>{t(lang, 'mktFaqTitle')}</h2>
-          <div className="mx-auto mt-12 max-w-2xl space-y-2">
+          <div className="website-faq">
             {faqs.map(({ q, a }, i) => (
-              <div
-                key={q}
-                data-reveal
-                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
-              >
+              <div key={q} data-reveal className="website-faq-item">
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  className="flex min-h-[56px] w-full items-center justify-between gap-4 px-6 py-4 text-left text-[17px] font-semibold text-white"
+                  className="website-faq-q"
                 >
                   {q}
-                  <ChevronDown className={`h-4 w-4 shrink-0 text-white/40 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 {openFaq === i && (
-                  <p className="border-t border-white/10 px-6 py-4 text-[15px] leading-relaxed text-white/50">{a}</p>
+                  <p className="website-faq-a">{a}</p>
                 )}
               </div>
             ))}
           </div>
         </section>
 
-        <footer className="website-footer">
-          <div className="mx-auto flex max-w-[1120px] flex-wrap items-end justify-between gap-10">
+        <footer id="contact" className="website-footer">
+          <div className="website-footer-inner">
             <div data-reveal>
               <p className="website-eyebrow">Say hello</p>
-              <h2 className="mt-3">{t(lang, 'mktCtaTitle')}</h2>
-              <p className="mt-3 max-w-md text-[16px] text-white/45">{t(lang, 'mktCtaBody')}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <h2>{t(lang, 'mktCtaTitle')}</h2>
+              <p className="website-footer-lede">{t(lang, 'mktCtaBody')}</p>
+              <div className="website-footer-cta">
                 <AppleButton variant="gold" magnetic onClick={() => onNavigate('registration')}>
                   {t(lang, 'mktRegisterMember')}
                 </AppleButton>
@@ -256,14 +295,14 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
                 </AppleButton>
               </div>
             </div>
-            <div className="text-[13px] text-white/40" data-reveal>
+            <div className="website-footer-meta" data-reveal>
               <p className="inline-flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-sky-400" />
                 {t(lang, 'mktTrust')}
               </p>
               <p className="mt-2">{t(lang, 'mktArchdiocese')}</p>
               {parishName && <p className="mt-1">{t(lang, 'mktServing')} {parishName}</p>}
-              <p className="mt-6 text-white/25">© {new Date().getFullYear()} Choir360</p>
+              <p className="website-copyright">© {new Date().getFullYear()} Choir360</p>
             </div>
           </div>
         </footer>

@@ -523,6 +523,7 @@ function AppInner() {
   const activeLabel = navLabel(activeTab);
   const pendingCount = members.filter((m) => m.status === 'Pending').length;
   const showPageChrome = !(activeTab === 'landing' && !authState.user);
+  const websiteMode = activeTab === 'landing' && !authState.user;
   const avatarInitials = currentMember
     ? `${currentMember.firstName?.[0] ?? ''}${currentMember.lastName?.[0] ?? ''}`.toUpperCase() || 'C'
     : (authState.user?.displayName?.[0] ?? authState.user?.email?.[0] ?? 'C').toUpperCase();
@@ -593,7 +594,12 @@ function AppInner() {
   return (
     <>
     <ParishOnboardingModal />
-    <div className="app-shell apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
+    <div
+      className={
+        'app-shell apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]' +
+        (websiteMode ? ' is-website-mode' : '')
+      }
+    >
       <AppHeader
         currentLang={currentLang}
         setCurrentLang={setCurrentLang}
@@ -615,6 +621,7 @@ function AppInner() {
         onAlertNavigate={navigate}
         notificationDot={headerAlerts.length === 0 && pendingCount > 0}
         roleChip={authState.isConfigured && authState.user ? effectiveRole.replace('_', ' ') : null}
+        websiteMode={websiteMode}
         demoRoleSlot={
           !authState.isConfigured ? (
             <RoleSelector currentRole={demoRole} setRole={handleDemoRoleChange} />
@@ -674,12 +681,16 @@ function AppInner() {
           onLogout={authState.logout}
           onRefreshToken={authState.refreshToken}
           onOpenRegistration={() => navigate('registration')}
+          websiteMode={websiteMode}
         />
 
         {/* MAIN CONTENT */}
         <main
           ref={mainScrollRef}
-          className="app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8"
+          className={
+            'app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8' +
+            (websiteMode ? ' !px-0 !py-0' : '')
+          }
         >
           {showPageChrome && (
             <div className="app-page-heading mb-5 hidden items-center justify-between md:flex lg:mb-7">

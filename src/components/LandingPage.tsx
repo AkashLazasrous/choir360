@@ -77,27 +77,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         onNavigate={onNavigate}
       />
 
-      <div className="website-desk hidden space-y-6 lg:block">
+      <div className="website-desk hidden space-y-8 lg:block">
       {/* Editorial website hero */}
       <section className="website-desk-hero">
         <div className="choir-hero-ambient opacity-40" aria-hidden />
-        <div className="relative grid gap-10 lg:grid-cols-[1.4fr_0.9fr]">
+        <div className="relative grid gap-12 lg:grid-cols-[1.45fr_0.85fr]">
           <div>
-            <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-white/40">{todayLabel}</p>
-            <p className="mt-3 text-[15px] font-semibold text-amber-300">{greeting}</p>
-            <h1 className="mt-2 max-w-xl text-[clamp(2.5rem,4vw,4rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-white">
+            <p className="website-desk-kicker">{todayLabel}</p>
+            <p className="mt-4 text-[15px] font-semibold tracking-wide text-amber-300">{greeting}</p>
+            <h1 className="website-desk-title max-w-xl">
               {nextMass
                 ? <>Ministry ready.<br /><span className="text-amber-300">Voices aligned.</span></>
                 : <>Welcome to<br /><span className="text-amber-300">Choir360.</span></>
               }
             </h1>
-            <p className="mt-4 max-w-lg text-[16px] leading-snug text-white/50">
+            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-white/50">
               {members.length === 0
                 ? 'Your parish choir desk. Register members and log your first mass.'
                 : `${confirmedPercent}% active · ${pendingMembers.length > 0 ? `${pendingMembers.length} pending` : 'All approved'} · ${masses.length} mass${masses.length !== 1 ? 'es' : ''}`
               }
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-9 flex flex-wrap gap-3">
               <AppleButton variant="gold" magnetic onClick={() => onNavigate('masses')}>
                 {nextMass ? 'Open Liturgy Desk' : 'Log First Mass'}
                 <ArrowUpRight className="h-4 w-4" />
@@ -108,11 +108,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-6 backdrop-blur-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">Next liturgy</p>
+          <div className="border border-white/10 bg-black/40 p-7 backdrop-blur-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Next liturgy</p>
             {nextMass ? (
-              <div className="mt-3 space-y-3">
-                <h3 className="text-[22px] font-semibold tracking-[-0.02em] text-white">{nextMass.name}</h3>
+              <div className="mt-4 space-y-3">
+                <h3 className="text-[26px] font-semibold tracking-[-0.03em] text-white">{nextMass.name}</h3>
                 <p className="flex items-center gap-2 text-[14px] text-white/55">
                   <CalendarDays className="h-4 w-4 text-amber-300" />
                   {new Date(nextMass.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' })}
@@ -129,7 +129,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             ) : (
               <p className="mt-4 text-[15px] text-white/45">No mass scheduled yet</p>
             )}
-            <div className="mt-6">
+            <div className="mt-7">
               <RadioPlayer />
             </div>
           </div>
@@ -138,9 +138,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Selected ministries — Unseen-style project grid */}
       <section>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-400">Selected ministries</p>
-        <h2 className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-[#0f172a]">Jump into the work</h2>
-        <div className="website-desk-grid mt-5 !text-[#f5f5f7]">
+        <p className="website-desk-kicker">Selected ministries</p>
+        <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#0f172a]">
+          Jump into the work
+        </h2>
+        <div className="website-desk-grid mt-6">
           {[
             { label: 'Liturgy', sub: nextMass ? nextMass.name : 'Log masses & shares', tab: 'masses' as Tab, icon: BookOpen },
             { label: 'People', sub: `${activeMembers.length} active`, tab: 'registration' as Tab, icon: UsersRound },
@@ -159,18 +161,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Insights strip */}
-      <section className="grid grid-cols-4 gap-3">
+      <section className="website-desk-stats">
         {[
           { label: 'Active', value: activeMembers.length },
           { label: 'Attendance', value: `${averageAttendance}%` },
           { label: 'Pending ₹', value: formatINR(pendingCollections) },
           { label: 'Health', value: healthLabel },
         ].map((stat) => (
-          <article key={stat.label} className="rounded-2xl border border-black/5 bg-white p-5">
-            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#0f172a]">
+          <article key={stat.label} className="website-desk-stat">
+            <p className="website-desk-stat-val">
               {typeof stat.value === 'number' ? <CountUp value={stat.value} /> : stat.value}
             </p>
-            <p className="mt-1 text-[12px] font-medium uppercase tracking-[0.08em] text-[#64748b]">{stat.label}</p>
+            <p className="website-desk-stat-label">{stat.label}</p>
           </article>
         ))}
       </section>

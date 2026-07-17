@@ -34,6 +34,8 @@ type AppHeaderProps = {
   demoRoleSlot?: React.ReactNode;
   /** Hide large desktop search — mobile uses icon */
   activeTab?: Tab;
+  /** Signed-out marketing: minimal website chrome on desktop */
+  websiteMode?: boolean;
 };
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -53,6 +55,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   avatarInitials = 'C',
   roleChip,
   demoRoleSlot,
+  websiteMode = false,
 }) => {
   const { selectedParish } = useParish();
   const parishLabel = selectedParish?.parishName ?? 'Choir360';
@@ -61,7 +64,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const hasAlerts = contextualAlerts.length > 0;
 
   return (
-    <header className="app-header website-chrome-header glass-panel-dark sticky top-0 z-50 shrink-0 border-b border-white/10 text-[#f5f5f7] lg:static">
+    <header
+      className={
+        'app-header website-chrome-header glass-panel-dark sticky top-0 z-50 shrink-0 border-b border-white/10 text-[#f5f5f7] lg:static' +
+        (websiteMode ? ' is-website-minimal' : '')
+      }
+    >
       <div className="app-header-inner mx-auto flex max-w-[1600px] items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:px-6">
         {/* Brand — mobile: mark only; tablet+: full lockup */}
         <button
@@ -78,7 +86,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               Choir360
             </p>
             <p className="mt-0.5 hidden truncate text-[10px] font-normal text-[#a1a1a6] md:block">
-              {parishLabel}
+              {websiteMode ? 'Parish choir ministry' : parishLabel}
             </p>
           </div>
         </button>
@@ -91,10 +99,13 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           <p className="truncate text-[10px] text-[#86868b]">Parish choir</p>
         </div>
 
-        {/* Desktop search */}
+        {/* Desktop search — hidden on marketing website mode */}
         <div
           ref={searchContainerRef}
-          className="relative ml-auto hidden max-w-md flex-1 lg:block"
+          className={
+            'relative ml-auto hidden max-w-md flex-1 lg:block' +
+            (websiteMode ? ' website-hide-on-marketing' : '')
+          }
         >
           <div className="flex items-center rounded-full border border-white/10 bg-white/[0.08] px-3.5 transition focus-within:border-white/25 focus-within:bg-white/12">
             <Search className="h-3.5 w-3.5 text-[#86868b]" />
@@ -124,7 +135,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           )}
 
           {/* Language — tablet+ inline; phone via sheet toggle */}
-          <div className="hidden items-center rounded-full bg-white/[0.08] p-0.5 md:flex">
+          <div
+            className={
+              'hidden items-center rounded-full bg-white/[0.08] p-0.5 md:flex' +
+              (websiteMode ? ' ml-auto' : '')
+            }
+          >
             {languages.map((language) => (
               <button
                 key={language.id}
@@ -184,7 +200,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </AnimatePresence>
           </div>
 
-          <div className="relative">
+          <div className={'relative' + (websiteMode ? ' website-hide-on-marketing' : '')}>
             <button
               type="button"
               className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-white/10"
