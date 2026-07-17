@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { RadioPlayer } from './RadioPlayer';
-import { Announcement, ChoirEvent, Language, Mass, Member, Payment, Tab } from '../types';
+import { Announcement, AttendanceRecord, ChoirEvent, Language, Mass, Member, Payment, Tab } from '../types';
 import {
   ArrowUpRight,
   BookOpen,
@@ -24,6 +24,7 @@ import { useParish } from '../features/parish/ParishContext';
 import { Reveal } from './interactions/Reveal';
 import { CountUp } from './interactions/CountUp';
 import { AppleButton } from './interactions/AppleButton';
+import { MobileHomeDashboard } from './mobileDashboard';
 
 interface LandingPageProps {
   currentLang: Language;
@@ -33,6 +34,8 @@ interface LandingPageProps {
   payments: Payment[];
   events: ChoirEvent[];
   announcements: Announcement[];
+  attendanceRecords?: AttendanceRecord[];
+  loading?: boolean;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -42,6 +45,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   payments,
   events,
   announcements,
+  attendanceRecords = [],
+  loading = false,
 }) => {
   const { selectedParish } = useParish();
   const parishName  = selectedParish?.parishName ?? 'your parish';
@@ -63,6 +68,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="font-apple space-y-4 animate-fade-in sm:space-y-5">
 
+      {/* Award mobile Home — all 10 patterns; desktop keeps legacy layout */}
+      <MobileHomeDashboard
+        variant="admin"
+        members={members}
+        masses={masses}
+        payments={payments}
+        events={events}
+        announcements={announcements}
+        attendanceRecords={attendanceRecords}
+        loading={loading}
+        onNavigate={onNavigate}
+      />
+
+      <div className="hidden space-y-4 sm:space-y-5 lg:block">
       {/* Hero — immersive Deep Sea; one composition on phone */}
       <section className="apple-hero-soft">
         <div className="choir-hero-ambient" aria-hidden />
@@ -399,6 +418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </article>
         </section>
       </Reveal>
+      </div>
     </div>
   );
 };

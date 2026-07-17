@@ -76,9 +76,12 @@ test.describe('Admin authenticated flows', () => {
   test('global search smoke', async ({ page }) => {
     await page.goto('/');
     await ensureParishSelected(page);
-    const search = page.getByPlaceholder(/^Search$/i);
-    await expect(search).toBeVisible();
-    await search.fill('ma');
+    // AppHeader placeholder: "Search members, masses, songs…"
+    const search = page.getByPlaceholder(/Search members, masses, songs/i).or(
+      page.getByRole('searchbox', { name: /Search/i }),
+    );
+    await expect(search.first()).toBeVisible();
+    await search.first().fill('ma');
     // Dropdown may show matches or empty state
     await expect(
       page.getByText(/No matches for|Mass|Song|People|member/i).first(),
@@ -88,9 +91,12 @@ test.describe('Admin authenticated flows', () => {
   test('language toggle while signed in', async ({ page }) => {
     await page.goto('/');
     await ensureParishSelected(page);
-    const tamil = page.getByRole('button', { name: 'Tamil', exact: true });
-    await expect(tamil).toBeVisible();
-    await tamil.click();
+    // Shell uses short codes (EN, TA); fall back to script label if present
+    const tamil = page.getByRole('button', { name: 'TA', exact: true }).or(
+      page.getByRole('button', { name: 'தமிழ்', exact: true }),
+    );
+    await expect(tamil.first()).toBeVisible();
+    await tamil.first().click();
     await page.getByRole('button', { name: 'EN', exact: true }).click();
   });
 });

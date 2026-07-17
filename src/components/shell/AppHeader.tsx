@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Bell, Languages, Music2, Search, X } from 'lucide-react';
 import type { Language, Tab } from '../../types';
 import { useParish } from '../../features/parish/ParishContext';
+import type { ContextualAlert } from '../mobileDashboard/types';
 
 const languages: { id: Language; label: string }[] = [
   { id: 'en', label: 'EN' },
@@ -24,6 +25,9 @@ type AppHeaderProps = {
   searchResultsSlot?: React.ReactNode;
   searchContainerRef?: React.RefObject<HTMLDivElement | null>;
   notificationDot?: boolean;
+  /** Pattern 9 — contextual alert previews for the Bell */
+  contextualAlerts?: ContextualAlert[];
+  onAlertNavigate?: (tab: Tab) => void;
   avatarUrl?: string | null;
   avatarInitials?: string;
   roleChip?: string | null;
@@ -43,6 +47,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   searchResultsSlot,
   searchContainerRef,
   notificationDot = true,
+  contextualAlerts = [],
+  onAlertNavigate,
   avatarUrl,
   avatarInitials = 'C',
   roleChip,
@@ -51,6 +57,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const { selectedParish } = useParish();
   const parishLabel = selectedParish?.parishName ?? 'Choir360';
   const [mobileLangOpen, setMobileLangOpen] = React.useState(false);
+  const [alertsOpen, setAlertsOpen] = React.useState(false);
+  const hasAlerts = contextualAlerts.length > 0;
 
   return (
     <header className="app-header glass-panel-dark sticky top-0 z-50 shrink-0 border-b border-white/10 text-[#f5f5f7] lg:static">
@@ -176,16 +184,81 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </AnimatePresence>
           </div>
 
-          <button
-            type="button"
-            className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-white/10"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            {notificationDot && (
-              <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
-            )}
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition hover:bg-white/10"
+              aria-label={hasAlerts ? `${contextualAlerts.length} alerts` : 'Notifications'}
+              aria-expanded={alertsOpen}
+              onClick={() => setAlertsOpen((o) => !o)}
+            >
+              <Bell className="h-4 w-4" />
+              {(hasAlerts || notificationDot) && (
+                <span
+                  className={
+                    hasAlerts
+                      ? 'absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-300 px-1 text-[9px] font-bold text-[#050a14]'
+                      : 'absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300'
+                  }
+                >
+                  {hasAlerts ? contextualAlerts.length : null}
+                </span>
+              )}
+            </button>
+            <AnimatePresence>
+              {alertsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(18.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#050a14]/95 shadow-2xl backdrop-blur-xl"
+                >
+                  <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                    <p className="text-[12px] font-semibold text-[#f5f5f7]">Alerts</p>
+                    <button type="button" aria-label="Close alerts" onClick={() => setAlertsOpen(false)}>
+                      <X className="h-4 w-4 text-[#86868b]" />
+                    </button>
+                  </div>
+                  {hasAlerts ? (
+                    <ul className="max-h-64 overflow-y-auto py-1">
+                      {contextualAlerts.map((a) => (
+                        <li key={a.id}>
+                          <button
+                            type="button"
+                            className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-white/5"
+                            onClick={() => {
+                              setAlertsOpen(false);
+                              onAlertNavigate?.(a.tab);
+                            }}
+                          >
+                            <span
+                              className={
+                                'mt-1 h-2 w-2 shrink-0 rounded-full ' +
+                                (a.tone === 'gold'
+                                  ? 'bg-amber-300'
+                                  : a.tone === 'warn'
+                                    ? 'bg-orange-400'
+                                    : 'bg-teal-300')
+                              }
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-[13px] font-semibold text-[#f5f5f7]">
+                                {a.title}
+                              </span>
+                              <span className="block text-[11px] text-[#86868b]">{a.body}</span>
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-3 py-4 text-[12px] text-[#86868b]">No new alerts</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {demoRoleSlot}
 

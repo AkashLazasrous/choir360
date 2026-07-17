@@ -110,9 +110,12 @@ test.describe('Public smoke (signed out)', () => {
   test('language toggle smoke', async ({ page }) => {
     await page.goto('/');
     await ensureParishSelected(page);
-    const tamil = page.getByRole('button', { name: 'Tamil', exact: true });
-    if (await tamil.isVisible().catch(() => false)) {
-      await tamil.click();
+    // Desktop/mobile shell uses short codes (EN, TA), not "Tamil" / script labels
+    const tamil = page.getByRole('button', { name: 'TA', exact: true }).or(
+      page.getByRole('button', { name: 'தமிழ்', exact: true }),
+    );
+    if (await tamil.first().isVisible().catch(() => false)) {
+      await tamil.first().click();
       await page.getByRole('button', { name: 'EN', exact: true }).click();
     }
   });

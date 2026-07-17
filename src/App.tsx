@@ -32,6 +32,7 @@ import { AppHeader, MobileSearchSheet } from './components/shell/AppHeader';
 import { AppSidebar } from './components/shell/AppSidebar';
 import { AppBottomNav } from './components/shell/AppBottomNav';
 import { AppAccountSheet } from './components/shell/AppAccountSheet';
+import { buildContextualAlerts } from './components/mobileDashboard/dashboardMetrics';
 
 // ─── Lazy Imports ─────────────────────────────────────────────────────────────
 const RehearsalManager = React.lazy(() => import('./components/RehearsalManager').then((m) => ({ default: m.RehearsalManager })));
@@ -526,6 +527,20 @@ function AppInner() {
     ? `${currentMember.firstName?.[0] ?? ''}${currentMember.lastName?.[0] ?? ''}`.toUpperCase() || 'C'
     : (authState.user?.displayName?.[0] ?? authState.user?.email?.[0] ?? 'C').toUpperCase();
 
+  const headerAlerts = useMemo(
+    () =>
+      authState.user
+        ? buildContextualAlerts({
+            members,
+            masses,
+            payments,
+            variant: guard.isAdmin ? 'admin' : 'member',
+            member: currentMember ?? null,
+          })
+        : [],
+    [authState.user, members, masses, payments, guard.isAdmin, currentMember],
+  );
+
   const syncStatusNode = (
     <>
       Sync:{' '}
@@ -596,6 +611,9 @@ function AppInner() {
         searchContainerRef={searchContainerRef}
         avatarUrl={currentMember?.photoUrl || authState.user?.photoURL || null}
         avatarInitials={avatarInitials}
+        contextualAlerts={headerAlerts}
+        onAlertNavigate={navigate}
+        notificationDot={headerAlerts.length === 0 && pendingCount > 0}
         roleChip={authState.isConfigured && authState.user ? effectiveRole.replace('_', ' ') : null}
         demoRoleSlot={
           !authState.isConfigured ? (
@@ -695,7 +713,8 @@ function AppInner() {
             {activeTab === 'landing' && (
               authState.user ? (
                 <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
-                  events={events} announcements={announcements}
+                  events={events} announcements={announcements} attendanceRecords={attendanceRecords}
+                  loading={authState.isConfigured && !authState.isReady}
                   onNavigate={navigate} />
               ) : (
                 <MarketingLanding lang={currentLang} onNavigate={navigate} parishName={selectedParish?.parishName} />
@@ -786,6 +805,8 @@ function AppInner() {
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
                     members={members} events={events} masses={masses} payments={payments} attendanceRecords={attendanceRecords}
+                    loading={authState.isConfigured && !authState.isReady}
+                    onNavigate={navigate}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert(updateRecordMetadata(updated, authState.user?.uid ?? updated.id), authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);

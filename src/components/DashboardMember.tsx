@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Tab } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -11,6 +11,7 @@ import { PrayerWall } from '../features/memberDashboard/PrayerWall';
 import { computeMemberRosterStats } from '../utils/attendanceStats';
 import { formatINR } from '../utils/currency';
 import { AttendanceLeaderboard } from '../features/attendance/AttendanceLeaderboard';
+import { MobileHomeDashboard } from './mobileDashboard';
 
 interface DashboardMemberProps {
   currentLang: Language;
@@ -22,6 +23,8 @@ interface DashboardMemberProps {
   attendanceRecords?: AttendanceRecord[];
   onUpdateMemberDetails: (updated: Member) => void;
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
+  onNavigate?: (tab: Tab) => void;
+  loading?: boolean;
 }
 
 /**
@@ -37,7 +40,9 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   payments = [],
   attendanceRecords = [],
   onUpdateMemberDetails,
-  onUpdateEventRsvp
+  onUpdateEventRsvp,
+  onNavigate,
+  loading = false,
 }) => {
   const member = members.find(m => m.id === memberId) || members[0];
   const liveStats = computeMemberRosterStats(attendanceRecords, members, masses, payments)
@@ -50,6 +55,8 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
     setHasRequestedChange(true);
     setTimeout(() => setHasRequestedChange(false), 6000);
   };
+
+  const go = onNavigate ?? (() => undefined);
 
   return (
     <div className="space-y-5 animate-fade-in sm:space-y-6" id="member-dashboard-subcontainer">
@@ -93,6 +100,19 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
       {/* Overview tab content */}
       {dashTab === 'overview' && <>
 
+      <MobileHomeDashboard
+        variant="member"
+        members={members}
+        masses={masses}
+        payments={payments}
+        events={events}
+        attendanceRecords={attendanceRecords}
+        member={member}
+        loading={loading}
+        onNavigate={go}
+      />
+
+      <div className="hidden space-y-5 lg:block">
       {/* Header Summary */}
       <div className="apple-card font-apple flex flex-col items-center justify-between gap-5 p-5 sm:gap-6 sm:p-6 md:flex-row md:items-start" id="dashboard-member-header">
         <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
@@ -168,6 +188,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
           <PracticeConsole />
           <PrayerWall member={member} />
         </div>
+      </div>
       </div>
 
       </>}
