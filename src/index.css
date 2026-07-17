@@ -38,6 +38,17 @@ body,
   overflow-x: hidden;
 }
 
+/* Desktop shell fills the viewport so flex children can use min-height: 0 */
+@media (min-width: 1024px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+}
+
 .tamil-text,
 :lang(ta) {
   font-family: "Noto Sans Tamil", "Latha", "Vijaya", "Nirmala UI", sans-serif;

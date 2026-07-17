@@ -36,10 +36,63 @@
 /* ── App shell chrome ─────────────────────────────────────────────────────── */
 .app-header {
   padding-top: env(safe-area-inset-top, 0px);
+  flex-shrink: 0;
 }
 
 .app-header-inner {
   height: var(--app-header-h);
+}
+
+/*
+ * Desktop / laptop shell (≥1024): lock to viewport and give sidebar + main
+ * independent scroll panes. Sticky-under-header failed when ancestors used
+ * overflow-x: hidden (creates a scrollport and clips the sticky pane).
+ */
+@media (min-width: 1024px) {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  @supports not (height: 100dvh) {
+    .app-shell {
+      height: 100vh;
+      max-height: 100vh;
+    }
+  }
+
+  .app-shell-body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .app-sidebar {
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-main {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Nested stickies are inside the main scrollport (header is outside). */
+  .app-main .sticky-below-header,
+  .app-main .product-subnav {
+    top: 0;
+  }
 }
 
 .app-bottom-nav {

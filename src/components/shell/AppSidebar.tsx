@@ -27,8 +27,8 @@ type AppSidebarProps = {
 };
 
 /**
- * Desktop / tablet sidebar — sticky under the header.
- * Hidden below lg; mobile uses bottom tabs + account sheet.
+ * Desktop sidebar — independent scroll pane under the header (≥1024).
+ * Hidden below lg; mobile/tablet use bottom tabs + account sheet.
  */
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   activeTab,
@@ -49,7 +49,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenRegistration,
 }) => (
   <aside
-    className="hidden w-64 shrink-0 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:sticky lg:top-[var(--app-header-offset)] lg:flex lg:h-[calc(100dvh-var(--app-header-offset))]"
+    className="app-sidebar hidden w-64 shrink-0 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:flex"
   >
     <ParishSidebarCard
       songCount={0}
@@ -57,7 +57,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       syncStatus={syncStatus}
     />
 
-    <div className="mt-4">
+    <div className="mt-4 shrink-0">
       <AuthPanel
         lang={lang}
         user={user}
@@ -71,7 +71,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       />
     </div>
 
-    <nav className="mt-5 flex-1 space-y-1 overflow-y-auto pb-4" aria-label="Main navigation">
+    <nav className="mt-5 space-y-1 pb-4" aria-label="Main navigation">
       {SIDEBAR_NAV.filter(
         (item) => !isConfigured || canAccess(item.minRole) || item.minRole === 'public_user',
       ).map((item) => {

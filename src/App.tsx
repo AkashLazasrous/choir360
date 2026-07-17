@@ -223,6 +223,8 @@ function AppInner() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+
   const navigate = (tab: Tab) => {
     setActiveTab(tab);
     pushTabPath(tab);
@@ -230,7 +232,9 @@ function AppInner() {
     setAccountSheetOpen(false);
     setMobileSearchOpen(false);
     setIsSearchResultsOpen(false);
+    // Desktop shell scrolls inside <main>; mobile/tablet still use the window.
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Attendance writes go through Admin SDK APIs. Client upserts rewrite
@@ -574,7 +578,7 @@ function AppInner() {
   return (
     <>
     <ParishOnboardingModal />
-    <div className="apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
+    <div className="app-shell apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
       <AppHeader
         currentLang={currentLang}
         setCurrentLang={setCurrentLang}
@@ -634,7 +638,7 @@ function AppInner() {
         onOpenRegistration={() => navigate('registration')}
       />
 
-      <div className="app-shell-body mx-auto flex max-w-[1600px]">
+      <div className="app-shell-body mx-auto flex w-full max-w-[1600px]">
         <AppSidebar
           activeTab={activeTab}
           navLabel={navLabel}
@@ -655,7 +659,10 @@ function AppInner() {
         />
 
         {/* MAIN CONTENT */}
-        <main className="app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8">
+        <main
+          ref={mainScrollRef}
+          className="app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8"
+        >
           {showPageChrome && (
             <div className="app-page-heading mb-5 hidden items-center justify-between md:flex lg:mb-7">
               <div className="min-w-0">
