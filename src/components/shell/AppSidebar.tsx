@@ -49,7 +49,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenRegistration,
 }) => (
   <aside
-    className="app-sidebar hidden w-64 shrink-0 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:flex"
+    className={
+      'app-sidebar website-chrome-sidebar hidden w-64 shrink-0 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:flex ' +
+      (activeTab === 'landing' && !user ? '' : '')
+    }
   >
     <ParishSidebarCard
       songCount={0}
@@ -88,11 +91,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             disabled={!accessible}
             aria-current={isActive ? 'page' : undefined}
             className={
-              'relative flex min-h-[44px] w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-[15px] font-medium tracking-[-0.01em] transition ' +
+              'shell-nav-item relative flex min-h-[44px] w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-[15px] font-medium tracking-[-0.01em] transition ' +
               (isActive
-                ? 'text-white'
+                ? 'is-active text-white'
                 : accessible
-                  ? 'text-[#1d1d1f] hover:bg-black/[0.04]'
+                  ? 'text-[#1d1d1f] hover:bg-black/[0.04] lg:text-inherit lg:hover:bg-white/5'
                   : 'cursor-not-allowed text-[#d2d2d7]')
             }
           >

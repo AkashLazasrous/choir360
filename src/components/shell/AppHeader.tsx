@@ -61,7 +61,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const hasAlerts = contextualAlerts.length > 0;
 
   return (
-    <header className="app-header glass-panel-dark sticky top-0 z-50 shrink-0 border-b border-white/10 text-[#f5f5f7] lg:static">
+    <header className="app-header website-chrome-header glass-panel-dark sticky top-0 z-50 shrink-0 border-b border-white/10 text-[#f5f5f7] lg:static">
       <div className="app-header-inner mx-auto flex max-w-[1600px] items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:px-6">
         {/* Brand — mobile: mark only; tablet+: full lockup */}
         <button
