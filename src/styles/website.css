@@ -1,16 +1,57 @@
 /* Desktop website language (≥1024) — Unseen-inspired cinematic editorial.
    Mobile/tablet styles are intentionally untouched. */
 
+:root {
+  --website-bg: #000;
+  --website-stage: #050a14;
+  --website-ink: #f5f5f7;
+  --website-muted: rgba(245, 245, 247, 0.48);
+  --website-gold: #f5c24c;
+  --website-sky: #38bdf8;
+  --website-line: rgba(255, 255, 255, 0.08);
+}
+
 /* Fail-safe: reveals must never start invisible without JS animation */
 [data-reveal] {
   opacity: 1;
   transform: none;
 }
 
+/* Below desktop: WebsitePageShell is a transparent wrapper */
+@media (max-width: 1023px) {
+  .website-page-hero {
+    display: none !important;
+  }
+
+  .website-page,
+  .website-page-body {
+    display: contents;
+  }
+}
+
 @media (min-width: 1024px) {
+  /* Signed-in / public ops — Deep Sea website app chrome */
+  .app-shell.is-website-app {
+    background: var(--website-bg);
+    color: var(--website-ink);
+  }
+
+  .app-shell.is-website-app .app-main {
+    background: var(--website-bg);
+    color: var(--website-ink);
+  }
+
+  .app-shell.is-website-app .app-page-heading {
+    display: none !important;
+  }
+
+  .app-shell.is-website-app .app-content-rail {
+    max-width: none;
+  }
+
   /* Full-bleed marketing mode — hide SaaS chrome */
   .app-shell.is-website-mode {
-    background: #000;
+    background: var(--website-bg);
   }
 
   .app-shell.is-website-mode .app-shell-body {
@@ -750,6 +791,301 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(245, 245, 247, 0.4);
+  }
+
+  /* ── Shared page primitives (all desktop tabs) ── */
+  .website-page {
+    position: relative;
+    min-height: 100%;
+    color: var(--website-ink);
+    background: var(--website-bg);
+    margin: -2rem -2rem 0;
+    padding: 0 0 4rem;
+  }
+
+  .website-page-hero {
+    padding: 3.25rem 3.5rem 2rem;
+    background:
+      linear-gradient(165deg, #0a1628 0%, var(--website-stage) 52%, var(--website-bg) 100%);
+    border-bottom: 1px solid var(--website-line);
+  }
+
+  .website-page-title {
+    margin-top: 0.65rem;
+    font-size: clamp(2.5rem, 4.2vw, 3.75rem);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    color: #fff;
+  }
+
+  .website-page-lede {
+    margin-top: 1rem;
+    max-width: 36rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: var(--website-muted);
+  }
+
+  .website-page-toolbar {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .website-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .website-page-body {
+    padding: 2rem 3.5rem 0;
+  }
+
+  .website-panel,
+  .website-table-stage,
+  .website-form-stage {
+    border: 1px solid var(--website-line);
+    background: var(--website-stage);
+    color: var(--website-ink);
+  }
+
+  .website-panel {
+    padding: 1.5rem;
+  }
+
+  .website-table-stage,
+  .website-form-stage {
+    padding: 1.25rem;
+    overflow: auto;
+  }
+
+  .website-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--website-muted);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+  }
+
+  /* Cascade: apple ops surfaces → Unseen stage inside website pages */
+  .website-page .apple-card,
+  .website-page .apple-panel,
+  .website-page .glass-panel,
+  .is-website-app .apple-card,
+  .is-website-app .apple-panel {
+    background: var(--website-stage) !important;
+    border-color: var(--website-line) !important;
+    color: var(--website-ink) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .website-page .apple-title,
+  .website-page h1,
+  .website-page h2,
+  .website-page h3,
+  .is-website-app .apple-title {
+    color: #fff !important;
+  }
+
+  .website-page .apple-caption,
+  .website-page .text-slate-500,
+  .website-page .text-slate-600,
+  .website-page .text-slate-400,
+  .is-website-app .apple-caption {
+    color: var(--website-muted) !important;
+  }
+
+  .website-page .text-slate-900,
+  .website-page .text-slate-800,
+  .is-website-app .text-slate-900 {
+    color: var(--website-ink) !important;
+  }
+
+  .website-page input,
+  .website-page select,
+  .website-page textarea,
+  .website-page .apple-input,
+  .is-website-app input:not([type='checkbox']):not([type='radio']),
+  .is-website-app select,
+  .is-website-app textarea {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--website-ink) !important;
+  }
+
+  .website-page table,
+  .is-website-app table {
+    color: var(--website-ink);
+  }
+
+  .website-page th,
+  .is-website-app th {
+    color: rgba(245, 245, 247, 0.55);
+    border-color: var(--website-line) !important;
+  }
+
+  .website-page td,
+  .is-website-app td {
+    border-color: var(--website-line) !important;
+  }
+
+  .website-page tr:hover td,
+  .is-website-app tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .website-page .bg-white,
+  .website-page .bg-slate-50,
+  .website-page .bg-slate-100,
+  .is-website-app .bg-white,
+  .is-website-app .bg-slate-50 {
+    background: var(--website-stage) !important;
+  }
+
+  .website-page .border-slate-200,
+  .website-page .border-slate-100,
+  .is-website-app .border-slate-200 {
+    border-color: var(--website-line) !important;
+  }
+
+  .website-page .btn-pill-primary,
+  .is-website-app .btn-pill-primary {
+    background: var(--website-gold) !important;
+    color: var(--website-stage) !important;
+  }
+
+  .website-page .shell-nav-item,
+  .website-modal {
+    /* reserved */
+  }
+
+  /* Desktop modals — Unseen dialogs */
+  .website-modal-backdrop,
+  .is-website-app .apple-modal-backdrop,
+  .is-website-mode .apple-modal-backdrop {
+    background: rgba(0, 0, 0, 0.72) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .website-modal,
+  .is-website-app .apple-modal,
+  .is-website-mode .apple-modal {
+    background: var(--website-stage) !important;
+    border: 1px solid var(--website-line) !important;
+    color: var(--website-ink) !important;
+    border-radius: 0 !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55) !important;
+  }
+
+  .is-website-app .apple-hero-soft,
+  .website-page .apple-hero-soft,
+  .website-page .apple-hero {
+    background: linear-gradient(160deg, #0a1628, var(--website-stage)) !important;
+    border: 1px solid var(--website-line) !important;
+    border-radius: 0 !important;
+  }
+
+  /* Demote nested page heroes — shell already owns the chapter title */
+  .website-page-body > * > .apple-hero-soft:first-child,
+  .website-page-body > .apple-hero-soft:first-child {
+    margin-top: 0;
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .website-page-body > * > .apple-hero-soft:first-child h2,
+  .website-page-body > .apple-hero-soft:first-child h2 {
+    font-size: 1.35rem !important;
+    letter-spacing: -0.02em;
+  }
+
+  /* Auth / parish sidebar panels */
+  .app-sidebar.website-chrome-sidebar .apple-card,
+  .app-sidebar.website-chrome-sidebar .apple-panel {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: var(--website-line) !important;
+    color: var(--website-ink) !important;
+  }
+
+  .app-sidebar.website-chrome-sidebar input,
+  .app-sidebar.website-chrome-sidebar .apple-input {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--website-ink) !important;
+  }
+
+  /* Access denied / empty states */
+  .is-website-app .website-access-denied {
+    border: 1px solid var(--website-line);
+    background: var(--website-stage);
+    padding: 3.5rem 2.5rem;
+    text-align: center;
+  }
+
+  .is-website-app .website-access-denied h2 {
+    font-size: 2rem;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+
+  /* Module skeleton on dark stage */
+  .is-website-app .module-skeleton,
+  .is-website-app [class*='Skeleton'] {
+    filter: invert(0.92) hue-rotate(180deg);
+  }
+
+  /* List rows / grouped lists on dark stage */
+  .website-page .apple-list-row,
+  .is-website-app .apple-list-row,
+  .website-page .apple-grouped,
+  .is-website-app .apple-grouped {
+    border-color: var(--website-line) !important;
+    color: var(--website-ink) !important;
+  }
+
+  .website-page .apple-list-row:hover,
+  .is-website-app .apple-list-row:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .website-page .apple-empty,
+  .is-website-app .apple-empty {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--website-muted) !important;
+  }
+
+  .website-page .apple-badge-forest,
+  .is-website-app .apple-badge-forest {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: var(--website-sky) !important;
+  }
+
+  /* Tabs / segmented controls */
+  .website-page [role='tablist'],
+  .is-website-app [role='tablist'] {
+    border-color: var(--website-line);
+  }
+
+  /* Scroll progress available site-wide (optional bar in shell) */
+  .is-website-app .website-app-progress {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .is-website-app .website-app-progress > span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--website-sky), var(--website-gold));
   }
 }
 

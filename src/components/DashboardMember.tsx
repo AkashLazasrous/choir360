@@ -114,7 +114,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
 
       <div className="hidden space-y-5 lg:block">
       {/* Header Summary */}
-      <div className="apple-card font-apple flex flex-col items-center justify-between gap-5 p-5 sm:gap-6 sm:p-6 md:flex-row md:items-start" id="dashboard-member-header">
+      <div className="apple-card website-panel font-apple flex flex-col items-center justify-between gap-5 p-5 sm:gap-6 sm:p-6 md:flex-row md:items-start" data-reveal id="dashboard-member-header">
         <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
           <img
             src={member.photoUrl}

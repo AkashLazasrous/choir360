@@ -11,10 +11,9 @@ import { ProductSubnav } from '../interactions/ProductSubnav';
 import { AppleButton } from '../interactions/AppleButton';
 import { SpotlightCard } from '../interactions/SpotlightCard';
 import {
-  useDesktopMarketingScroll,
   useEnterVeil,
   useSectionReveals,
-} from '../../features/marketing/motion/desktopMotion';
+} from '../../features/website/motion/desktopMotion';
 
 interface MarketingLandingProps {
   lang: Language;
@@ -30,7 +29,7 @@ export const MarketingLanding: React.FC<MarketingLandingProps> = ({ lang, onNavi
   const rootRef = useRef<HTMLDivElement>(null);
   const { show: showVeil, enter } = useEnterVeil();
 
-  useDesktopMarketingScroll(true);
+  /* Lenis is mounted once from App — avoid double smooth-scroll instances */
   useSectionReveals(rootRef, true);
 
   const subnavLinks = useMemo(() => [

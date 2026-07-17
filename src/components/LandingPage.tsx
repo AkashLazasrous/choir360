@@ -79,7 +79,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       <div className="website-desk hidden space-y-8 lg:block">
       {/* Editorial website hero */}
-      <section className="website-desk-hero">
+      <section className="website-desk-hero" data-reveal>
         <div className="choir-hero-ambient opacity-40" aria-hidden />
         <div className="relative grid gap-12 lg:grid-cols-[1.45fr_0.85fr]">
           <div>
@@ -137,9 +137,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Selected ministries — Unseen-style project grid */}
-      <section>
+      <section data-reveal>
         <p className="website-desk-kicker">Selected ministries</p>
-        <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-[#0f172a]">
+        <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] font-semibold tracking-[-0.035em] text-white">
           Jump into the work
         </h2>
         <div className="website-desk-grid mt-6">
@@ -161,7 +161,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Insights strip */}
-      <section className="website-desk-stats">
+      <section className="website-desk-stats" data-reveal>
         {[
           { label: 'Active', value: activeMembers.length },
           { label: 'Attendance', value: `${averageAttendance}%` },

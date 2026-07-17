@@ -379,11 +379,11 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     : undefined;
 
   return (
-    <div className="space-y-6 font-apple">
-      <section className="apple-hero-soft relative px-6 py-7 sm:px-8">
-        <div className="choir-hero-ambient" aria-hidden />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+    <div className="space-y-6 font-apple" data-reveal>
+      <section className="apple-hero-soft relative px-6 py-7 sm:px-8 lg:border lg:border-white/10 lg:bg-[#050a14] lg:px-0 lg:py-0">
+        <div className="choir-hero-ambient lg:hidden" aria-hidden />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between lg:items-center">
+          <div className="lg:hidden">
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-amber-300/15 px-3 py-1">
               <ClipboardList className="h-3.5 w-3.5 text-amber-300" />
               <span className="text-[13px] font-medium text-amber-200">Choir Attendance</span>
@@ -393,25 +393,25 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               Mass · Special Mass · Practice Session — one log for Sts Joseph &amp; Philip
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="website-filters flex flex-wrap gap-2 lg:gap-0">
             <button
               type="button"
               onClick={() => setSection('log')}
-              className={`btn-pill btn-pill-sm ${section === 'log' ? 'btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
+              className={`website-filter btn-pill btn-pill-sm ${section === 'log' ? 'is-active btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
             >
               Log
             </button>
             <button
               type="button"
               onClick={() => setSection('history')}
-              className={`btn-pill btn-pill-sm ${section === 'history' ? 'btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
+              className={`website-filter btn-pill btn-pill-sm ${section === 'history' ? 'is-active btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
             >
               History
             </button>
             <button
               type="button"
               onClick={() => setSection('overview')}
-              className={`btn-pill btn-pill-sm ${section === 'overview' ? 'btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
+              className={`website-filter btn-pill btn-pill-sm ${section === 'overview' ? 'is-active btn-pill-gold' : 'btn-pill-secondary !bg-white/10 !text-[#f5f5f7]'}`}
             >
               Overview
             </button>

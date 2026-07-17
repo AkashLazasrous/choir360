@@ -33,6 +33,9 @@ import { AppSidebar } from './components/shell/AppSidebar';
 import { AppBottomNav } from './components/shell/AppBottomNav';
 import { AppAccountSheet } from './components/shell/AppAccountSheet';
 import { buildContextualAlerts } from './components/mobileDashboard/dashboardMetrics';
+import { WebsitePageShell } from './components/website/WebsitePageShell';
+import { WEBSITE_PAGE_META } from './components/website/pageMeta';
+import { useDesktopAppScroll } from './features/website/motion/desktopMotion';
 
 // ─── Lazy Imports ─────────────────────────────────────────────────────────────
 const RehearsalManager = React.lazy(() => import('./components/RehearsalManager').then((m) => ({ default: m.RehearsalManager })));
@@ -88,6 +91,9 @@ function AppInner() {
   const { selectedParish, archdioceseId, selectParish } = useParish();
   const authState = useFirebaseAuth();
   const showToast = useToast();
+
+  /* One Lenis instance for all desktop routes (marketing + ops). */
+  useDesktopAppScroll(true);
 
   const claimRole = (authState.claims.role ?? 'public_user') as Role;
   const isAdminViewer = hasMinimumRole(claimRole, 'choir_admin');
@@ -524,6 +530,19 @@ function AppInner() {
   const pendingCount = members.filter((m) => m.status === 'Pending').length;
   const showPageChrome = !(activeTab === 'landing' && !authState.user);
   const websiteMode = activeTab === 'landing' && !authState.user;
+  /** Deep Sea website chrome for every non-marketing desktop route */
+  const websiteApp = !websiteMode;
+  const pageMeta = WEBSITE_PAGE_META[activeTab];
+  const pageShellActions =
+    websiteApp && guard.isAdmin ? (
+      <button
+        type="button"
+        onClick={() => navigate('registration')}
+        className="btn-pill btn-pill-primary !text-[13px]"
+      >
+        <UserPlus className="h-3.5 w-3.5" /> Add member
+      </button>
+    ) : null;
   const avatarInitials = currentMember
     ? `${currentMember.firstName?.[0] ?? ''}${currentMember.lastName?.[0] ?? ''}`.toUpperCase() || 'C'
     : (authState.user?.displayName?.[0] ?? authState.user?.email?.[0] ?? 'C').toUpperCase();
@@ -597,7 +616,8 @@ function AppInner() {
     <div
       className={
         'app-shell apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]' +
-        (websiteMode ? ' is-website-mode' : '')
+        (websiteMode ? ' is-website-mode' : '') +
+        (websiteApp ? ' is-website-app' : '')
       }
     >
       <AppHeader
@@ -629,7 +649,7 @@ function AppInner() {
         }
         searchResultsSlot={
           isSearchResultsOpen && globalSearchQuery.trim().length >= 2 ? (
-            <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
+            <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden border border-white/10 bg-[#050a14] text-[#f5f5f7] shadow-2xl">
               {searchResultsList}
             </div>
           ) : null
@@ -689,9 +709,15 @@ function AppInner() {
           ref={mainScrollRef}
           className={
             'app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8' +
-            (websiteMode ? ' !px-0 !py-0' : '')
+            (websiteMode ? ' !px-0 !py-0' : '') +
+            (websiteApp ? ' lg:!pt-0' : '')
           }
         >
+          {websiteApp && (
+            <div className="website-app-progress hidden lg:block" aria-hidden>
+              <span id="website-scroll-progress" />
+            </div>
+          )}
           {showPageChrome && (
             <div className="app-page-heading mb-5 hidden items-center justify-between md:flex lg:mb-7">
               <div className="min-w-0">
@@ -718,18 +744,25 @@ function AppInner() {
             {/* Hold protected deep links until auth+claims finish restoring. */}
             {authState.isConfigured && !authState.isReady && TAB_REQUIRED_ROLE[activeTab] !== 'public_user' ? (
               <ModuleSkeleton />
-            ) : (
+            ) : websiteMode ? (
             <>
-            {/* Signed-out visitors get the marketing page; members get the ops dashboard. */}
+            <MarketingLanding lang={currentLang} onNavigate={navigate} parishName={selectedParish?.parishName} />
+            </>
+            ) : (
+            <WebsitePageShell
+              key={activeTab}
+              eyebrow={pageMeta.eyebrow}
+              title={activeLabel}
+              lede={pageMeta.lede}
+              hideHero={activeTab === 'landing'}
+              actions={pageShellActions}
+            >
+            <>
             {activeTab === 'landing' && (
-              authState.user ? (
-                <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
-                  events={events} announcements={announcements} attendanceRecords={attendanceRecords}
-                  loading={authState.isConfigured && !authState.isReady}
-                  onNavigate={navigate} />
-              ) : (
-                <MarketingLanding lang={currentLang} onNavigate={navigate} parishName={selectedParish?.parishName} />
-              )
+              <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
+                events={events} announcements={announcements} attendanceRecords={attendanceRecords}
+                loading={authState.isConfigured && !authState.isReady}
+                onNavigate={navigate} />
             )}
             {activeTab === 'calendar' && (
               <UnifiedCalendar currentLang={currentLang} masses={masses} events={events}
@@ -885,6 +918,7 @@ function AppInner() {
               ) : <AccessDenied requiredRole="choir_member" />
             )}
             </>
+            </WebsitePageShell>
             )}
           </Suspense>
           </PageTransition>

@@ -83,7 +83,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-reveal>
       {/* ── Brand hero header ─────────────────────────────────────────────── */}
       <section className="apple-hero-soft mb-2 px-8 py-7 font-apple">
         <div className="choir-hero-ambient" aria-hidden />

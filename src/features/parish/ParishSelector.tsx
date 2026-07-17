@@ -33,8 +33,8 @@ export const ParishOnboardingModal: React.FC = () => {
   if (!needsParishSelection) return null;
 
   return (
-    <div className="apple-modal-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="apple-modal w-full max-w-md overflow-hidden font-apple">
+    <div className="apple-modal-backdrop website-modal-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="apple-modal website-modal w-full max-w-md overflow-hidden font-apple">
         {/* Header */}
         <div className="apple-hero-soft px-6 py-7">
           <div className="relative flex items-center gap-3">
