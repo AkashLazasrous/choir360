@@ -1,13 +1,8 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { MotionConfig, motion } from 'motion/react';
-import {
-  BarChart3, Bell, CalendarDays, Church, Command,
-  HeartHandshake, LayoutDashboard, Menu, Music2, Search,
-  Sparkles, Star, UserPlus, UsersRound, X, BookOpen, BookText, ClipboardList,
-} from 'lucide-react';
+import { MotionConfig } from 'motion/react';
+import { UserPlus, UsersRound } from 'lucide-react';
 import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
-import { AuthPanel } from './components/AuthPanel';
 import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS, MOCK_REHEARSALS } from './data/mockData';
 import { useSyncedCollection } from './hooks/useSyncedCollection';
@@ -29,27 +24,14 @@ import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
 import { ToastProvider, useToast } from './components/feedback/ToastProvider';
 import { PageTransition } from './components/interactions/PageTransition';
 import { ParishProvider } from './features/parish/ParishContext';
-import { ParishSidebarCard, ParishOnboardingModal } from './features/parish/ParishSelector';
+import { ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
 import { apiFetch } from './services/apiClient';
-
-
-const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
-  landing: 'public_user',
-  calendar: 'public_user',
-  bible: 'public_user',
-  song_library: 'public_user',
-  registration: 'public_user',
-  catholic_hub: 'public_user',
-  liturgical_planner: 'choir_member',
-  dashboard_member: 'choir_member',
-  masses: 'choir_member',
-  ai_hub: 'choir_member',
-  gamification: 'choir_member',
-  analytics: 'choir_admin',
-  rehearsals: 'choir_member',
-  attendance: 'choir_member',
-};
+import { TAB_REQUIRED_ROLE } from './components/shell/navConfig';
+import { AppHeader, MobileSearchSheet } from './components/shell/AppHeader';
+import { AppSidebar } from './components/shell/AppSidebar';
+import { AppBottomNav } from './components/shell/AppBottomNav';
+import { AppAccountSheet } from './components/shell/AppAccountSheet';
 
 // ─── Lazy Imports ─────────────────────────────────────────────────────────────
 const RehearsalManager = React.lazy(() => import('./components/RehearsalManager').then((m) => ({ default: m.RehearsalManager })));
@@ -68,31 +50,6 @@ const CatholicKnowledgeHub = React.lazy(() => import('./components/CatholicKnowl
 const LiturgicalPlanner = React.lazy(() => import('./components/LiturgicalPlanner').then((m) => ({ default: m.LiturgicalPlanner })));
 const GamificationProfileView = React.lazy(() => import('./components/GamificationProfile').then((m) => ({ default: m.GamificationProfileView })));
 const ActivityAttendance = React.lazy(() => import('./features/attendance/ActivityAttendance').then((m) => ({ default: m.ActivityAttendance })));
-
-// ─── Nav Config ──────────────────────────────────────────────────────────────
-const navItems: { id: Tab; icon: React.ElementType; minRole: Role }[] = [
-  { id: 'landing',             icon: LayoutDashboard, minRole: 'public_user' },
-  { id: 'calendar',            icon: CalendarDays,    minRole: 'public_user' },
-  { id: 'masses',              icon: Church,          minRole: 'choir_member' },
-  { id: 'attendance',          icon: ClipboardList,   minRole: 'choir_member' },
-  { id: 'bible',               icon: BookText,        minRole: 'public_user' },
-  { id: 'song_library',        icon: Music2,          minRole: 'public_user' },
-  { id: 'registration',        icon: UsersRound,      minRole: 'public_user' },
-  { id: 'dashboard_member',    icon: HeartHandshake,  minRole: 'choir_member' },
-  { id: 'catholic_hub',        icon: BookOpen,        minRole: 'public_user' },
-  { id: 'liturgical_planner',  icon: Sparkles,        minRole: 'choir_member' },
-  { id: 'gamification',        icon: Star,            minRole: 'choir_member' },
-  { id: 'analytics',           icon: BarChart3,       minRole: 'choir_admin' },
-  { id: 'rehearsals',          icon: Music2,          minRole: 'choir_member' },
-];
-
-const languages: { id: Language; label: string }[] = [
-  { id: 'en', label: 'EN' },
-  { id: 'ta', label: 'Tamil' },
-  { id: 'ml', label: 'Malayalam' },
-  { id: 'te', label: 'Telugu' },
-  { id: 'hi', label: 'Hindi' },
-];
 
 const ModuleSkeleton = () => (
   <div className="space-y-4">
@@ -201,8 +158,9 @@ function AppInner() {
   }, [currentLang]);
   // The URL is the source of truth for the active tab (deep links + back/forward).
   const [activeTab, setActiveTab] = useState<Tab>(() => tabFromPath(window.location.pathname));
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [accountSheetOpen, setAccountSheetOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [demoRole, setDemoRole] = useState<Role>('choir_admin');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSearchResultsOpen, setIsSearchResultsOpen] = useState(false);
@@ -268,8 +226,10 @@ function AppInner() {
   const navigate = (tab: Tab) => {
     setActiveTab(tab);
     pushTabPath(tab);
-    setMobileNavOpen(false);
     setMobileMoreOpen(false);
+    setAccountSheetOpen(false);
+    setMobileSearchOpen(false);
+    setIsSearchResultsOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -557,204 +517,166 @@ function AppInner() {
   const navLabel = (id: Tab) => t(currentLang, NAV_LABEL_KEYS[id] ?? 'navOverview');
   const activeLabel = navLabel(activeTab);
   const pendingCount = members.filter((m) => m.status === 'Pending').length;
+  const showPageChrome = !(activeTab === 'landing' && !authState.user);
+  const avatarInitials = currentMember
+    ? `${currentMember.firstName?.[0] ?? ''}${currentMember.lastName?.[0] ?? ''}`.toUpperCase() || 'C'
+    : (authState.user?.displayName?.[0] ?? authState.user?.email?.[0] ?? 'C').toUpperCase();
+
+  const syncStatusNode = (
+    <>
+      Sync:{' '}
+      <span className={membersLive ? 'text-emerald-700' : syncEnabled ? 'text-amber-700' : 'text-slate-400'}>
+        {membersLive
+          ? t(currentLang, 'syncLive')
+          : syncEnabled
+          ? t(currentLang, 'syncConnecting')
+          : t(currentLang, 'syncSignIn')}
+      </span>
+      {membersSyncError && (
+        <span className="block truncate text-rose-600" title={membersSyncError}>
+          {membersSyncError}
+        </span>
+      )}
+    </>
+  );
+
+  const searchResultsList = (
+    <>
+      {globalSearchQuery.trim().length < 2 ? (
+        <p className="px-4 py-4 text-sm text-slate-500">Type at least 2 characters…</p>
+      ) : globalSearchResults.length === 0 ? (
+        <p className="px-4 py-4 text-sm text-slate-500">No matches for &ldquo;{globalSearchQuery}&rdquo;.</p>
+      ) : (
+        <ul className="max-h-80 overflow-y-auto py-1">
+          {globalSearchResults.map((result) => (
+            <li key={result.key}>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSelectSearchResult(result);
+                  setMobileSearchOpen(false);
+                }}
+                className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left hover:bg-slate-50 active:bg-slate-100"
+              >
+                <span className="flex w-full items-center justify-between gap-2">
+                  <span className="truncate text-sm font-bold text-slate-900">{result.title}</span>
+                  <span className="apple-badge-forest shrink-0">{result.category}</span>
+                </span>
+                <span className="truncate text-xs text-slate-500">{result.subtitle}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
 
   return (
     <>
     <ParishOnboardingModal />
     <div className="apple-skin choir-paper-bg font-apple min-h-[100dvh] overflow-x-hidden text-[#1d1d1f]">
-      {/* HEADER — Apple liquid-glass bar */}
-      <header className="app-header glass-panel-dark sticky top-0 z-50 border-b border-white/10 text-[#f5f5f7]">
-        <div className="app-header-inner mx-auto flex max-w-[1600px] items-center gap-4 px-4 sm:px-6">
-          <button
-            onClick={() => setMobileNavOpen((o) => !o)}
-            className="min-h-[44px] min-w-[44px] rounded-full p-2 transition hover:bg-white/10 lg:hidden"
-            aria-label="Toggle navigation"
-          >
-            {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-
-          <button onClick={() => navigate('landing')} className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-300 text-[#050a14]">
-              <Music2 className="h-4 w-4" />
+      <AppHeader
+        currentLang={currentLang}
+        setCurrentLang={setCurrentLang}
+        onNavigateHome={() => navigate('landing')}
+        onOpenAccount={() => setAccountSheetOpen(true)}
+        onOpenSearch={() => {
+          setMobileSearchOpen(true);
+          setIsSearchResultsOpen(true);
+        }}
+        searchQuery={globalSearchQuery}
+        onSearchQueryChange={(q) => {
+          setGlobalSearchQuery(q);
+          setIsSearchResultsOpen(true);
+        }}
+        searchContainerRef={searchContainerRef}
+        avatarUrl={currentMember?.photoUrl || authState.user?.photoURL || null}
+        avatarInitials={avatarInitials}
+        roleChip={authState.isConfigured && authState.user ? effectiveRole.replace('_', ' ') : null}
+        demoRoleSlot={
+          !authState.isConfigured ? (
+            <RoleSelector currentRole={demoRole} setRole={handleDemoRoleChange} />
+          ) : null
+        }
+        searchResultsSlot={
+          isSearchResultsOpen && globalSearchQuery.trim().length >= 2 ? (
+            <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
+              {searchResultsList}
             </div>
-            <div className="text-left">
-              <p className="text-[17px] font-semibold leading-none tracking-[-0.02em]">Choir360</p>
-              <p className="mt-0.5 hidden text-[10px] font-normal text-[#a1a1a6] sm:block">{t(currentLang, 'ecosystem')}</p>
-            </div>
-          </button>
+          ) : null
+        }
+      />
 
-          <div ref={searchContainerRef} className="relative ml-auto hidden max-w-md flex-1 lg:block">
-            <div className="flex items-center rounded-full border border-white/10 bg-white/[0.08] px-3.5 transition focus-within:border-white/25 focus-within:bg-white/12">
-              <Search className="h-3.5 w-3.5 text-[#86868b]" />
-              <input
-                value={globalSearchQuery}
-                onChange={(e) => { setGlobalSearchQuery(e.target.value); setIsSearchResultsOpen(true); }}
-                onFocus={() => setIsSearchResultsOpen(true)}
-                className="w-full bg-transparent px-2.5 py-2 text-[13px] outline-none placeholder:text-[#86868b]"
-                placeholder={t(currentLang, 'search')}
-                aria-label={t(currentLang, 'search')}
-              />
-              <Command className="h-3 w-3 text-[#636366]" />
-            </div>
+      <MobileSearchSheet
+        open={mobileSearchOpen}
+        onClose={() => setMobileSearchOpen(false)}
+        query={globalSearchQuery}
+        onQueryChange={(q) => {
+          setGlobalSearchQuery(q);
+          setIsSearchResultsOpen(true);
+        }}
+        results={searchResultsList}
+      />
 
-            {isSearchResultsOpen && globalSearchQuery.trim().length >= 2 && (
-              <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
-                {globalSearchResults.length === 0 ? (
-                  <p className="px-4 py-4 text-sm text-slate-500">No matches for "{globalSearchQuery}".</p>
-                ) : (
-                  <ul className="max-h-80 overflow-y-auto py-1">
-                    {globalSearchResults.map((result) => (
-                      <li key={result.key}>
-                        <button
-                          type="button"
-                          onClick={() => handleSelectSearchResult(result)}
-                          className="flex w-full flex-col items-start gap-0.5 px-4 py-2 text-left hover:bg-slate-50"
-                        >
-                          <span className="flex w-full items-center justify-between gap-2">
-                            <span className="truncate text-sm font-bold text-slate-900">{result.title}</span>
-                            <span className="apple-badge-forest shrink-0">
-                              {result.category}
-                            </span>
-                          </span>
-                          <span className="truncate text-xs text-slate-500">{result.subtitle}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
+      <AppAccountSheet
+        open={accountSheetOpen}
+        onClose={() => setAccountSheetOpen(false)}
+        lang={currentLang}
+        changeParishLabel={t(currentLang, 'changeParish')}
+        syncStatus={syncStatusNode}
+        user={authState.user}
+        isConfigured={authState.isConfigured}
+        authError={authState.authError}
+        effectiveRole={authState.effectiveRole}
+        onSignIn={authState.signIn}
+        onLogout={authState.logout}
+        onRefreshToken={authState.refreshToken}
+        onOpenRegistration={() => navigate('registration')}
+      />
 
-          <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
-            <div className="hidden items-center rounded-full bg-white/[0.08] p-0.5 md:flex">
-              {languages.map((language) => (
-                <button key={language.id} onClick={() => setCurrentLang(language.id)}
-                  className={"rounded-full px-2.5 py-1 text-[11px] font-medium transition " + (currentLang === language.id ? 'bg-white text-[#1d1d1f]' : 'text-[#a1a1a6] hover:text-white')}>
-                  {language.label}
-                </button>
-              ))}
-            </div>
-            <button className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2.5 transition hover:bg-white/10" aria-label="Notifications">
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
-            </button>
-            {!authState.isConfigured && (
-              <RoleSelector currentRole={demoRole} setRole={handleDemoRoleChange} />
-            )}
-            {authState.isConfigured && authState.user && (
-              <div className="btn-pill btn-pill-gold btn-pill-sm !min-h-[36px] !px-3 !text-[12px]">
-                {effectiveRole.replace('_', ' ')}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile drawer backdrop */}
-      {mobileNavOpen && (
-        <button
-          type="button"
-          aria-label="Close navigation"
-          className="fixed inset-0 z-30 bg-[#050a14]/40 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileNavOpen(false)}
+      <div className="app-shell-body mx-auto flex max-w-[1600px]">
+        <AppSidebar
+          activeTab={activeTab}
+          navLabel={navLabel}
+          canAccess={guard.canAccess}
+          isConfigured={authState.isConfigured}
+          onNavigate={navigate}
+          pendingCount={pendingCount}
+          lang={currentLang}
+          changeParishLabel={t(currentLang, 'changeParish')}
+          syncStatus={syncStatusNode}
+          user={authState.user}
+          authError={authState.authError}
+          effectiveRole={authState.effectiveRole}
+          onSignIn={authState.signIn}
+          onLogout={authState.logout}
+          onRefreshToken={authState.refreshToken}
+          onOpenRegistration={() => navigate('registration')}
         />
-      )}
-
-      <div className="mx-auto flex max-w-[1600px]">
-        {/* SIDEBAR */}
-        <aside className={(mobileNavOpen ? 'fixed inset-x-0 z-40 flex' : 'hidden') + ' w-64 flex-col border-r border-black/5 bg-white/80 p-3 shadow-[8px_0_32px_rgba(0,0,0,0.04)] backdrop-blur-xl lg:sticky lg:top-[var(--app-header-offset)] lg:flex'}
-          style={mobileNavOpen ? {
-            top: 'var(--app-header-offset)',
-            bottom: 'var(--bottom-chrome)',
-            maxHeight: 'calc(100dvh - var(--app-header-offset) - var(--bottom-chrome))',
-          } : undefined}
-        >
-          <ParishSidebarCard
-            songCount={0}
-            changeParishLabel={t(currentLang, 'changeParish')}
-            syncStatus={
-              <>
-                Sync:{' '}
-                <span className={membersLive ? 'text-emerald-700' : syncEnabled ? 'text-amber-700' : 'text-slate-400'}>
-                  {membersLive
-                    ? t(currentLang, 'syncLive')
-                    : syncEnabled
-                    ? t(currentLang, 'syncConnecting')
-                    : t(currentLang, 'syncSignIn')}
-                </span>
-                {membersSyncError && (
-                  <span className="block truncate text-rose-600" title={membersSyncError}>
-                    {membersSyncError}
-                  </span>
-                )}
-              </>
-            }
-          />
-
-          <div className="mt-4">
-            <AuthPanel
-              lang={currentLang}
-              user={authState.user}
-              isConfigured={authState.isConfigured}
-              authError={authState.authError}
-              effectiveRole={authState.effectiveRole}
-              onSignIn={authState.signIn}
-              onLogout={authState.logout}
-              onRefreshToken={authState.refreshToken}
-              onOpenRegistration={() => navigate('registration')}
-            />
-          </div>
-
-          <nav className="mt-5 space-y-1 overflow-y-auto" aria-label="Main navigation">
-            {navItems
-              .filter((item) => !authState.isConfigured || guard.canAccess(item.minRole) || item.minRole === 'public_user')
-              .map((item) => {
-                const accessible = guard.canAccess(item.minRole);
-                const isActive = activeTab === item.id;
-                return (
-                  <button key={item.id} onClick={() => { if (accessible) { navigate(item.id); setMobileNavOpen(false); } }} disabled={!accessible}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={'relative flex min-h-[44px] w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-[15px] font-medium tracking-[-0.01em] transition ' +
-                      (isActive ? 'text-white' : accessible ? 'text-[#1d1d1f] hover:bg-black/[0.04]' : 'cursor-not-allowed text-[#d2d2d7]')}>
-                    {isActive && (
-                      <motion.span
-                        layoutId="sidebar-active-pill"
-                        className="absolute inset-0 rounded-full bg-[#0e3d4c]"
-                        transition={{ type: 'spring', stiffness: 420, damping: 36 }}
-                      />
-                    )}
-                    <item.icon className={'relative h-4 w-4 ' + (isActive ? 'text-amber-300' : accessible ? 'text-[#86868b]' : 'text-[#d2d2d7]')} />
-                    <span className="relative">{navLabel(item.id)}</span>
-                    {item.id === 'registration' && pendingCount > 0 && (
-                      <span className="relative ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">{pendingCount}</span>
-                    )}
-                    {!accessible && authState.isConfigured && (
-                      <span className="relative ml-auto text-[9px] text-slate-300">[locked]</span>
-                    )}
-                  </button>
-                );
-              })}
-          </nav>
-        </aside>
 
         {/* MAIN CONTENT */}
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {!(activeTab === 'landing' && !authState.user) && (
-            <div className="mb-7 flex items-center justify-between">
-              <div>
+        <main className="app-main min-w-0 flex-1 px-4 pb-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:py-8">
+          {showPageChrome && (
+            <div className="app-page-heading mb-5 hidden items-center justify-between md:flex lg:mb-7">
+              <div className="min-w-0">
                 <BreadcrumbParishLabel />
-                <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">{activeLabel}</h1>
+                <h1 className="mt-1 truncate text-[28px] font-semibold tracking-[-0.025em] text-[#1d1d1f]">
+                  {activeLabel}
+                </h1>
               </div>
               {guard.isAdmin && (
-                <button onClick={() => navigate('registration')}
-                  className="btn-pill btn-pill-primary hidden !text-[13px] sm:inline-flex">
+                <button
+                  type="button"
+                  onClick={() => navigate('registration')}
+                  className="btn-pill btn-pill-primary !text-[13px]"
+                >
                   <UserPlus className="h-3.5 w-3.5 text-amber-300" /> Add member
                 </button>
               )}
             </div>
           )}
 
+          <div className="app-content-rail">
           <PageTransition pageKey={activeTab}>
           <Suspense fallback={<ModuleSkeleton />}>
             {/* Hold protected deep links until auth+claims finish restoring. */}
@@ -927,90 +849,19 @@ function AppInner() {
             )}
           </Suspense>
           </PageTransition>
+          </div>
         </main>
       </div>
 
-      {/* Mobile bottom nav — 5 primary tabs + More drawer */}
-      {mobileMoreOpen && (
-        <div className="fixed inset-0 z-[55] lg:hidden" onClick={() => setMobileMoreOpen(false)}>
-          <div className="absolute inset-0 bg-[#050a14]/35 backdrop-blur-sm" />
-          <div
-            className="app-more-sheet absolute left-0 right-0 rounded-t-2xl border-t border-black/5 bg-white/95 shadow-xl backdrop-blur-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-2">
-              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[#1d1d1f]">More</span>
-              <button
-                type="button"
-                onClick={() => setMobileMoreOpen(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
-                aria-label="Close more menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-1 p-3 pb-4">
-              {([
-                { id: 'bible' as Tab,             Icon: BookText },
-                { id: 'catholic_hub' as Tab,       Icon: BookOpen },
-                { id: 'rehearsals' as Tab,         Icon: Sparkles },
-                { id: 'attendance' as Tab,         Icon: ClipboardList },
-                { id: 'dashboard_member' as Tab,   Icon: HeartHandshake },
-                { id: 'liturgical_planner' as Tab, Icon: Sparkles },
-                { id: 'gamification' as Tab,       Icon: Star },
-                { id: 'ai_hub' as Tab,             Icon: Command },
-                { id: 'analytics' as Tab,          Icon: BarChart3 },
-              ] as { id: Tab; Icon: React.ElementType }[])
-                .filter(({ id }) => guard.canAccess(TAB_REQUIRED_ROLE[id]))
-                .map(({ id, Icon }) => {
-                  const isActive = activeTab === id;
-                  const label = id === 'ai_hub' ? 'AI Hub' : navLabel(id);
-                  return (
-                    <button key={id} onClick={() => { navigate(id); setMobileMoreOpen(false); }}
-                      className={'flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl p-3 ' + (isActive ? 'bg-[#0e3d4c]/10' : 'hover:bg-black/[0.03]')}>
-                      <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
-                      <span className={'text-center text-[11px] font-medium leading-tight ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{label}</span>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      )}
-      <nav className="app-bottom-nav glass-panel fixed bottom-0 left-0 right-0 z-50 flex border-t border-black/5 lg:hidden">
-        {([
-          { id: 'landing' as Tab,      Icon: LayoutDashboard },
-          { id: 'calendar' as Tab,     Icon: CalendarDays },
-          { id: 'masses' as Tab,       Icon: Church },
-          { id: 'song_library' as Tab, Icon: Music2 },
-          { id: 'registration' as Tab, Icon: UsersRound },
-        ] as { id: Tab; Icon: React.ElementType }[])
-          .filter(({ id }) => guard.canAccess(TAB_REQUIRED_ROLE[id]))
-          .map(({ id, Icon }) => {
-            const isActive = activeTab === id;
-            return (
-              <button key={id} onClick={() => navigate(id)}
-                className="relative flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5"
-                aria-current={isActive ? 'page' : undefined}>
-                {isActive && (
-                  <motion.span
-                    layoutId="bottomnav-active-bar"
-                    className="absolute top-0 h-[2px] w-8 rounded-full bg-[#0e3d4c]"
-                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-                  />
-                )}
-                <Icon className={'h-5 w-5 ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
-                <span className={'text-[11px] font-medium ' + (isActive ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>{navLabel(id)}</span>
-              </button>
-            );
-          })}
-        <button onClick={() => setMobileMoreOpen((o) => !o)}
-          className="flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 py-2.5">
-          <Menu className={'h-5 w-5 ' + (mobileMoreOpen ? 'text-[#0e3d4c]' : 'text-[#86868b]')} />
-          <span className={'text-[11px] font-medium ' + (mobileMoreOpen ? 'text-[#0e3d4c]' : 'text-[#86868b]')}>More</span>
-        </button>
-      </nav>
-      <div className="app-bottom-spacer lg:hidden" aria-hidden="true" />
+      <AppBottomNav
+        activeTab={activeTab}
+        canAccess={guard.canAccess}
+        navLabel={navLabel}
+        onNavigate={navigate}
+        moreOpen={mobileMoreOpen}
+        onMoreOpenChange={setMobileMoreOpen}
+        pendingPeopleCount={pendingCount}
+      />
     </div>
     </>
   );

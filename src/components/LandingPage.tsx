@@ -61,35 +61,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const todayLabel = today.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
-    <div className="font-apple space-y-5 animate-fade-in">
+    <div className="font-apple space-y-4 animate-fade-in sm:space-y-5">
 
-      {/* Hero — Apple product block */}
+      {/* Hero — immersive Deep Sea; one composition on phone */}
       <section className="apple-hero-soft">
         <div className="choir-hero-ambient" aria-hidden />
         <div className="relative grid lg:grid-cols-[1.45fr_0.85fr]">
-          <div className="px-5 py-8 sm:px-10 sm:py-11">
-            <p className="text-[13px] font-medium text-[#a1a1a6]">{todayLabel}</p>
-            <p className="mt-3 text-[17px] font-semibold tracking-[-0.01em] text-amber-300">
+          <div className="px-4 py-7 sm:px-10 sm:py-11">
+            <p className="text-[12px] font-medium text-[#a1a1a6] sm:text-[13px]">{todayLabel}</p>
+            <p className="mt-2 text-[15px] font-semibold tracking-[-0.01em] text-amber-300 sm:mt-3 sm:text-[17px]">
               {greeting}
             </p>
-            <h1 className="mt-2 max-w-xl text-[clamp(1.85rem,7vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#f5f5f7]">
+            <h1 className="mt-2 max-w-xl text-[clamp(1.75rem,7.5vw,3.25rem)] font-semibold leading-[1.05] tracking-[-0.035em] text-[#f5f5f7]">
               {nextMass
                 ? <>Ministry ready.<br /><span className="text-amber-300">Voices aligned.</span></>
                 : <>Welcome to<br /><span className="text-amber-300">Choir360.</span></>
               }
             </h1>
-            <p className="mt-3 max-w-lg text-[15px] leading-snug tracking-[-0.01em] text-[#a1a1a6] sm:text-[17px]">
+            <p className="mt-3 max-w-lg text-[14px] leading-snug tracking-[-0.01em] text-[#a1a1a6] sm:text-[17px]">
               {members.length === 0
                 ? 'Your parish choir desk. Register members and log your first mass.'
                 : `${confirmedPercent}% active · ${pendingMembers.length > 0 ? `${pendingMembers.length} pending` : 'All approved'} · ${masses.length} mass${masses.length !== 1 ? 'es' : ''}`
               }
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8">
-              <AppleButton variant="gold" magnetic onClick={() => onNavigate('masses')}>
+            <div className="mt-5 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+              <AppleButton variant="gold" magnetic onClick={() => onNavigate('masses')} className="w-full sm:w-auto">
                 {nextMass ? 'Open Liturgy Desk' : 'Log First Mass'}
                 <ArrowUpRight className="h-4 w-4" />
               </AppleButton>
-              <AppleButton variant="onDark" onClick={() => onNavigate('registration')}>
+              <AppleButton variant="onDark" onClick={() => onNavigate('registration')} className="w-full sm:w-auto">
                 Manage Members
               </AppleButton>
             </div>
@@ -158,7 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Stats — two columns on phone, softer density */}
-      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
         {[
           {
             label: 'Active choralists',
@@ -190,16 +190,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         ].map((stat, i) => (
           <Reveal key={stat.label} delay={i * 0.05}>
-            <article className="apple-card flex h-full flex-col p-5">
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(14,61,76,0.08)] text-[#0e3d4c]">
+            <article className="apple-card flex h-full flex-col p-3.5 sm:p-5">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(14,61,76,0.08)] text-[#0e3d4c] sm:mb-3 sm:h-9 sm:w-9">
                 <stat.icon className="h-4 w-4" />
               </div>
-              <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#1d1d1f]">
+              <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#1d1d1f] sm:text-[28px]">
                 {typeof stat.value === 'number' ? <CountUp value={stat.value} /> : stat.value}
               </p>
-              <p className="mt-0.5 text-[13px] font-medium text-[#1d1d1f]">{stat.label}</p>
-              <p className="mt-1 text-[12px] text-[#86868b]">{stat.sub}</p>
-              <div className="mt-auto pt-4">
+              <p className="mt-0.5 text-[12px] font-medium text-[#1d1d1f] sm:text-[13px]">{stat.label}</p>
+              <p className="mt-1 text-[11px] leading-snug text-[#86868b] sm:text-[12px]">{stat.sub}</p>
+              <div className="mt-auto pt-3 sm:pt-4">
                 <div className="h-1 w-full overflow-hidden rounded-full bg-black/[0.06]">
                   <div
                     className="h-full rounded-full bg-[#0e3d4c] transition-all duration-700"

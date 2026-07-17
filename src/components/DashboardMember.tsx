@@ -52,25 +52,31 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in" id="member-dashboard-subcontainer">
+    <div className="space-y-5 animate-fade-in sm:space-y-6" id="member-dashboard-subcontainer">
 
-      {/* Sub-tab switcher */}
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-2xl w-fit">
+      {/* Sub-tab switcher — segmented control */}
+      <div className="flex w-full gap-1 rounded-2xl bg-[#0e3d4c]/[0.06] p-1 sm:w-fit">
         <button
+          type="button"
           onClick={() => setDashTab('overview')}
-          className={`flex items-center gap-1.5 px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition ${
-            dashTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition sm:flex-none ${
+            dashTab === 'overview'
+              ? 'bg-white text-[#0e3d4c] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f]'
           }`}
         >
-          <Activity className="w-3.5 h-3.5" /> Overview
+          <Activity className="h-3.5 w-3.5" /> Overview
         </button>
         <button
+          type="button"
           onClick={() => setDashTab('id_card')}
-          className={`flex items-center gap-1.5 px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold transition ${
-            dashTab === 'id_card' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold transition sm:flex-none ${
+            dashTab === 'id_card'
+              ? 'bg-white text-[#0e3d4c] shadow-sm'
+              : 'text-[#86868b] hover:text-[#1d1d1f]'
           }`}
         >
-          <IdCard className="w-3.5 h-3.5" /> Digital ID & Badges
+          <IdCard className="h-3.5 w-3.5" /> Digital ID
         </button>
       </div>
 
@@ -88,37 +94,37 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
       {dashTab === 'overview' && <>
 
       {/* Header Summary */}
-      <div className="apple-card font-apple flex flex-col items-center justify-between gap-6 p-6 md:flex-row md:items-start" id="dashboard-member-header">
+      <div className="apple-card font-apple flex flex-col items-center justify-between gap-5 p-5 sm:gap-6 sm:p-6 md:flex-row md:items-start" id="dashboard-member-header">
         <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
           <img
             src={member.photoUrl}
             alt={member.firstName}
             referrerPolicy="no-referrer"
-            className="h-16 w-16 rounded-full object-cover ring-2 ring-[#18392f]/20"
+            className="h-16 w-16 rounded-full object-cover ring-2 ring-[#0e3d4c]/20 sm:h-[4.5rem] sm:w-[4.5rem]"
           />
           <div>
-            <h3 className="flex items-center justify-center gap-2 text-[21px] font-semibold tracking-[-0.02em] text-[#1d1d1f] md:justify-start">
+            <h3 className="flex flex-wrap items-center justify-center gap-2 text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[21px] md:justify-start">
               {member.firstName} {member.lastName}
               <span className="apple-badge-forest">
                 {member.status}
               </span>
             </h3>
-            <p className="mt-1 text-[13px] text-[#86868b]">{member.memberType} · Voice: <strong className="font-medium text-[#18392f]">{member.voiceType}</strong></p>
+            <p className="mt-1 text-[13px] text-[#86868b]">{member.memberType} · Voice: <strong className="font-medium text-[#0e3d4c]">{member.voiceType}</strong></p>
             <p className="mt-0.5 text-[12px] text-[#86868b]">ID: {member.id} · {member.parish}</p>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-4 rounded-2xl bg-[rgba(24,57,47,0.06)] p-4">
+        <div className="flex w-full shrink-0 items-center gap-4 rounded-2xl bg-[rgba(14,61,76,0.06)] p-4 md:w-auto">
           <div className="text-center">
-            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#18392f]">
+            <p className="text-[28px] font-semibold tracking-[-0.03em] text-[#0e3d4c]">
               {liveStats?.finalPercent ?? member.attendanceRate ?? 0}%
             </p>
-            <p className="text-[12px] font-medium text-[#86868b]">Attendance (final)</p>
+            <p className="text-[12px] font-medium text-[#86868b]">Attendance</p>
           </div>
-          <div className="space-y-0.5 border-l border-black/10 pl-3 text-[13px] text-[#3a3a3c]">
-            <p>Masses: <span className="font-semibold text-[#18392f]">{liveStats?.massAttended ?? 0} / {liveStats?.massLogged ?? 0}</span></p>
-            <p>Present: <span className="font-semibold text-[#18392f]">{liveStats?.present ?? 0}</span> · Late: <span className="font-semibold text-[#8a6a10]">{liveStats?.late ?? 0}</span></p>
-            <p>Absent: <span className="font-semibold text-[#d70015]">{liveStats?.absent ?? 0}</span> · Share: <span className="font-semibold text-[#18392f]">{formatINR(liveStats?.totalShareINR ?? 0)}</span></p>
+          <div className="min-w-0 flex-1 space-y-0.5 border-l border-black/10 pl-3 text-[13px] text-[#3a3a3c] md:flex-none">
+            <p>Masses: <span className="font-semibold text-[#0e3d4c]">{liveStats?.massAttended ?? 0} / {liveStats?.massLogged ?? 0}</span></p>
+            <p>Present: <span className="font-semibold text-[#0e3d4c]">{liveStats?.present ?? 0}</span> · Late: <span className="font-semibold text-[#8a6a10]">{liveStats?.late ?? 0}</span></p>
+            <p>Absent: <span className="font-semibold text-[#d70015]">{liveStats?.absent ?? 0}</span> · Share: <span className="font-semibold text-[#0e3d4c]">{formatINR(liveStats?.totalShareINR ?? 0)}</span></p>
           </div>
         </div>
       </div>
@@ -132,9 +138,9 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-8">
         {/* Left Column: Profile edit & Availability RSVPs */}
-        <div className="space-y-8" id="member-profile-controls">
+        <div className="space-y-5 lg:space-y-8" id="member-profile-controls">
           <ProfileCard
             member={member}
             onUpdateMemberDetails={onUpdateMemberDetails}
@@ -145,7 +151,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         </div>
 
         {/* Middle and Right: Mass Earnings and RSVPs */}
-        <div className="lg:col-span-2 space-y-8" id="member-earnings-events">
+        <div className="space-y-5 lg:col-span-2 lg:space-y-8" id="member-earnings-events">
           <AttendanceLeaderboard
             attendanceRecords={attendanceRecords}
             members={members}
