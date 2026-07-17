@@ -333,7 +333,11 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         />
       )}
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3" id="song-split-panel">
+      <div
+        className={`grid grid-cols-1 gap-8 lg:grid-cols-3 ${isMobileLyricsOpen ? 'max-lg:hidden' : ''}`}
+        id="song-split-panel"
+        aria-hidden={isMobileLyricsOpen ? true : undefined}
+      >
         <div className="song-index-scroll space-y-3 overflow-y-auto pr-1 lg:h-[620px]" id="songs-sidebar-list">
           <div className="sticky-below-header sticky z-10 glass-panel p-4">
             <p className="apple-label text-[#18392f]">Song Index</p>

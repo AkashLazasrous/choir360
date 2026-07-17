@@ -142,7 +142,7 @@ export const PdfSongPage: React.FC<PdfSongPageProps> = ({ song, isPresentationMo
 
       <canvas
         ref={canvasRef}
-        className={`max-w-full bg-white shadow-xl ${status !== 'ready' ? 'hidden' : ''}`}
+        className={`block h-auto max-w-full bg-white shadow-xl ${status !== 'ready' ? 'hidden' : ''}`}
         aria-label={`${song.title} original PDF page`}
       />
     </div>

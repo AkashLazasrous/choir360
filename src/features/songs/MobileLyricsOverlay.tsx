@@ -88,9 +88,47 @@ export const MobileLyricsOverlay: React.FC<MobileLyricsOverlayProps> = ({
     if (controlledScroll === undefined) setLocalScroll((s) => !s);
   };
 
+  // Lock the document scrollport while open. On mobile Safari/Chrome, a short
+  // lyrics page inside a fixed overlay otherwise scroll-chains into the tall
+  // Music song index behind it (infinite black void under the white PDF page).
   useEffect(() => {
-    document.body.classList.add('mobile-reader-open');
-    return () => document.body.classList.remove('mobile-reader-open');
+    const html = document.documentElement;
+    const { body } = document;
+    const scrollY = window.scrollY;
+
+    html.classList.add('mobile-reader-open');
+    body.classList.add('mobile-reader-open');
+
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+    };
+
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+
+    return () => {
+      html.classList.remove('mobile-reader-open');
+      body.classList.remove('mobile-reader-open');
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      window.scrollTo(0, scrollY);
+    };
   }, []);
 
   // Local auto-scroll only when parent does not own scroll state (e.g. Catholic Hub).
@@ -109,7 +147,14 @@ export const MobileLyricsOverlay: React.FC<MobileLyricsOverlayProps> = ({
     : 'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-black/10 bg-black/[0.04] px-3.5 text-[14px] font-medium text-[#1d1d1f]';
 
   return (
-    <div className={`mobile-safe-screen fixed inset-0 z-[70] flex flex-col font-apple lg:hidden ${viewerDarkMode ? 'bg-[#0a0a0a] text-[#f5f5f7]' : 'bg-[#f5f5f7] text-[#1d1d1f]'}`}>
+    <div
+      className={`mobile-safe-screen fixed inset-0 z-[70] flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden font-apple lg:hidden ${
+        viewerDarkMode ? 'bg-[#0a0a0a] text-[#f5f5f7]' : 'bg-[#f5f5f7] text-[#1d1d1f]'
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Song lyrics"
+    >
       <div className={`sticky top-0 z-10 border-b px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] ${
         viewerDarkMode ? 'border-white/10 bg-[#0a0a0a]/95' : 'border-black/[0.06] bg-[#f5f5f7]/95'
       }`}>
@@ -181,7 +226,7 @@ export const MobileLyricsOverlay: React.FC<MobileLyricsOverlayProps> = ({
 
       <div
         ref={lyricsContainerRef}
-        className="mobile-scroll-contain min-h-0 flex-1 overflow-y-auto px-4 py-5"
+        className="mobile-scroll-contain min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 py-5"
         style={{
           fontSize: `${Math.max(viewerFontSize, 17)}px`,
           paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',

@@ -171,7 +171,18 @@
   bottom: var(--bottom-chrome);
 }
 
-/* Hide bottom nav when a full-screen reader is open (body class toggled in JS) */
+/*
+ * Full-screen readers (lyrics / PDF page): hide tab chrome AND lock the
+ * document scrollport. Without this, iOS/Android scroll-chaining scrolls the
+ * page behind the fixed overlay — e.g. the Music song index (~340 cards) —
+ * which looks like an infinite empty black void under a short lyrics page.
+ */
+html.mobile-reader-open,
+body.mobile-reader-open {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
 body.mobile-reader-open .app-bottom-nav,
 body.mobile-reader-open .app-bottom-spacer {
   display: none !important;
