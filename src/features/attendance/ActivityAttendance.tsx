@@ -45,23 +45,31 @@ const STATUSES: AttendanceStatus[] = ['Present', 'Absent', 'Late', 'Excused'];
 
 const STATUS_STYLE: Record<AttendanceStatus, { active: string; idle: string; icon: React.ReactNode }> = {
   Present: {
-    active: 'border-[rgba(24,57,47,0.35)] bg-[rgba(24,57,47,0.12)] text-[#18392f]',
-    idle: 'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(24,57,47,0.2)]',
+    active:
+      'border-[rgba(24,57,47,0.35)] bg-[rgba(24,57,47,0.12)] text-[#18392f] lg:border-emerald-400/45 lg:bg-emerald-500/20 lg:text-emerald-300',
+    idle:
+      'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(24,57,47,0.2)] lg:border-white/20 lg:bg-white/10 lg:text-white/80 lg:hover:border-emerald-400/40',
     icon: <Check className="h-4 w-4" />,
   },
   Late: {
-    active: 'border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.16)] text-[#8a6a10]',
-    idle: 'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(245,194,76,0.3)]',
+    active:
+      'border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.16)] text-[#8a6a10] lg:border-amber-300/50 lg:bg-amber-400/20 lg:text-amber-200',
+    idle:
+      'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(245,194,76,0.3)] lg:border-white/20 lg:bg-white/10 lg:text-white/80 lg:hover:border-amber-300/40',
     icon: <Clock className="h-4 w-4" />,
   },
   Absent: {
-    active: 'border-[rgba(255,59,48,0.35)] bg-[rgba(255,59,48,0.08)] text-[#d70015]',
-    idle: 'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(255,59,48,0.25)]',
+    active:
+      'border-[rgba(255,59,48,0.35)] bg-[rgba(255,59,48,0.08)] text-[#d70015] lg:border-rose-400/45 lg:bg-rose-500/20 lg:text-rose-300',
+    idle:
+      'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(255,59,48,0.25)] lg:border-white/20 lg:bg-white/10 lg:text-white/80 lg:hover:border-rose-400/40',
     icon: <X className="h-4 w-4" />,
   },
   Excused: {
-    active: 'border-[rgba(100,116,139,0.35)] bg-[rgba(100,116,139,0.1)] text-[#475569]',
-    idle: 'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(100,116,139,0.25)]',
+    active:
+      'border-[rgba(100,116,139,0.35)] bg-[rgba(100,116,139,0.1)] text-[#475569] lg:border-slate-400/45 lg:bg-slate-500/20 lg:text-slate-200',
+    idle:
+      'border-black/[0.08] bg-white text-[#86868b] hover:border-[rgba(100,116,139,0.25)] lg:border-white/20 lg:bg-white/10 lg:text-white/80 lg:hover:border-slate-300/40',
     icon: <AlertCircle className="h-4 w-4" />,
   },
 };
@@ -797,13 +805,13 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     return (
                       <div
                         key={member.id}
-                        className="flex flex-col gap-2 rounded-2xl border border-black/[0.06] bg-[#fafafa] px-3 py-3 sm:flex-row sm:items-center"
+                        className="flex flex-col gap-2 rounded-2xl border border-black/[0.06] bg-[#fafafa] px-3 py-3 sm:flex-row sm:items-center lg:border-white/15 lg:bg-white/[0.06]"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="text-[15px] font-semibold text-[#1d1d1f]">
+                          <p className="text-[15px] font-semibold text-[#1d1d1f] lg:text-[#f5f5f7]">
                             {member.firstName} {member.lastName}
                           </p>
-                          <p className="text-[12px] text-[#86868b]">{member.memberType} · {member.voiceType}</p>
+                          <p className="text-[12px] text-[#86868b] lg:text-white/70">{member.memberType} · {member.voiceType}</p>
                         </div>
                         <div className="grid grid-cols-4 gap-1.5 sm:max-w-[320px] sm:flex-1">
                           {STATUSES.map((s) => {
@@ -841,7 +849,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   <button
                     type="button"
                     onClick={() => { setHistoryCategoryFilter(category); setSection('history'); }}
-                    className="text-[12px] font-semibold text-[#18392f] hover:underline"
+                    className="text-[12px] font-semibold text-sky-300 hover:underline lg:text-sky-300"
                   >
                     View all
                   </button>
@@ -855,10 +863,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                         key={`${session.kind}-${session.date}`}
                         type="button"
                         onClick={() => openSession(session.date, session.kind)}
-                        className="flex w-full min-h-[44px] items-center justify-between rounded-xl px-2 text-left text-[13px] hover:bg-black/[0.04]"
+                        className="flex w-full min-h-[44px] items-center justify-between rounded-xl px-2 text-left text-[13px] text-[#f5f5f7] hover:bg-white/10 max-lg:text-[#1d1d1f] max-lg:hover:bg-black/[0.04]"
                       >
-                        <span className="font-medium text-[#1d1d1f]">{session.date}</span>
-                        <span className="text-[#86868b]">{session.loggedCount} marks</span>
+                        <span className="font-medium text-[#f5f5f7] max-lg:text-[#1d1d1f]">{session.date}</span>
+                        <span className="text-white/70 max-lg:text-[#86868b]">{session.loggedCount} marks</span>
                       </button>
                     ))}
                   </div>
@@ -868,14 +876,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
           </div>
 
           {canEdit && (
-            <div className="sticky bottom-[calc(var(--app-bottom-nav-height,0px)+0.75rem)] z-20 rounded-2xl border border-black/[0.08] bg-white/95 p-4 shadow-lg backdrop-blur-xl">
+            <div className="sticky bottom-[calc(var(--app-bottom-nav-height,0px)+0.75rem)] z-20 rounded-2xl border border-black/[0.08] bg-white/95 p-4 shadow-lg backdrop-blur-xl lg:border-white/15 lg:bg-[#050a14]/95">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap gap-3 text-[13px] text-[#3a3a3c]">
+                <div className="flex flex-wrap gap-3 text-[13px] text-[#3a3a3c] lg:text-white/80">
                   <span><UserCheck className="mr-1 inline h-3.5 w-3.5" />{summary.logged} logged</span>
-                  <span className="text-[#18392f]">P {summary.present}</span>
-                  <span className="text-[#8a6a10]">L {summary.late}</span>
-                  <span className="text-[#d70015]">A {summary.absent}</span>
-                  <span className="text-[#475569]">E {summary.excused}</span>
+                  <span className="text-[#18392f] lg:text-emerald-300">P {summary.present}</span>
+                  <span className="text-[#8a6a10] lg:text-amber-200">L {summary.late}</span>
+                  <span className="text-[#d70015] lg:text-rose-300">A {summary.absent}</span>
+                  <span className="text-[#475569] lg:text-slate-300">E {summary.excused}</span>
                 </div>
                 <button
                   type="button"

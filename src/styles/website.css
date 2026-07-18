@@ -5,10 +5,12 @@
   --website-bg: #000;
   --website-stage: #050a14;
   --website-ink: #f5f5f7;
-  --website-muted: rgba(245, 245, 247, 0.48);
+  /* Higher contrast than 0.48 — secondary copy must stay readable on black */
+  --website-muted: rgba(245, 245, 247, 0.72);
+  --website-muted-soft: rgba(245, 245, 247, 0.55);
   --website-gold: #f5c24c;
   --website-sky: #38bdf8;
-  --website-line: rgba(255, 255, 255, 0.08);
+  --website-line: rgba(255, 255, 255, 0.12);
 }
 
 /* Fail-safe: reveals must never start invisible without JS animation */
@@ -356,9 +358,9 @@
     min-height: 40px;
     padding: 0 1.1rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: transparent;
-    color: rgba(245, 245, 247, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(245, 245, 247, 0.88);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -1086,6 +1088,192 @@
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, var(--website-sky), var(--website-gold));
+  }
+
+  /* ── Contrast rescue: light ink on dark stage (ops pages) ── */
+
+  .is-website-app .apple-label,
+  .website-page .apple-label,
+  .is-website-app label,
+  .website-page label {
+    color: var(--website-muted) !important;
+  }
+
+  .is-website-app .btn-pill-secondary,
+  .website-page .btn-pill-secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--website-ink) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .is-website-app .btn-pill-secondary:hover:not(:disabled),
+  .website-page .btn-pill-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14) !important;
+    color: #fff !important;
+  }
+
+  .is-website-app .btn-pill-ghost,
+  .website-page .btn-pill-ghost {
+    color: var(--website-ink) !important;
+  }
+
+  .is-website-app .btn-pill-link,
+  .website-page .btn-pill-link {
+    color: var(--website-sky) !important;
+  }
+
+  .is-website-app .btn-pill-gold,
+  .website-page .btn-pill-gold {
+    background: var(--website-gold) !important;
+    color: #050a14 !important;
+  }
+
+  /* Hardcoded light-theme ink → readable on Deep Sea */
+  .is-website-app .text-\[\#1d1d1f\],
+  .website-page .text-\[\#1d1d1f\],
+  .is-website-app .text-\[\#3a3a3c\],
+  .website-page .text-\[\#3a3a3c\],
+  .is-website-app .text-\[\#0e3d4c\],
+  .website-page .text-\[\#0e3d4c\] {
+    color: var(--website-ink) !important;
+  }
+
+  .is-website-app .text-\[\#86868b\],
+  .website-page .text-\[\#86868b\],
+  .is-website-app .text-\[\#a1a1a6\],
+  .website-page .text-\[\#a1a1a6\],
+  .is-website-app .text-\[\#c7c7cc\],
+  .website-page .text-\[\#c7c7cc\] {
+    color: var(--website-muted) !important;
+  }
+
+  /* Links / “View all” — was forest green on black */
+  .is-website-app .text-\[\#18392f\],
+  .website-page .text-\[\#18392f\] {
+    color: #7dd3a8 !important;
+  }
+
+  .is-website-app .text-\[\#8a6a10\],
+  .website-page .text-\[\#8a6a10\] {
+    color: var(--website-gold) !important;
+  }
+
+  .is-website-app .text-\[\#475569\],
+  .website-page .text-\[\#475569\] {
+    color: #94a3b8 !important;
+  }
+
+  .is-website-app .text-slate-700,
+  .is-website-app .text-slate-600,
+  .website-page .text-slate-700 {
+    color: var(--website-muted) !important;
+  }
+
+  .is-website-app .text-emerald-700,
+  .is-website-app .text-amber-700,
+  .is-website-app .text-rose-600 {
+    filter: brightness(1.35);
+  }
+
+  /* Light gray fills → translucent stage panels */
+  .is-website-app .bg-\[\#fafafa\],
+  .website-page .bg-\[\#fafafa\],
+  .is-website-app .bg-\[\#f5f5f7\],
+  .website-page .bg-\[\#f5f5f7\] {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--website-ink) !important;
+  }
+
+  .is-website-app .hover\:bg-black\/\[0\.04\]:hover,
+  .website-page .hover\:bg-black\/\[0\.04\]:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .is-website-app .border-black\/\[0\.06\],
+  .is-website-app .border-black\/\[0\.08\],
+  .website-page .border-black\/\[0\.06\],
+  .website-page .border-black\/\[0\.08\] {
+    border-color: rgba(255, 255, 255, 0.14) !important;
+  }
+
+  /* Sticky save bar / frosted white bars */
+  .is-website-app .bg-white\/95,
+  .website-page .bg-white\/95 {
+    background: rgba(5, 10, 20, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--website-ink) !important;
+  }
+
+  /* Placeholder + strong on dark */
+  .is-website-app input::placeholder,
+  .is-website-app textarea::placeholder,
+  .website-page input::placeholder,
+  .website-page textarea::placeholder {
+    color: rgba(245, 245, 247, 0.4) !important;
+  }
+
+  .is-website-app strong,
+  .website-page strong {
+    color: #fff;
+  }
+
+  /* Status idle chips: white/gray → visible on stage */
+  .is-website-app .bg-white.text-\[\#86868b\],
+  .website-page .bg-white.text-\[\#86868b\] {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--website-muted) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+
+  /* Active Present chip: dark forest text → mint */
+  .is-website-app .text-\[\#18392f\].bg-\[rgba\(24\,57\,47\,0\.12\)\],
+  .website-page .bg-\[rgba\(24\,57\,47\,0\.12\)\] {
+    color: #86efac !important;
+    background: rgba(34, 197, 94, 0.18) !important;
+  }
+
+  .is-website-app .bg-\[rgba\(245\,194\,76\,0\.16\)\] {
+    color: var(--website-gold) !important;
+  }
+
+  .is-website-app .bg-\[rgba\(255\,59\,48\,0\.08\)\] {
+    color: #fb7185 !important;
+  }
+
+  .is-website-app .bg-\[rgba\(100\,116\,139\,0\.1\)\] {
+    color: #cbd5e1 !important;
+  }
+
+  /* Table header fills */
+  .is-website-app thead,
+  .website-page thead {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: var(--website-muted) !important;
+  }
+
+  /* Amber / warning banners on dark */
+  .is-website-app .bg-amber-50,
+  .website-page .bg-amber-50 {
+    background: rgba(245, 194, 76, 0.12) !important;
+    border-color: rgba(245, 194, 76, 0.35) !important;
+    color: #fde68a !important;
+  }
+
+  .is-website-app .text-amber-800,
+  .website-page .text-amber-800 {
+    color: #fde68a !important;
+  }
+
+  /* Ensure list/history rows are never dark-on-dark */
+  .is-website-app .apple-card button,
+  .website-page .apple-card button:not(.btn-pill-primary):not(.btn-pill-gold) {
+    color: inherit;
+  }
+
+  .is-website-app .apple-card .font-medium,
+  .website-page .apple-card .font-medium {
+    color: var(--website-ink);
   }
 }
 
