@@ -19,6 +19,7 @@ import {
   defaultEntityName,
   kindToEntityType,
 } from "./src/utils/attendanceActivity";
+import { resolveActivityKind } from "./src/utils/attendanceTaxonomy";
 import type { ActivityKind, AttendanceStatus, Mass, Member, Rehearsal } from "./src/types";
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 
@@ -1318,18 +1319,109 @@ function envelopeForWrite(
   };
 }
 
-function sessionMarksMatchExisting(
+function isSoftDeletedDoc(data: DocumentData | undefined): boolean {
+  if (!data) return true;
+  return data.status === "deleted" || data.deletedAt != null;
+}
+
+function softDeleteFields(adminUid: string, now: string) {
+  return {
+    status: "deleted",
+    deletedAt: now,
+    deletedBy: adminUid,
+    updatedAt: now,
+    updatedBy: adminUid,
+  };
+}
+
+/** Load parish attendance for import dates (canonical + legacy ids). */
+async function loadParishAttendanceForDates(
+  db: Firestore,
+  parishId: string,
+  dates: string[],
+): Promise<Array<{ id: string; data: DocumentData }>> {
+  const unique = [...new Set(dates.filter(Boolean))];
+  const out: Array<{ id: string; data: DocumentData }> = [];
+  for (let i = 0; i < unique.length; i += 30) {
+    const chunk = unique.slice(i, i + 30);
+    try {
+      const snap = await db.collection("attendance")
+        .where("parishId", "==", parishId)
+        .where("date", "in", chunk)
+        .get();
+      for (const docSnap of snap.docs) {
+        out.push({ id: docSnap.id, data: docSnap.data() || {} });
+      }
+    } catch {
+      // Composite index may be missing — fall back to date-only + parish filter.
+      for (const date of chunk) {
+        const snap = await db.collection("attendance").where("date", "==", date).get();
+        for (const docSnap of snap.docs) {
+          const data = docSnap.data() || {};
+          if (data.parishId === parishId) out.push({ id: docSnap.id, data });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+async function loadParishParentsForDates(
+  db: Firestore,
+  collectionName: "masses" | "rehearsals",
+  parishId: string,
+  dates: string[],
+): Promise<Array<{ id: string; data: DocumentData }>> {
+  const unique = [...new Set(dates.filter(Boolean))];
+  const out: Array<{ id: string; data: DocumentData }> = [];
+  for (let i = 0; i < unique.length; i += 30) {
+    const chunk = unique.slice(i, i + 30);
+    try {
+      const snap = await db.collection(collectionName)
+        .where("parishId", "==", parishId)
+        .where("date", "in", chunk)
+        .get();
+      for (const docSnap of snap.docs) {
+        out.push({ id: docSnap.id, data: docSnap.data() || {} });
+      }
+    } catch {
+      for (const date of chunk) {
+        const snap = await db.collection(collectionName).where("date", "==", date).get();
+        for (const docSnap of snap.docs) {
+          const data = docSnap.data() || {};
+          if (data.parishId === parishId) out.push({ id: docSnap.id, data });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function sessionMarksAlreadyCanonical(
   marks: Record<string, AttendanceStatus | null>,
-  existingById: Map<string, DocumentData>,
   entityId: string,
+  sessionDocs: Array<{ id: string; data: DocumentData }>,
 ): boolean {
   const incoming = Object.entries(marks).filter(([, status]) => status) as [string, AttendanceStatus][];
-  if (incoming.length === 0) return existingById.size === 0;
-  if (incoming.length !== existingById.size) return false;
-  return incoming.every(([memberId, status]) => {
-    const docData = existingById.get(attendanceRecordId(entityId, memberId));
-    return Boolean(docData && docData.status === status);
-  });
+  const live = sessionDocs.filter((d) => !isSoftDeletedDoc(d.data));
+  if (incoming.length === 0) return live.length === 0;
+
+  // Any non-canonical doc for this session means we still need a cleanup pass.
+  for (const doc of live) {
+    const memberId = typeof doc.data.memberId === "string" ? doc.data.memberId : "";
+    if (!memberId) continue;
+    if (doc.id !== attendanceRecordId(entityId, memberId)) return false;
+  }
+
+  const byMember = new Map<string, string>();
+  for (const doc of live) {
+    const memberId = typeof doc.data.memberId === "string" ? doc.data.memberId : "";
+    if (!memberId) continue;
+    byMember.set(memberId, String(doc.data.status ?? ""));
+  }
+
+  if (byMember.size !== incoming.length) return false;
+  return incoming.every(([memberId, status]) => byMember.get(memberId) === status);
 }
 
 async function upsertAttendanceSessions(opts: {
@@ -1345,6 +1437,9 @@ async function upsertAttendanceSessions(opts: {
   sessionsWritten: number;
   attendanceWritten: number;
   writtenRecords: number;
+  marksInserted: number;
+  marksUpdated: number;
+  duplicatesRemoved: number;
   unknownMemberIds: string[];
   membersLoaded: number;
   parishId: string;
@@ -1371,16 +1466,35 @@ async function upsertAttendanceSessions(opts: {
     return { session, entityId, recordIds };
   });
 
-  const [massExisting, rehearsalExisting, attendanceExistingAll] = await Promise.all([
+  const sessionDates = prepared.map((p) => p.session.date);
+  const [
+    massExisting,
+    rehearsalExisting,
+    attendanceExistingAll,
+    attendanceByDate,
+    massesByDate,
+    rehearsalsByDate,
+  ] = await Promise.all([
     getDocsByIds(db, "masses", massIds),
     getDocsByIds(db, "rehearsals", rehearsalIds),
     getDocsByIds(db, "attendance", attendanceIds),
+    loadParishAttendanceForDates(db, tenant.parishId, sessionDates),
+    loadParishParentsForDates(db, "masses", tenant.parishId, sessionDates),
+    loadParishParentsForDates(db, "rehearsals", tenant.parishId, sessionDates),
   ]);
+
+  // Seed get-by-id map with date-query docs so updates preserve createdAt.
+  for (const row of attendanceByDate) {
+    if (!attendanceExistingAll.has(row.id)) attendanceExistingAll.set(row.id, row.data);
+  }
 
   let imported = 0;
   let skipped = 0;
   let emptySkipped = 0;
   let writtenRecords = 0;
+  let marksInserted = 0;
+  let marksUpdated = 0;
+  let duplicatesRemoved = 0;
   let batch = db.batch();
   let ops = 0;
   const commitBatch = async () => {
@@ -1390,7 +1504,7 @@ async function upsertAttendanceSessions(opts: {
     ops = 0;
   };
 
-  for (const { session, entityId, recordIds } of prepared) {
+  for (const { session, entityId } of prepared) {
     const incomingMarks = Object.entries(session.marks)
       .filter(([, status]) => status) as [string, AttendanceStatus][];
     const resolvableMarks = incomingMarks.filter(([memberId]) => memberById.has(memberId));
@@ -1400,24 +1514,48 @@ async function upsertAttendanceSessions(opts: {
       continue;
     }
 
-    const attendanceExisting = new Map<string, DocumentData>();
-    for (const id of recordIds) {
-      const docData = attendanceExistingAll.get(id);
-      if (docData) attendanceExisting.set(id, docData);
-    }
-
     const resolvedMarks: Record<string, AttendanceStatus | null> = {};
     for (const [memberId, status] of resolvableMarks) resolvedMarks[memberId] = status;
 
-    if (sessionMarksMatchExisting(resolvedMarks, attendanceExisting, entityId)) {
+    const sessionAttendance = attendanceByDate.filter((row) => {
+      if (row.data.date !== session.date || isSoftDeletedDoc(row.data)) return false;
+      return resolveActivityKind({
+        activityKind: row.data.activityKind,
+        entityType: row.data.entityType,
+        entityName: row.data.entityName,
+      }) === session.kind;
+    });
+
+    if (sessionMarksAlreadyCanonical(resolvedMarks, entityId, sessionAttendance)) {
       skipped += 1;
       continue;
     }
 
     const attendingIds = attendingMemberIdsFromMarks(resolvedMarks);
-    const parentPrev = session.kind === "practice"
+    let parentPrev = session.kind === "practice"
       ? rehearsalExisting.get(entityId)
       : massExisting.get(entityId);
+
+    // Prefer metadata from a legacy parent for the same kind+date when canonical is new.
+    if (!parentPrev) {
+      const parentPool = session.kind === "practice" ? rehearsalsByDate : massesByDate;
+      const legacyParent = parentPool.find((row) => {
+        if (row.id === entityId || row.data.date !== session.date || isSoftDeletedDoc(row.data)) return false;
+        if (session.kind === "practice") {
+          return resolveActivityKind({
+            activityKind: row.data.activityKind,
+            entityType: "Rehearsal",
+            entityName: row.data.name,
+          }) === "practice";
+        }
+        return resolveActivityKind({
+          activityKind: row.data.activityKind,
+          entityType: "Mass",
+          entityName: row.data.name,
+        }) === session.kind;
+      });
+      if (legacyParent) parentPrev = legacyParent.data;
+    }
 
     if (session.kind === "practice") {
       const rehearsal = buildRehearsalFromActivity(
@@ -1461,6 +1599,26 @@ async function upsertAttendanceSessions(opts: {
     }
     ops += 1;
 
+    // Soft-delete duplicate parent docs for the same logical session.
+    const parentPool = session.kind === "practice" ? rehearsalsByDate : massesByDate;
+    for (const row of parentPool) {
+      if (row.id === entityId || row.data.date !== session.date || isSoftDeletedDoc(row.data)) continue;
+      const rowKind = resolveActivityKind({
+        activityKind: row.data.activityKind,
+        entityType: session.kind === "practice" ? "Rehearsal" : "Mass",
+        entityName: row.data.name,
+      });
+      if (rowKind !== session.kind) continue;
+      batch.set(
+        db.collection(session.kind === "practice" ? "rehearsals" : "masses").doc(row.id),
+        softDeleteFields(adminUid, now),
+        { merge: true },
+      );
+      ops += 1;
+      duplicatesRemoved += 1;
+      if (ops >= 400) await commitBatch();
+    }
+
     const entityName = session.title?.trim()
       || (typeof parentPrev?.name === "string" ? parentPrev.name : defaultEntityName(session.kind, session.date));
     const records = buildAttendanceRecords(
@@ -1491,8 +1649,11 @@ async function upsertAttendanceSessions(opts: {
       });
     }
 
+    const canonicalIds = new Set(ensured.keys());
+
     for (const record of ensured.values()) {
       const prev = attendanceExistingAll.get(record.id);
+      const hadLivePrev = Boolean(prev && !isSoftDeletedDoc(prev));
       // Keep attendance mark in `status` (Present/Absent/…) — same dual-use as
       // the rest of the app. Soft-delete uses status === 'deleted'.
       batch.set(
@@ -1503,6 +1664,8 @@ async function upsertAttendanceSessions(opts: {
           // Re-assert mark after envelope so Present/Absent is not overwritten
           // by lifecycle "active". Client filters only exclude status === 'deleted'.
           status: record.status,
+          deletedAt: null,
+          deletedBy: null,
           parishId: tenant.parishId,
           tenantId: tenant.tenantId,
           archdioceseId: tenant.archdioceseId,
@@ -1513,6 +1676,21 @@ async function upsertAttendanceSessions(opts: {
       );
       ops += 1;
       writtenRecords += 1;
+      if (hadLivePrev) marksUpdated += 1;
+      else marksInserted += 1;
+      if (ops >= 400) await commitBatch();
+    }
+
+    // Soft-delete legacy attendance docs for the same member + kind + date.
+    for (const row of sessionAttendance) {
+      if (canonicalIds.has(row.id) || isSoftDeletedDoc(row.data)) continue;
+      batch.set(
+        db.collection("attendance").doc(row.id),
+        softDeleteFields(adminUid, now),
+        { merge: true },
+      );
+      ops += 1;
+      duplicatesRemoved += 1;
       if (ops >= 400) await commitBatch();
     }
 
@@ -1528,6 +1706,9 @@ async function upsertAttendanceSessions(opts: {
     sessionsWritten: imported,
     attendanceWritten: writtenRecords,
     writtenRecords,
+    marksInserted,
+    marksUpdated,
+    duplicatesRemoved,
     unknownMemberIds: [...unknownMemberIds].slice(0, 50),
     membersLoaded: members.length,
     parishId: tenant.parishId,
@@ -1612,8 +1793,10 @@ app.post("/api/attendance/import", requireFirebaseAuth, requireAdminRole, async 
     console.log(
       `[Attendance] import parish=${result.parishId} sessionsIn=${sessions.length} `
       + `sessionsWritten=${result.sessionsWritten} skipped=${result.skipped} emptySkipped=${result.emptySkipped} `
-      + `attendanceWritten=${result.attendanceWritten} membersLoaded=${result.membersLoaded} `
-      + `unknownIds=${result.unknownMemberIds.length} clientUnmatched=${clientUnmatched.length} by=${adminUid}`,
+      + `attendanceWritten=${result.attendanceWritten} inserted=${result.marksInserted} `
+      + `updated=${result.marksUpdated} duplicatesRemoved=${result.duplicatesRemoved} `
+      + `membersLoaded=${result.membersLoaded} unknownIds=${result.unknownMemberIds.length} `
+      + `clientUnmatched=${clientUnmatched.length} by=${adminUid}`,
     );
 
     return res.json({

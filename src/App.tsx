@@ -278,6 +278,9 @@ function AppInner() {
     skipped?: number;
     sessionsWritten?: number;
     attendanceWritten?: number;
+    marksInserted?: number;
+    marksUpdated?: number;
+    duplicatesRemoved?: number;
     emptySkipped?: number;
     unmatchedNames?: string[];
     parishId?: string;
@@ -313,6 +316,9 @@ function AppInner() {
         skipped,
         sessionsWritten: typeof data.sessionsWritten === 'number' ? data.sessionsWritten : imported,
         attendanceWritten,
+        marksInserted: typeof data.marksInserted === 'number' ? data.marksInserted : undefined,
+        marksUpdated: typeof data.marksUpdated === 'number' ? data.marksUpdated : undefined,
+        duplicatesRemoved: typeof data.duplicatesRemoved === 'number' ? data.duplicatesRemoved : undefined,
         emptySkipped: typeof data.emptySkipped === 'number' ? data.emptySkipped : 0,
         unmatchedNames: Array.isArray(data.unmatchedNames) ? data.unmatchedNames : payload.unmatchedNames,
         parishId: typeof data.parishId === 'string' ? data.parishId : tenantContext.parishId,

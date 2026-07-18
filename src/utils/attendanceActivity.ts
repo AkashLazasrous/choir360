@@ -182,14 +182,47 @@ export function buildAttendanceRecords(
     }));
 }
 
+function isSoftDeletedRecord(record: AttendanceRecord): boolean {
+  return (record as AttendanceRecord & { deletedAt?: string | null }).deletedAt != null
+    || (record.status as string) === 'deleted';
+}
+
 export function marksFromRecords(
   records: AttendanceRecord[],
   entityId: string,
 ): Record<string, AttendanceStatus> {
   const marks: Record<string, AttendanceStatus> = {};
   for (const record of records.filter((r) => r.entityId === entityId)) {
+    if (isSoftDeletedRecord(record)) continue;
     marks[record.memberId] = record.status;
   }
+  return marks;
+}
+
+/**
+ * One mark per member for a logical session (kind + date).
+ * Prefers the canonical entityId so Log/History stay aligned after CSV re-imports
+ * even when legacy docs used a different mass/rehearsal id.
+ */
+export function marksForActivitySession(
+  records: AttendanceRecord[],
+  kind: ActivityKind,
+  date: string,
+): Record<string, AttendanceStatus> {
+  const canonicalEntityId = activityEntityId(kind, date);
+  const marks: Record<string, AttendanceStatus> = {};
+
+  for (const record of records) {
+    if (record.date !== date || isSoftDeletedRecord(record)) continue;
+    if (resolveActivityKind(record) !== kind) continue;
+    marks[record.memberId] = record.status;
+  }
+
+  for (const record of records) {
+    if (record.entityId !== canonicalEntityId || isSoftDeletedRecord(record)) continue;
+    marks[record.memberId] = record.status;
+  }
+
   return marks;
 }
 
@@ -256,8 +289,7 @@ export function sessionMarksUnchanged(
   marks: Record<string, AttendanceStatus | null>,
   records: AttendanceRecord[],
 ): boolean {
-  const entityId = activityEntityId(kind, date);
-  const existing = marksFromRecords(records, entityId);
+  const existing = marksForActivitySession(records, kind, date);
   const incoming = Object.entries(marks).filter(([, status]) => status) as [string, AttendanceStatus][];
   if (incoming.length === 0) return Object.keys(existing).length === 0;
   if (incoming.length !== Object.keys(existing).length) return false;
@@ -281,6 +313,7 @@ export function listActivitySessions(
   const membersBySession = new Map<string, Set<string>>();
 
   for (const record of records) {
+    if (isSoftDeletedRecord(record)) continue;
     const recordKind = resolveActivityKind(record);
     if (kind && recordKind !== kind) continue;
     const key = `${recordKind}::${record.date}`;

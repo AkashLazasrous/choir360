@@ -19,12 +19,11 @@ import { formatINR } from '../../utils/currency';
 import {
   ACTIVITY_KIND_LABELS,
   ATTENDANCE_CATEGORY_LABELS,
-  activityEntityId,
   categoryForActivityKind,
   findActivityParent,
   kindsForCategory,
   listActivitySessions,
-  marksFromRecords,
+  marksForActivitySession,
   MASS_BUCKET_KINDS,
 } from '../../utils/attendanceActivity';
 import {
@@ -108,6 +107,9 @@ interface ActivityAttendanceProps {
     skipped?: number;
     sessionsWritten?: number;
     attendanceWritten?: number;
+    marksInserted?: number;
+    marksUpdated?: number;
+    duplicatesRemoved?: number;
     emptySkipped?: number;
     unmatchedNames?: string[];
     parishId?: string;
@@ -159,11 +161,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     [members],
   );
 
-  const entityId = activityEntityId(kind, date);
   const existingParent = findActivityParent(kind, date, masses, rehearsals);
   const existingMarks = useMemo(
-    () => marksFromRecords(attendanceRecords, entityId),
-    [attendanceRecords, entityId],
+    () => marksForActivitySession(attendanceRecords, kind, date),
+    [attendanceRecords, kind, date],
   );
 
   const loadedMarks = useMemo(() => {
@@ -356,16 +357,21 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
     const result = await onImportSessions({ kind, sessions: dedupedSessions, unmatchedNames });
     setImporting(false);
-    const skipped = sessions.length - dedupedSessions.length;
+    const mergedDupes = sessions.length - dedupedSessions.length;
     const written = result.attendanceWritten ?? 0;
+    const inserted = result.marksInserted ?? 0;
+    const updated = result.marksUpdated ?? 0;
+    const removed = result.duplicatesRemoved ?? 0;
     if (result.ok) {
       setImportMessage(
-        `Imported ${result.sessionsWritten ?? result.imported ?? dedupedSessions.length} sessions · ${written} marks`
+        `Upserted ${result.sessionsWritten ?? result.imported ?? dedupedSessions.length} sessions · ${written} marks`
+        + `${inserted || updated ? ` (${inserted} new · ${updated} updated)` : ''}`
         + `${result.skipped ? ` · ${result.skipped} unchanged` : ''}`
         + `${result.emptySkipped ? ` · ${result.emptySkipped} empty` : ''}`
-        + `${skipped ? ` · ${skipped} duplicate dates merged` : ''}`
+        + `${mergedDupes ? ` · ${mergedDupes} duplicate dates merged in file` : ''}`
+        + `${removed ? ` · ${removed} duplicate records cleaned` : ''}`
         + `${unmatchedNames.length ? ` · unmatched: ${unmatchedNames.join(', ')}` : ''}.`
-        + ' Open History to browse imported dates.',
+        + ' Re-import updates existing dates — it does not create duplicates.',
       );
       setSection('history');
       setHistoryCategoryFilter('all');
@@ -622,6 +628,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               </button>
               <p className="text-[12px] text-[#86868b]">
                 Expects files named Mass, Special Mass, Practise Session (CSV).
+                Re-import upserts by date — updates existing marks, never duplicates.
               </p>
               {importMessage && <p className="w-full text-[13px] text-[#18392f]">{importMessage}</p>}
             </div>
