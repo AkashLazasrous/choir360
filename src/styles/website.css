@@ -32,6 +32,22 @@
 }
 
 @media (min-width: 1024px) {
+  /*
+   * Global desktop token remap — apple-* components using --choir-ink /
+   * --choir-fill inherit readable contrast on Deep Sea without per-page fixes.
+   * Mobile (&lt;1024) is unaffected (this block is desktop-only).
+   */
+  .app-shell.is-website-app,
+  .app-shell.is-website-mode {
+    --choir-ink: #f5f5f7;
+    --choir-ink-secondary: rgba(245, 245, 247, 0.72);
+    --choir-ink-tertiary: rgba(245, 245, 247, 0.55);
+    --choir-fill: rgba(255, 255, 255, 0.1);
+    --choir-fill-secondary: rgba(255, 255, 255, 0.06);
+    --choir-separator: rgba(255, 255, 255, 0.12);
+    --choir-separator-opaque: rgba(255, 255, 255, 0.16);
+  }
+
   /* Signed-in / public ops — Deep Sea website app chrome */
   .app-shell.is-website-app {
     background: var(--website-bg);
@@ -946,7 +962,7 @@
     background: rgba(255, 255, 255, 0.03);
   }
 
-  /* Invert common light surfaces to Deep Sea */
+  /* Invert common light / pastel surfaces to Deep Sea */
   .website-page .bg-white,
   .website-page .bg-slate-50,
   .website-page .bg-slate-100,
@@ -963,12 +979,53 @@
   .is-website-app .bg-\[\#f8faf9\],
   .is-website-app .bg-\[\#fafafa\],
   .is-website-app .bg-\[\#f5f5f7\],
+  .is-website-app .bg-\[\#fff\],
   .website-page .bg-\[\#eef4f1\],
   .website-page .bg-\[\#f8faf9\],
   .website-page .bg-\[\#fafafa\],
-  .website-page .bg-\[\#f5f5f7\] {
+  .website-page .bg-\[\#f5f5f7\],
+  .is-website-app .bg-amber-50,
+  .is-website-app .bg-emerald-50,
+  .is-website-app .bg-rose-50,
+  .is-website-app .bg-sky-50,
+  .is-website-app .bg-orange-50,
+  .is-website-app .bg-yellow-50,
+  .is-website-app .hover\:bg-slate-50:hover,
+  .is-website-app .hover\:bg-white:hover,
+  .is-website-app .hover\:bg-emerald-50:hover,
+  .website-page .bg-amber-50,
+  .website-page .bg-emerald-50,
+  .website-page .bg-rose-50,
+  .website-page .bg-sky-50,
+  .is-website-app .apple-grouped,
+  .is-website-app .apple-inset,
+  .is-website-app .apple-card-flush {
     background: var(--website-stage) !important;
     color: var(--website-ink) !important;
+  }
+
+  .is-website-app .bg-amber-50,
+  .website-page .bg-amber-50 {
+    background: rgba(245, 194, 76, 0.12) !important;
+    border-color: rgba(245, 194, 76, 0.35) !important;
+  }
+
+  .is-website-app .bg-emerald-50,
+  .website-page .bg-emerald-50 {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: rgba(52, 211, 153, 0.3) !important;
+  }
+
+  .is-website-app .bg-rose-50,
+  .website-page .bg-rose-50 {
+    background: rgba(244, 63, 94, 0.12) !important;
+    border-color: rgba(251, 113, 133, 0.3) !important;
+  }
+
+  .is-website-app .bg-sky-50,
+  .website-page .bg-sky-50 {
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
   }
 
   /*
@@ -976,20 +1033,26 @@
    * remapped to light — classic invisible text. Force gradient stops dark.
    */
   .is-website-app .to-white,
-  .website-page .to-white {
+  .website-page .to-white,
+  .is-website-app .to-slate-50,
+  .website-page .to-slate-50 {
     --tw-gradient-to: #0a1628 !important;
   }
 
   .is-website-app .from-white,
   .website-page .from-white,
   .is-website-app .via-white,
-  .website-page .via-white {
+  .website-page .via-white,
+  .is-website-app .from-slate-50,
+  .website-page .from-slate-50 {
     --tw-gradient-from: #0a1628 !important;
-    --tw-gradient-via: #050a14 !important;
+    --tw-gradient-to: #0a1628 !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
   }
 
   .is-website-app .to-white\/90,
   .is-website-app .to-white\/80,
+  .is-website-app .to-white\/70,
   .website-page .to-white\/90 {
     --tw-gradient-to: rgba(10, 22, 40, 0.95) !important;
   }
@@ -1003,16 +1066,6 @@
       #050a14 100%
     ) !important;
     color: var(--website-ink);
-  }
-
-  /*
-   * Safety net: remaining light-ish fills that were not remapped must keep
-   * dark ink so remapped light text never sits on paper white.
-   */
-  .is-website-app .website-light-surface,
-  .website-page .website-light-surface {
-    --website-local-ink: #0f172a;
-    --website-local-muted: #64748b;
   }
 
   /*
@@ -1052,18 +1105,17 @@
     color: #6ee7b7 !important;
   }
 
-  /* PDF / true light reading surfaces — keep paper + dark ink */
+  /* PDF / true light reading surfaces — restore light-theme tokens + dark ink */
   .is-website-app .website-light-surface,
   .website-page .website-light-surface {
+    --choir-ink: #0f172a;
+    --choir-ink-secondary: #64748b;
+    --choir-ink-tertiary: #94a3b8;
+    --choir-fill: rgba(14, 61, 76, 0.08);
+    --choir-fill-secondary: rgba(14, 61, 76, 0.05);
+    --choir-separator: rgba(0, 0, 0, 0.08);
     background: #fff !important;
     color: #1d1d1f !important;
-  }
-
-  .is-website-app .website-light-surface,
-  .is-website-app .website-light-surface *,
-  .website-page .website-light-surface,
-  .website-page .website-light-surface * {
-    color: inherit;
   }
 
   .is-website-app .website-light-surface h1,
@@ -1073,6 +1125,8 @@
   .is-website-app .website-light-surface .text-slate-900,
   .is-website-app .website-light-surface .text-slate-800,
   .is-website-app .website-light-surface .text-slate-700,
+  .is-website-app .website-light-surface .text-\[\#1d1d1f\],
+  .is-website-app .website-light-surface .text-\[\#0e3d4c\],
   .website-page .website-light-surface h1,
   .website-page .website-light-surface h2,
   .website-page .website-light-surface h3,
@@ -1083,6 +1137,7 @@
 
   .is-website-app .website-light-surface .text-slate-500,
   .is-website-app .website-light-surface .text-slate-400,
+  .is-website-app .website-light-surface .text-\[\#86868b\],
   .website-page .website-light-surface .text-slate-500,
   .website-page .website-light-surface .text-slate-400 {
     color: #64748b !important;
@@ -1096,6 +1151,13 @@
   .website-page .website-light-surface textarea {
     background: #fff !important;
     border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  .is-website-app .website-light-surface .bg-white,
+  .is-website-app .website-light-surface .bg-slate-50,
+  .website-page .website-light-surface .bg-white {
+    background: #fff !important;
     color: #0f172a !important;
   }
 
@@ -1309,58 +1371,88 @@
     color: #050a14 !important;
   }
 
-  /* Hardcoded light-theme ink → readable on Deep Sea (skip paper surfaces) */
-  .is-website-app :not(.website-light-surface) > .text-\[\#1d1d1f\],
-  .is-website-app .website-page-body .text-\[\#1d1d1f\],
+  /*
+   * Hardcoded light-theme ink → readable on Deep Sea.
+   * Covers main, sidebar, and modals. Paper surfaces reset tokens above.
+   */
+  .is-website-app .app-main .text-\[\#1d1d1f\],
+  .is-website-app .app-main .text-\[\#0f172a\],
+  .is-website-app .app-main .text-\[\#3a3a3c\],
+  .is-website-app .app-main .text-\[\#0e3d4c\],
+  .is-website-app .app-main .text-\[\#334155\],
+  .is-website-app .app-main .text-\[\#1e293b\],
   .is-website-app .app-sidebar .text-\[\#1d1d1f\],
-  .is-website-app .website-page-body .text-\[\#3a3a3c\],
-  .is-website-app .website-page-body .text-\[\#0e3d4c\],
+  .is-website-app .app-sidebar .text-\[\#0e3d4c\],
+  .is-website-app .apple-modal .text-\[\#1d1d1f\],
+  .is-website-app .apple-modal .text-\[\#0e3d4c\],
+  .is-website-app .apple-modal .text-\[\#3a3a3c\],
   .website-page .text-\[\#1d1d1f\],
   .website-page .text-\[\#3a3a3c\],
-  .website-page .text-\[\#0e3d4c\] {
+  .website-page .text-\[\#0e3d4c\],
+  .website-page .text-\[\#334155\] {
     color: var(--website-ink) !important;
   }
 
-  .is-website-app .website-page-body .text-\[\#86868b\],
-  .is-website-app .website-page-body .text-\[\#a1a1a6\],
-  .is-website-app .website-page-body .text-\[\#c7c7cc\],
+  .is-website-app .app-main .text-\[\#86868b\],
+  .is-website-app .app-main .text-\[\#a1a1a6\],
+  .is-website-app .app-main .text-\[\#c7c7cc\],
+  .is-website-app .app-main .text-\[\#64748b\],
+  .is-website-app .app-main .text-\[\#94a3b8\],
   .is-website-app .app-sidebar .text-\[\#86868b\],
+  .is-website-app .apple-modal .text-\[\#86868b\],
+  .is-website-app .apple-modal .text-\[\#a1a1a6\],
   .website-page .text-\[\#86868b\],
   .website-page .text-\[\#a1a1a6\],
-  .website-page .text-\[\#c7c7cc\] {
+  .website-page .text-\[\#c7c7cc\],
+  .website-page .text-\[\#64748b\] {
     color: var(--website-muted) !important;
   }
 
-  .is-website-app .website-page-body .text-\[\#18392f\],
+  .is-website-app .app-main .text-\[\#18392f\],
+  .is-website-app .apple-modal .text-\[\#18392f\],
   .website-page .text-\[\#18392f\] {
     color: #7dd3a8 !important;
   }
 
-  .is-website-app .website-page-body .text-\[\#8a6a10\],
+  .is-website-app .app-main .text-\[\#8a6a10\],
+  .is-website-app .apple-modal .text-\[\#8a6a10\],
   .website-page .text-\[\#8a6a10\] {
     color: var(--website-gold) !important;
   }
 
-  .is-website-app .website-page-body .text-\[\#475569\],
+  .is-website-app .app-main .text-\[\#475569\],
   .website-page .text-\[\#475569\] {
     color: #94a3b8 !important;
   }
 
-  /* Never lift ink inside paper / light reading surfaces */
-  .is-website-app .website-light-surface .text-\[\#1d1d1f\],
-  .is-website-app .website-light-surface .text-\[\#3a3a3c\],
-  .is-website-app .website-light-surface .text-slate-950,
-  .is-website-app .website-light-surface .text-slate-900,
-  .is-website-app .website-light-surface .text-slate-800,
-  .is-website-app .website-light-surface .text-slate-700,
-  .website-page .website-light-surface .text-\[\#1d1d1f\] {
-    color: #0f172a !important;
+  .is-website-app .app-main .text-amber-800,
+  .is-website-app .app-main .text-amber-900,
+  .is-website-app .app-main .text-emerald-800,
+  .is-website-app .app-main .text-emerald-900,
+  .is-website-app .app-main .text-rose-700,
+  .is-website-app .app-main .text-rose-800,
+  .website-page .text-amber-800,
+  .website-page .text-emerald-800 {
+    color: #fde68a !important;
   }
 
-  .is-website-app .website-light-surface .text-\[\#86868b\],
-  .is-website-app .website-light-surface .text-slate-500,
-  .is-website-app .website-light-surface .text-slate-400 {
-    color: #64748b !important;
+  .is-website-app .app-main .text-emerald-800,
+  .is-website-app .app-main .text-emerald-900,
+  .website-page .text-emerald-800 {
+    color: #6ee7b7 !important;
+  }
+
+  .is-website-app .app-main .text-rose-700,
+  .is-website-app .app-main .text-rose-800,
+  .website-page .text-rose-700 {
+    color: #fb7185 !important;
+  }
+
+  /* White-on-dark buttons that used dark ink via tokens */
+  .is-website-app .btn-pill-on-dark {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #f5f5f7 !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 
   /* Light gray fills → translucent stage panels */
@@ -1462,6 +1554,62 @@
   .is-website-app .apple-card .font-medium,
   .website-page .apple-card .font-medium {
     color: var(--website-ink);
+  }
+
+  /*
+   * FINAL override: paper surfaces must win over global ink lifts.
+   * Keeps Bible PDF / lyrics readers readable.
+   */
+  .is-website-app .website-light-surface,
+  .is-website-app .app-main .website-light-surface,
+  .website-page .website-light-surface {
+    --choir-ink: #0f172a !important;
+    --choir-ink-secondary: #64748b !important;
+    --choir-ink-tertiary: #94a3b8 !important;
+    background: #e8e8ed !important;
+    color: #0f172a !important;
+  }
+
+  .is-website-app .website-light-surface.bg-white,
+  .is-website-app .website-light-surface .bg-white,
+  .is-website-app .app-main .website-light-surface .bg-white {
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+
+  .is-website-app .app-main .website-light-surface .text-\[\#1d1d1f\],
+  .is-website-app .app-main .website-light-surface .text-\[\#0e3d4c\],
+  .is-website-app .app-main .website-light-surface .text-\[\#3a3a3c\],
+  .is-website-app .app-main .website-light-surface .text-\[\#334155\],
+  .is-website-app .app-main .website-light-surface .text-slate-950,
+  .is-website-app .app-main .website-light-surface .text-slate-900,
+  .is-website-app .app-main .website-light-surface .text-slate-800,
+  .is-website-app .app-main .website-light-surface .text-slate-700,
+  .is-website-app .app-main .website-light-surface h1,
+  .is-website-app .app-main .website-light-surface h2,
+  .is-website-app .app-main .website-light-surface h3,
+  .is-website-app .app-main .website-light-surface strong {
+    color: #0f172a !important;
+  }
+
+  .is-website-app .app-main .website-light-surface .text-\[\#86868b\],
+  .is-website-app .app-main .website-light-surface .text-\[\#64748b\],
+  .is-website-app .app-main .website-light-surface .text-slate-500,
+  .is-website-app .app-main .website-light-surface .text-slate-400 {
+    color: #64748b !important;
+  }
+
+  .is-website-app .app-main .website-light-surface input,
+  .is-website-app .app-main .website-light-surface select,
+  .is-website-app .app-main .website-light-surface textarea {
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  .is-website-app .app-main .website-light-surface input::placeholder,
+  .is-website-app .app-main .website-light-surface textarea::placeholder {
+    color: #94a3b8 !important;
   }
 }
 

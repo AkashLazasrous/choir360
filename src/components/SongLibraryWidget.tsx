@@ -422,7 +422,7 @@ export const SongLibraryWidget: React.FC<SongLibraryWidgetProps> = ({
         <div className={`hidden flex-col justify-between rounded-3xl border shadow-lg transition duration-300 lg:col-span-2 lg:flex ${
           viewerDarkMode
             ? 'border-slate-850 bg-slate-950 text-slate-100'
-            : 'border-slate-200/80 bg-white text-slate-900'
+            : 'website-light-surface border-slate-200/80 bg-white text-slate-900'
         } ${isPresentationMode ? 'fixed inset-0 z-50 !h-screen overflow-hidden rounded-none p-6 md:p-12' : 'h-[620px]'}`} id="lyrics-viewer-panel">
           <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${
             viewerDarkMode ? 'border-slate-850 bg-slate-900/60' : 'border-slate-100 bg-slate-50/70'

@@ -7,7 +7,7 @@ interface SongLyricsViewerProps {
 }
 
 export const SongLyricsViewer: React.FC<SongLyricsViewerProps> = ({ song }) => (
-  <article className="tamil-text whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white p-5 text-center leading-loose">
+  <article className="website-light-surface tamil-text whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white p-5 text-center leading-loose text-slate-900">
     <h2 className="text-lg font-black text-slate-950">{getSongTitle(song)}</h2>
     <p className="mt-1 text-xs font-bold text-slate-500">
       {song.category} • {song.language} • Page {song.sourcePageNumber ?? song.pageNumber ?? '-'}
