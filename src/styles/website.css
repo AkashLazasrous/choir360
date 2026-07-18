@@ -1086,6 +1086,32 @@
     color: var(--website-ink) !important;
     border-radius: 0 !important;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55) !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Keep modal body scrollable under Lenis / dark chrome */
+  .is-website-app .apple-modal form,
+  .is-website-mode .apple-modal form {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .is-website-app .apple-modal [data-lenis-prevent].overflow-y-auto,
+  .is-website-app .apple-modal .overflow-y-auto {
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245, 194, 76, 0.55) rgba(255, 255, 255, 0.08);
+  }
+
+  .is-website-app .apple-modal .overflow-y-auto::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .is-website-app .apple-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: rgba(245, 194, 76, 0.45);
+    border-radius: 999px;
   }
 
   .is-website-app .apple-hero-soft,

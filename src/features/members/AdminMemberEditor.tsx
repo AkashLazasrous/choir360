@@ -60,23 +60,32 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
     <div
       className="apple-modal-backdrop flex items-end justify-center p-0 sm:items-center sm:p-4"
       onClick={onClose}
+      data-lenis-prevent
     >
       <div
-        className="apple-modal flex max-h-[min(90dvh,100%)] w-full max-w-2xl flex-col rounded-t-3xl sm:rounded-3xl"
+        className="apple-modal flex h-[min(92dvh,100%)] max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl sm:h-[min(90dvh,880px)] sm:max-h-[min(90dvh,880px)] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-member-editor-title"
       >
-        <div className="flex-shrink-0 border-b border-black/[0.06] px-6 pb-4 pt-6">
+        <div className="shrink-0 border-b border-black/[0.06] px-6 pb-4 pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Edit member profile</h3>
-              <p className="mt-0.5 text-[13px] text-[#86868b]">
+              <h3
+                id="admin-member-editor-title"
+                className="text-[19px] font-semibold tracking-[-0.02em] text-[#1d1d1f] lg:text-[#f5f5f7]"
+              >
+                Edit member profile
+              </h3>
+              <p className="mt-0.5 text-[13px] text-[#86868b] lg:text-white/65">
                 {member.firstName} {member.lastName} · {member.status}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04] lg:text-white/70 lg:hover:bg-white/10"
               aria-label="Close"
             >
               <X className="h-5 w-5" />
@@ -88,8 +97,11 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
           )}
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-4 [scrollbar-gutter:stable]"
+            data-lenis-prevent
+          >
           <div className="rounded-2xl border border-black/[0.06] bg-[#f5f5f7] p-4">
             <p className="apple-label mb-3">Profile photo</p>
             <ProfilePhotoUpload
@@ -228,7 +240,7 @@ export const AdminMemberEditor: React.FC<AdminMemberEditorProps> = ({
 
           </div>
 
-          <div className="flex flex-shrink-0 gap-2 border-t border-black/[0.06] bg-white px-6 py-4">
+          <div className="flex shrink-0 gap-2 border-t border-black/[0.06] bg-white px-6 py-4 lg:border-white/10 lg:bg-[#050a14]">
             <button type="button" onClick={onClose} className="btn-pill btn-pill-secondary flex-1">Cancel</button>
             <button
               type="submit"
