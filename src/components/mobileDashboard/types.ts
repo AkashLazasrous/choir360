@@ -5,8 +5,10 @@ import type {
   Mass,
   Member,
   Payment,
+  Rehearsal,
   Tab,
 } from '../../types';
+import type { LiturgySongNotesSave } from '../LoggedLiturgySection';
 
 export type TimeRange = 'D' | 'W' | 'M' | 'Y';
 
@@ -55,6 +57,7 @@ export interface MobileDashboardData {
   variant: DashboardVariant;
   members: Member[];
   masses: Mass[];
+  rehearsals?: Rehearsal[];
   payments: Payment[];
   events: ChoirEvent[];
   announcements?: Announcement[];
@@ -62,6 +65,8 @@ export interface MobileDashboardData {
   /** Signed-in member (member variant) */
   member?: Member | null;
   loading?: boolean;
+  isAdmin?: boolean;
+  onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onNavigate: (tab: Tab) => void;
 }
 

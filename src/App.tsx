@@ -269,6 +269,29 @@ function AppInner() {
     }
   };
 
+  const saveLiturgySongNotes = async (payload: {
+    id: string;
+    kind: 'mass' | 'practice';
+    songNotes: string;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) {
+      return { ok: false, error: 'Only choir admins can add song lists.' };
+    }
+    const uid = authState.user?.uid;
+    if (payload.kind === 'mass') {
+      return massSync.patch(payload.id, { notes: payload.songNotes } as Partial<Mass>, uid);
+    }
+    const songs = payload.songNotes
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return rehearsalSync.patch(
+      payload.id,
+      { notes: payload.songNotes, songs } as Partial<Rehearsal>,
+      uid,
+    );
+  };
+
   const importActivitySessions = async (
     payload: ActivityAttendanceImportPayload,
   ): Promise<{
@@ -767,10 +790,14 @@ function AppInner() {
             >
             <>
             {activeTab === 'landing' && (
-              <LandingPage currentLang={currentLang} members={members} masses={masses} payments={payments}
-                events={events} announcements={announcements} attendanceRecords={attendanceRecords}
+              <LandingPage currentLang={currentLang} members={members} masses={masses} rehearsals={rehearsals}
+                payments={payments} events={events} announcements={announcements}
+                attendanceRecords={attendanceRecords}
                 loading={authState.isConfigured && !authState.isReady}
-                onNavigate={navigate} />
+                isAdmin={guard.isAdmin}
+                onNavigate={navigate}
+                onSaveLiturgySongNotes={saveLiturgySongNotes}
+              />
             )}
             {activeTab === 'calendar' && (
               <UnifiedCalendar currentLang={currentLang} masses={masses} events={events}
@@ -856,9 +883,12 @@ function AppInner() {
               guard.canAccess('choir_member') ? (
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
-                    members={members} events={events} masses={masses} payments={payments} attendanceRecords={attendanceRecords}
+                    members={members} events={events} masses={masses} rehearsals={rehearsals}
+                    payments={payments} attendanceRecords={attendanceRecords}
                     loading={authState.isConfigured && !authState.isReady}
+                    isAdmin={guard.isAdmin}
                     onNavigate={navigate}
+                    onSaveLiturgySongNotes={saveLiturgySongNotes}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert(updateRecordMetadata(updated, authState.user?.uid ?? updated.id), authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);

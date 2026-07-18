@@ -1,11 +1,20 @@
 import React, { useMemo } from 'react';
 import { RadioPlayer } from './RadioPlayer';
-import { Announcement, AttendanceRecord, ChoirEvent, Language, Mass, Member, Payment, Tab } from '../types';
+import {
+  Announcement,
+  AttendanceRecord,
+  ChoirEvent,
+  Language,
+  Mass,
+  Member,
+  Payment,
+  Rehearsal,
+  Tab,
+} from '../types';
 import {
   ArrowUpRight,
   BookOpen,
   CalendarDays,
-  ChevronRight,
   Clock3,
   MapPin,
   Music2,
@@ -22,28 +31,38 @@ import { Reveal } from './interactions/Reveal';
 import { CountUp } from './interactions/CountUp';
 import { AppleButton } from './interactions/AppleButton';
 import { MobileHomeDashboard } from './mobileDashboard';
+import {
+  LoggedLiturgySection,
+  type LiturgySongNotesSave,
+} from './LoggedLiturgySection';
 
 interface LandingPageProps {
   currentLang: Language;
   onNavigate: (section: Tab) => void;
   members: Member[];
   masses: Mass[];
+  rehearsals?: Rehearsal[];
   payments: Payment[];
   events: ChoirEvent[];
   announcements: Announcement[];
   attendanceRecords?: AttendanceRecord[];
   loading?: boolean;
+  isAdmin?: boolean;
+  onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onNavigate,
   members,
   masses,
+  rehearsals = [],
   payments,
   events,
   announcements,
   attendanceRecords = [],
   loading = false,
+  isAdmin = false,
+  onSaveLiturgySongNotes,
 }) => {
   const { selectedParish } = useParish();
   const parishName  = selectedParish?.parishName ?? 'your parish';
@@ -69,11 +88,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         variant="admin"
         members={members}
         masses={masses}
+        rehearsals={rehearsals}
         payments={payments}
         events={events}
         announcements={announcements}
         attendanceRecords={attendanceRecords}
         loading={loading}
+        isAdmin={isAdmin}
+        onSaveLiturgySongNotes={onSaveLiturgySongNotes}
         onNavigate={onNavigate}
       />
 
@@ -177,69 +199,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         ))}
       </section>
 
-      {/* Keep liturgy list for ops continuity */}
+      {/* Liturgy + practice log with admin song notes */}
       <Reveal>
         <section className="grid gap-4 xl:grid-cols-[1.4fr_0.85fr]">
-          <article className="apple-card p-5 sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <div>
-                <p className="apple-caption">Parish liturgy log</p>
-                <h3 className="apple-title mt-0.5">Logged masses</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => onNavigate('masses')}
-                className="btn-pill btn-pill-secondary !min-h-[44px] !text-[13px]"
-              >
-                Manage <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-
-            {masses.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => onNavigate('masses')}
-                className="apple-empty w-full rounded-2xl border border-dashed border-black/10 bg-[#f5f5f7]"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0e3d4c]">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <h3>No masses logged yet</h3>
-                <p>Open Masses & Accounts to add your first liturgy.</p>
-              </button>
-            ) : (
-              <div className="apple-grouped">
-                {masses.slice(0, 5).map((mass, i) => {
-                  const isSpecial = ['Special Mass', 'Death Mass', 'Death Anniversary Mass'].includes(mass.category);
-                  return (
-                    <button
-                      key={mass.id}
-                      type="button"
-                      onClick={() => onNavigate('masses')}
-                      className="apple-list-row w-full text-left"
-                    >
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        i === 0 ? 'bg-[#0e3d4c] text-amber-300' : isSpecial ? 'bg-[rgba(245,194,76,0.22)] text-[#8a6a10]' : 'bg-black/[0.06] text-[#86868b]'
-                      }`}>
-                        <BookOpen className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-[15px] font-medium text-[#1d1d1f]">{mass.name}</p>
-                          {i === 0 && <span className="apple-badge-forest">Next</span>}
-                        </div>
-                        <p className="mt-0.5 text-[12px] text-[#86868b]">
-                          {mass.category} · {mass.date} · {mass.time}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[12px] text-[#86868b]">{mass.language}</span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-[#c7c7cc]" />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </article>
+          <LoggedLiturgySection
+            variant="desk"
+            masses={masses}
+            rehearsals={rehearsals}
+            isAdmin={isAdmin}
+            onNavigate={onNavigate}
+            onSaveSongNotes={onSaveLiturgySongNotes}
+          />
 
           <article className="apple-hero relative overflow-hidden p-6">
             <div className="choir-hero-ambient" aria-hidden />

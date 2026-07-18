@@ -18,6 +18,7 @@ import {
   choirStreakDays,
 } from './dashboardMetrics';
 import type { BentoWidgetKey, MobileDashboardData, TimeRange } from './types';
+import { LoggedLiturgySection } from '../LoggedLiturgySection';
 
 /**
  * Award-style mobile Home surface — all 10 patterns.
@@ -27,11 +28,14 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
   variant,
   members,
   masses,
+  rehearsals = [],
   payments,
   events,
   attendanceRecords = [],
   member = null,
   loading = false,
+  isAdmin = false,
+  onSaveLiturgySongNotes,
   onNavigate,
 }) => {
   const [range, setRange] = useState<TimeRange>('W');
@@ -289,6 +293,16 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         streakDays={streak}
         onNavigate={onNavigate}
         onOpenSheet={setSheet}
+      />
+
+      <LoggedLiturgySection
+        variant="mobile"
+        masses={masses}
+        rehearsals={rehearsals}
+        isAdmin={isAdmin}
+        limit={6}
+        onNavigate={onNavigate}
+        onSaveSongNotes={onSaveLiturgySongNotes}
       />
 
       {nextPractice && (

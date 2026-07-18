@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Tab } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Rehearsal, Tab } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -12,6 +12,10 @@ import { computeMemberRosterStats } from '../utils/attendanceStats';
 import { formatINR } from '../utils/currency';
 import { AttendanceLeaderboard } from '../features/attendance/AttendanceLeaderboard';
 import { MobileHomeDashboard } from './mobileDashboard';
+import {
+  LoggedLiturgySection,
+  type LiturgySongNotesSave,
+} from './LoggedLiturgySection';
 
 interface DashboardMemberProps {
   currentLang: Language;
@@ -19,8 +23,11 @@ interface DashboardMemberProps {
   members: Member[];
   events: ChoirEvent[];
   masses: Mass[];
+  rehearsals?: Rehearsal[];
   payments?: Payment[];
   attendanceRecords?: AttendanceRecord[];
+  isAdmin?: boolean;
+  onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onUpdateMemberDetails: (updated: Member) => void;
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
   onNavigate?: (tab: Tab) => void;
@@ -37,8 +44,11 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   members,
   events,
   masses,
+  rehearsals = [],
   payments = [],
   attendanceRecords = [],
+  isAdmin = false,
+  onSaveLiturgySongNotes,
   onUpdateMemberDetails,
   onUpdateEventRsvp,
   onNavigate,
@@ -104,11 +114,14 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         variant="member"
         members={members}
         masses={masses}
+        rehearsals={rehearsals}
         payments={payments}
         events={events}
         attendanceRecords={attendanceRecords}
         member={member}
         loading={loading}
+        isAdmin={isAdmin}
+        onSaveLiturgySongNotes={onSaveLiturgySongNotes}
         onNavigate={go}
       />
 
@@ -148,6 +161,15 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
           </div>
         </div>
       </div>
+
+      <LoggedLiturgySection
+        variant="desk"
+        masses={masses}
+        rehearsals={rehearsals}
+        isAdmin={isAdmin}
+        onNavigate={go}
+        onSaveSongNotes={onSaveLiturgySongNotes}
+      />
 
       {hasRequestedChange && (
         <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 text-xs font-medium flex items-center gap-2" id="edit-request-banner">
