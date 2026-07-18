@@ -155,27 +155,34 @@ export const ParishSidebarCard: React.FC<{
   };
 
   return (
-    <div className="rounded-2xl bg-[#eef4f1] p-4 relative" ref={dropdownRef}>
+    <div
+      className="relative rounded-2xl bg-[#eef4f1] p-4 lg:border lg:border-white/12 lg:bg-white/[0.04]"
+      ref={dropdownRef}
+    >
       {/* Archdiocese label */}
-      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 lg:text-white/55">
         {archdioceseName}
       </p>
 
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm shrink-0">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm lg:bg-white/10 lg:text-amber-300 lg:shadow-none">
           <Church className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           {needsParishSelection ? (
-            <p className="text-sm font-bold text-slate-400">No parish selected</p>
+            <p className="text-sm font-bold text-slate-400 lg:text-white/60">No parish selected</p>
           ) : (
             <>
-              <p className="truncate text-sm font-bold text-slate-900">{selectedParish!.parishName}</p>
-              <p className="flex items-center gap-1 text-[10px] text-slate-500">
+              <p className="truncate text-sm font-bold text-slate-900 lg:text-[#f5f5f7]">
+                {selectedParish!.parishName}
+              </p>
+              <p className="flex items-center gap-1 text-[10px] text-slate-500 lg:text-white/65">
                 <MapPin className="h-3 w-3" /> {selectedParish!.place}
               </p>
               {songCount !== undefined && (
-                <p className="text-[10px] text-slate-400 mt-0.5">Choir · {songCount} Songs</p>
+                <p className="mt-0.5 text-[10px] text-slate-400 lg:text-white/50">
+                  Choir · {songCount} Songs
+                </p>
               )}
             </>
           )}
@@ -186,46 +193,52 @@ export const ParishSidebarCard: React.FC<{
       <button
         type="button"
         onClick={() => setDropdownOpen((o) => !o)}
-        className="mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-white transition"
+        className="mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200/70 bg-white/80 px-3 py-2 text-[11px] font-semibold text-slate-700 transition hover:bg-white lg:border-white/15 lg:bg-white/10 lg:text-[#f5f5f7] lg:hover:bg-white/15"
       >
         {needsParishSelection ? changeParishLabel : changeParishLabel}
-        <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-slate-400 transition-transform lg:text-white/60 ${dropdownOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {/* Sync status */}
-      <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[10px] font-semibold text-slate-500">
+      <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-[10px] font-semibold text-slate-500 lg:bg-white/[0.06] lg:text-white/65">
         {syncStatus}
       </div>
 
       {/* Dropdown */}
       {dropdownOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-          <div className="border-b border-slate-100 px-3 py-2">
-            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1.5">
-              <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl lg:border-white/12 lg:bg-[#0a1628] lg:shadow-black/50">
+          <div className="border-b border-slate-100 px-3 py-2 lg:border-white/10">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1.5 lg:bg-white/8">
+              <Search className="h-3.5 w-3.5 shrink-0 text-slate-400 lg:text-white/50" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search parish…"
-                className="w-full bg-transparent text-xs outline-none placeholder:text-slate-400"
+                className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400 lg:text-[#f5f5f7] lg:placeholder:text-white/40"
               />
             </div>
           </div>
-          <ul className="max-h-56 overflow-y-auto divide-y divide-slate-50">
+          <ul className="max-h-56 divide-y divide-slate-50 overflow-y-auto lg:divide-white/8">
             {filtered.map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
                   onClick={() => handleSelect(p)}
-                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-emerald-50 transition-colors ${selectedParish?.id === p.id ? 'bg-emerald-50' : ''}`}
+                  className={`flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-emerald-50 lg:hover:bg-white/8 ${
+                    selectedParish?.id === p.id ? 'bg-emerald-50 lg:bg-white/10' : ''
+                  }`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-semibold text-slate-900">{p.parishName}</p>
-                    <p className="text-[10px] text-slate-500">{p.place}</p>
+                    <p className="truncate text-xs font-semibold text-slate-900 lg:text-[#f5f5f7]">
+                      {p.parishName}
+                    </p>
+                    <p className="text-[10px] text-slate-500 lg:text-white/55">{p.place}</p>
                   </div>
                   {selectedParish?.id === p.id && (
-                    <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600 lg:bg-amber-300" />
                   )}
                 </button>
               </li>

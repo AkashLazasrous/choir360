@@ -390,16 +390,20 @@ export const BiblePdfViewer: React.FC<BiblePdfViewerProps> = ({ document }) => {
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-100 bg-[#f8faf9] p-5 xl:flex-row xl:items-center xl:justify-between">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:border-white/12 lg:bg-[#050a14] lg:shadow-none">
+      <div className="flex flex-col gap-4 border-b border-slate-100 bg-[#f8faf9] p-5 lg:border-white/10 lg:bg-white/[0.04] xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#18392f] text-amber-300">
             <BookOpen className="h-6 w-6" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">{document.label}</p>
-            <h2 className="truncate text-xl font-black text-slate-950">{document.title}</h2>
-            <p className="mt-1 text-xs font-medium text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700 lg:text-emerald-300">
+              {document.label}
+            </p>
+            <h2 className="truncate text-xl font-black text-slate-950 lg:text-[#f5f5f7]">
+              {document.title}
+            </h2>
+            <p className="mt-1 text-xs font-medium text-slate-500 lg:text-white/65">
               {totalPages ? `${totalPages.toLocaleString()} PDF pages` : document.subtitle}
             </p>
           </div>
@@ -422,7 +426,7 @@ export const BiblePdfViewer: React.FC<BiblePdfViewerProps> = ({ document }) => {
             rel="noreferrer"
             aria-disabled={!document.pdfUrl}
             className={
-              'inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 ' +
+              'inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 lg:border-white/15 lg:bg-white/10 lg:text-[#f5f5f7] lg:hover:bg-white/15 ' +
               (!document.pdfUrl ? 'pointer-events-none opacity-40' : '')
             }
           >
@@ -542,7 +546,10 @@ export const BiblePdfViewer: React.FC<BiblePdfViewerProps> = ({ document }) => {
               </aside>
             )}
 
-          <div ref={viewerRef} className="relative min-h-[50svh] min-w-0 max-h-[calc(100dvh-var(--app-header-offset)-var(--bottom-chrome)-8rem)] overflow-auto bg-[#e8e8ed] p-3 md:min-h-[560px] md:max-h-[calc(100dvh-21rem)] md:p-4">
+          <div
+            ref={viewerRef}
+            className="website-light-surface relative min-h-[50svh] min-w-0 max-h-[calc(100dvh-var(--app-header-offset)-var(--bottom-chrome)-8rem)] overflow-auto bg-[#e8e8ed] p-3 md:min-h-[560px] md:max-h-[calc(100dvh-21rem)] md:p-4"
+          >
             {(isDocumentLoading || isPageLoading) && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
                 <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm">

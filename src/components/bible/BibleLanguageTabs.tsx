@@ -14,7 +14,7 @@ const tabs: { id: BibleSection; label: string; description: string; Icon: React.
 ];
 
 export const BibleLanguageTabs: React.FC<BibleLanguageTabsProps> = ({ activeSection, onSectionChange }) => (
-  <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm md:grid-cols-2">
+  <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm md:grid-cols-2 lg:border-white/12 lg:bg-white/[0.04] lg:shadow-none">
     {tabs.map(({ id, label, description, Icon }) => {
       const active = activeSection === id;
       return (
@@ -24,16 +24,30 @@ export const BibleLanguageTabs: React.FC<BibleLanguageTabsProps> = ({ activeSect
           onClick={() => onSectionChange(id)}
           className={
             'flex min-h-[64px] items-center gap-3 rounded-xl px-3 py-2 text-left transition ' +
-            (active ? 'bg-[#18392f] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')
+            (active
+              ? 'bg-[#18392f] text-white shadow-sm'
+              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 lg:text-white/75 lg:hover:bg-white/8 lg:hover:text-white')
           }
           aria-current={active ? 'page' : undefined}
         >
-          <span className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' + (active ? 'bg-white/10 text-amber-300' : 'bg-slate-100 text-emerald-800')}>
+          <span
+            className={
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ' +
+              (active
+                ? 'bg-white/10 text-amber-300'
+                : 'bg-slate-100 text-emerald-800 lg:bg-white/10 lg:text-emerald-300')
+            }
+          >
             <Icon className="h-5 w-5" />
           </span>
           <span className="min-w-0">
             <span className="block truncate text-sm font-black">{label}</span>
-            <span className={'mt-0.5 block truncate text-[11px] font-semibold ' + (active ? 'text-emerald-100' : 'text-slate-400')}>
+            <span
+              className={
+                'mt-0.5 block truncate text-[11px] font-semibold ' +
+                (active ? 'text-emerald-100' : 'text-slate-400 lg:text-white/55')
+              }
+            >
               {description}
             </span>
           </span>
