@@ -535,7 +535,9 @@ function AppInner() {
         showToast({
           message: status === 'Active Member'
             ? 'Member approved — they can now sign in with email/mobile and DOB (DDMMYYYY).'
-            : `Member status set to ${status}.`,
+            : status === 'Admin'
+              ? 'Parish Admin approved — they get parish portal access after sign-out and sign-in.'
+              : `Member status set to ${status}.`,
           onUndo: previousStatus && previousStatus !== status
             ? () => void handleUpdateMemberStatus(memberId, previousStatus)
             : undefined,

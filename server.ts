@@ -7,7 +7,7 @@ import rateLimit from "express-rate-limit";
 import admin from "firebase-admin";
 import dotenv from "dotenv";
 import { stripSongSiteChrome, isSongChromeLine } from "./src/utils/songLyricsClean";
-import { findParishById } from "./src/data/madrasMylaporeParishes";
+import { findParishByDisplayName, findParishById } from "./src/data/madrasMylaporeParishes";
 import { dobToPassword, looksLikeEmail, normalizeMobile } from "./src/utils/memberAuth";
 import {
   activityEntityId,
@@ -305,13 +305,85 @@ function tenantFromParishId(parishId: string): Omit<ParishClaims, "role"> {
   };
 }
 
-function isActiveMemberStatus(status: unknown): boolean {
-  return status === "Active Member" || status === "Admin";
+function defaultParishId(): string {
+  return (
+    process.env.VITE_DEFAULT_PARISH_ID
+    || process.env.DEFAULT_PARISH_ID
+    || "church-of-sts-joseph-the-worker-philip-ambattur-ot"
+  );
+}
+
+/** Resolve tenant claims from a member doc (parishId first, then display name). */
+function tenantFromMember(member: Record<string, unknown> | undefined | null): Omit<ParishClaims, "role"> {
+  const parishId = String(member?.parishId || "").trim();
+  if (parishId && findParishById(parishId)) {
+    return tenantFromParishId(parishId);
+  }
+  const label = String(member?.parishName || member?.parish || "").trim();
+  const byName = findParishByDisplayName(label);
+  if (byName) {
+    return tenantFromParishId(byName.id);
+  }
+  return tenantFromParishId(defaultParishId());
+}
+
+/** Auth role for portal access. Admin status → parish_admin (not choir_member). */
+function roleFromMemberStatus(status: unknown): "parish_admin" | "choir_member" | "public_user" {
+  if (status === "Admin") return "parish_admin";
+  if (status === "Active Member") return "choir_member";
+  return "public_user";
 }
 
 async function setMemberClaims(uid: string, claims: ParishClaims) {
   await admin.auth().setCustomUserClaims(uid, claims);
   return claims;
+}
+
+async function upsertParishAdminDoc(
+  uid: string,
+  email: string,
+  tenant: Omit<ParishClaims, "role">,
+  updatedBy: string,
+) {
+  await admin.firestore().collection("admins").doc(uid).set({
+    uid,
+    email: email.toLowerCase().trim(),
+    role: "parish_admin",
+    ...tenant,
+    status: "active",
+    updatedAt: new Date().toISOString(),
+    updatedBy,
+  }, { merge: true });
+}
+
+async function deactivateParishAdminDoc(uid: string, updatedBy: string) {
+  const ref = admin.firestore().collection("admins").doc(uid);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  await ref.set({
+    status: "inactive",
+    role: "choir_member",
+    updatedAt: new Date().toISOString(),
+    updatedBy,
+  }, { merge: true });
+}
+
+/** Backfill parishId on member when resolved from parish display name. */
+async function ensureMemberParishFields(
+  uid: string,
+  member: Record<string, unknown>,
+  tenant: Omit<ParishClaims, "role">,
+) {
+  if (String(member.parishId || "").trim() === tenant.parishId) return;
+  await admin.firestore().collection("members").doc(uid).set({
+    parishId: tenant.parishId,
+    parishName: tenant.parishName,
+    parish: tenant.parishName,
+    archdioceseId: tenant.archdioceseId,
+    tenantId: tenant.tenantId,
+    choirId: tenant.choirId,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -571,9 +643,10 @@ app.post("/api/auth/resolve-login", loginResolveLimiter, async (req, res) => {
 
 // ---------------------------------------------------------------------------
 // AUTO-SYNC ROLE CLAIMS
-// Admins (ADMIN_EMAILS) → parish_admin.
-// Members → choir_member only when members/{uid}.status is Active Member/Admin.
-// Otherwise → public_user (pending / rejected / no record).
+// 1) ADMIN_EMAILS allow-list → parish_admin
+// 2) members/{uid}.status === "Admin" → parish_admin (Approval Desk)
+// 3) status === "Active Member" → choir_member
+// 4) else → public_user (pending / rejected / no record)
 // ---------------------------------------------------------------------------
 app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
   try {
@@ -600,13 +673,10 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       const adminDoc = await admin.firestore().collection("admins").doc(uid).get();
       const adminParishId = String(adminDoc.data()?.parishId || "").trim();
       const tokenParishId = String((req as any).user?.parishId || "").trim();
-      const defaultParishId =
-        process.env.VITE_DEFAULT_PARISH_ID
-        || process.env.DEFAULT_PARISH_ID
-        || "church-of-sts-joseph-the-worker-philip-ambattur-ot";
+      const fallbackParishId = defaultParishId();
 
-      let resolvedParishId = defaultParishId;
-      for (const candidate of [bodyParishId, adminParishId, tokenParishId, defaultParishId]) {
+      let resolvedParishId = fallbackParishId;
+      for (const candidate of [bodyParishId, adminParishId, tokenParishId, fallbackParishId]) {
         if (candidate && findParishById(candidate)) {
           resolvedParishId = candidate;
           break;
@@ -616,50 +686,45 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       const tenant = tenantFromParishId(resolvedParishId);
       const claims = { role: "parish_admin", ...tenant };
       await setMemberClaims(uid, claims);
-      // Keep /admins mapping in sync so future logins remember this parish.
-      await admin.firestore().collection("admins").doc(uid).set({
-        uid,
-        email,
-        role: "parish_admin",
-        ...tenant,
-        status: "active",
-        updatedAt: new Date().toISOString(),
-        updatedBy: uid,
-      }, { merge: true });
+      await upsertParishAdminDoc(uid, email, tenant, uid);
       console.log(`[Auth] sync-role: uid=${uid} email=${email} → parish_admin parish=${claims.parishId}`);
       return res.json({ ok: true, role: "parish_admin", claims, pendingApproval: false });
     }
 
     const memberSnap = await admin.firestore().collection("members").doc(uid).get();
-    const member = memberSnap.data();
+    const member = memberSnap.data() as Record<string, unknown> | undefined;
 
-    if (member && isActiveMemberStatus(member.status)) {
-      const claims: ParishClaims = {
-        role: "choir_member",
-        archdioceseId: String(member.archdioceseId || "madras-mylapore"),
-        parishName: String(member.parishName || member.parish || ""),
-        tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
-        parishId: String(member.parishId || ""),
-        choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
-      };
+    // Approval Desk “Approve Admin” → Firestore status Admin → parish portal access
+    if (member && member.status === "Admin") {
+      const tenant = tenantFromMember(member);
+      const claims: ParishClaims = { role: "parish_admin", ...tenant };
       await setMemberClaims(uid, claims);
+      await upsertParishAdminDoc(uid, email || String(member.email || ""), tenant, uid);
+      try {
+        await ensureMemberParishFields(uid, member, tenant);
+      } catch (backfillError: any) {
+        console.warn(`[Auth] sync-role parish backfill skipped for ${uid}:`, backfillError?.message || backfillError);
+      }
+      console.log(`[Auth] sync-role: uid=${uid} email=${email} → parish_admin (member.status=Admin) parish=${claims.parishId}`);
+      return res.json({ ok: true, role: "parish_admin", claims, pendingApproval: false });
+    }
+
+    if (member && member.status === "Active Member") {
+      const tenant = tenantFromMember(member);
+      const claims: ParishClaims = { role: "choir_member", ...tenant };
+      await setMemberClaims(uid, claims);
+      try {
+        await deactivateParishAdminDoc(uid, uid);
+      } catch {
+        // non-fatal
+      }
       console.log(`[Auth] sync-role: uid=${uid} email=${email} → choir_member parish=${claims.parishId}`);
       return res.json({ ok: true, role: "choir_member", claims, pendingApproval: false });
     }
 
-    const tenant = member?.parishId
-      ? {
-          archdioceseId: String(member.archdioceseId || "madras-mylapore"),
-          parishName: String(member.parishName || member.parish || ""),
-          tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
-          parishId: String(member.parishId),
-          choirId: String(member.choirId || `${member.parishId}-choir`),
-        }
-      : tenantFromParishId(
-          process.env.VITE_DEFAULT_PARISH_ID
-            || process.env.DEFAULT_PARISH_ID
-            || "church-of-sts-joseph-the-worker-philip-ambattur-ot",
-        );
+    const tenant = member
+      ? tenantFromMember(member)
+      : tenantFromParishId(defaultParishId());
 
     const claims = { role: "public_user", ...tenant };
     await setMemberClaims(uid, claims);
@@ -928,27 +993,25 @@ app.post("/api/members/:id/status", requireFirebaseAuth, requireAdminRole, async
     await batch.commit();
 
     const member = { ...memberSnap.data(), ...patch } as Record<string, unknown>;
-    const tenant = {
-      archdioceseId: String(member.archdioceseId || "madras-mylapore"),
-      parishName: String(member.parishName || member.parish || ""),
-      tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
-      parishId: String(member.parishId || ""),
-      choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
-    };
+    const tenant = tenantFromMember(member);
+    const role = roleFromMemberStatus(status);
+    const memberEmail = String(member.email || "").toLowerCase().trim();
 
-    let role = "public_user";
-    if (isActiveMemberStatus(status)) {
-      role = "choir_member";
-    }
     try {
       await setMemberClaims(memberId, { role, ...tenant });
+      if (role === "parish_admin") {
+        await upsertParishAdminDoc(memberId, memberEmail, tenant, adminUid);
+        await ensureMemberParishFields(memberId, member, tenant);
+      } else {
+        await deactivateParishAdminDoc(memberId, adminUid);
+      }
     } catch (claimError: any) {
       // Member doc may use legacy M00x ids without an Auth user
       console.warn(`[Auth] status claims skipped for ${memberId}:`, claimError?.message || claimError);
     }
 
-    console.log(`[Auth] member status: id=${memberId} → ${status} role=${role}`);
-    return res.json({ ok: true, status, role });
+    console.log(`[Auth] member status: id=${memberId} → ${status} role=${role} parish=${tenant.parishId}`);
+    return res.json({ ok: true, status, role, parishId: tenant.parishId });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to update member status." });
   }

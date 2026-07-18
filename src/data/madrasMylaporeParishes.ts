@@ -153,6 +153,13 @@ export const MADRAS_MYLAPORE_PARISHES: Parish[] = [
 export const findParishById = (id: string): Parish | undefined =>
   MADRAS_MYLAPORE_PARISHES.find((p) => p.id === id);
 
+/** Look up a parish by display name (case-insensitive). */
+export const findParishByDisplayName = (name: string): Parish | undefined => {
+  const needle = name.trim().toLowerCase();
+  if (!needle) return undefined;
+  return MADRAS_MYLAPORE_PARISHES.find((p) => p.displayName.toLowerCase() === needle);
+};
+
 /** Active parishes sorted by displayName */
 export const activeParishes = (): Parish[] =>
   MADRAS_MYLAPORE_PARISHES

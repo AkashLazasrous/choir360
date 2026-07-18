@@ -1321,6 +1321,12 @@
     color: var(--website-sky) !important;
   }
 
+  .website-page .apple-badge-gold,
+  .is-website-app .apple-badge-gold {
+    background: rgba(245, 194, 76, 0.22) !important;
+    color: #fde68a !important;
+  }
+
   /* Tabs / segmented controls */
   .website-page [role='tablist'],
   .is-website-app [role='tablist'] {
