@@ -1312,6 +1312,65 @@
     border-color: var(--website-line);
   }
 
+  /*
+   * Segmented pills (Rehearsals, AI Tools, Calendar Day/Week/Month, Registration…).
+   * Active chip is a white surface — force dark ink so labels never go white-on-white
+   * after --choir-ink is remapped for the dark stage.
+   */
+  .is-website-app .apple-segmented,
+  .website-page .apple-segmented {
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+
+  .is-website-app .apple-segmented button,
+  .website-page .apple-segmented button {
+    color: rgba(245, 245, 247, 0.78) !important;
+  }
+
+  .is-website-app .apple-segmented button[aria-selected='true'],
+  .is-website-app .apple-segmented button.is-active,
+  .website-page .apple-segmented button[aria-selected='true'],
+  .website-page .apple-segmented button.is-active {
+    background: #fff !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  }
+
+  .is-website-app .apple-segmented button[aria-selected='true'] svg,
+  .is-website-app .apple-segmented button.is-active svg,
+  .website-page .apple-segmented button[aria-selected='true'] svg,
+  .website-page .apple-segmented button.is-active svg,
+  .is-website-app .apple-segmented button[aria-selected='true'] span,
+  .is-website-app .apple-segmented button.is-active span,
+  .website-page .apple-segmented button[aria-selected='true'] span,
+  .website-page .apple-segmented button.is-active span {
+    color: #0f172a !important;
+  }
+
+  /* Tailwind “white active chip” tabs (header range, dashboard, etc.) */
+  .is-website-app .app-main button.bg-white,
+  .is-website-app .app-header button.bg-white,
+  .is-website-app header button.bg-white {
+    background: #fff !important;
+    color: #0f172a !important;
+  }
+
+  .is-website-app .app-main button.bg-white svg,
+  .is-website-app .app-header button.bg-white svg,
+  .is-website-app header button.bg-white svg {
+    color: #0f172a !important;
+  }
+
+  /* Native <select> menus: keep option text readable on OS white popups */
+  .is-website-app select option,
+  .website-page select option,
+  .is-website-app .apple-select option,
+  .website-page .apple-select option {
+    background-color: #fff;
+    color: #0f172a;
+  }
+
   /* Scroll progress available site-wide (optional bar in shell) */
   .is-website-app .website-app-progress {
     position: sticky;
@@ -1545,14 +1604,15 @@
     color: #fde68a !important;
   }
 
-  /* Ensure list/history rows are never dark-on-dark */
-  .is-website-app .apple-card button,
-  .website-page .apple-card button:not(.btn-pill-primary):not(.btn-pill-gold) {
+  /* Ensure list/history rows are never dark-on-dark.
+     Do not override active segmented chips or primary/gold pills. */
+  .is-website-app .apple-card button:not(.btn-pill-primary):not(.btn-pill-gold):not(.is-active):not([aria-selected='true']),
+  .website-page .apple-card button:not(.btn-pill-primary):not(.btn-pill-gold):not(.is-active):not([aria-selected='true']) {
     color: inherit;
   }
 
-  .is-website-app .apple-card .font-medium,
-  .website-page .apple-card .font-medium {
+  .is-website-app .apple-card .font-medium:not(button.is-active):not(button[aria-selected='true']),
+  .website-page .apple-card .font-medium:not(button.is-active):not(button[aria-selected='true']) {
     color: var(--website-ink);
   }
 

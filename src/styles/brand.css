@@ -578,7 +578,9 @@
 .apple-segmented button.is-active {
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0.5px 0 rgba(0, 0, 0, 0.04);
-  color: var(--choir-ink);
+  /* Always dark ink on the white chip — never inherit theme --choir-ink
+     (desktop dark stage remaps that token to light, which made active tabs invisible). */
+  color: #1d1d1f;
 }
 
 /* Badges / chips */
