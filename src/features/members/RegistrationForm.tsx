@@ -103,9 +103,57 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   })();
 
+  const validateStep = (s: RegStep): string | null => {
+    if (s === 1) {
+      if (!firstName.trim() || !lastName.trim() || !mobile.trim() || !email.trim() || !dob) {
+        return 'Please fill in name, mobile, email, and date of birth before continuing.';
+      }
+      if (!whatsappSameAsMobile && !whatsapp.trim()) {
+        return 'Enter a WhatsApp number, or choose “same as mobile”.';
+      }
+      return null;
+    }
+    if (s === 2) {
+      if (!parishId) return 'Select a parish before continuing.';
+      if (!voiceType || !memberType) return 'Select voice type and member type before continuing.';
+      return null;
+    }
+    return null;
+  };
+
+  const goNext = () => {
+    const err = validateStep(step);
+    if (err) {
+      setFormError(err);
+      return;
+    }
+    setFormError('');
+    setStep((s) => (s < 3 ? ((s + 1) as RegStep) : s));
+  };
+
+  const goBack = () => {
+    setFormError('');
+    setStep((s) => (s > 1 ? ((s - 1) as RegStep) : s));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+
+    // Mobile keyboards (Enter / Go / Next) submit the <form>. Without this guard,
+    // steps 1–2 create the member and skip photo + emergency contact.
+    if (step < 3) {
+      goNext();
+      return;
+    }
+
+    const stepErr = validateStep(1) || validateStep(2);
+    if (stepErr) {
+      setFormError(stepErr);
+      setStep(1);
+      return;
+    }
+
     if (!firstName || !lastName || !mobile || !email || !parishId || !dob) {
       setFormError('Please fill in all mandatory fields: name, mobile, email, date of birth, and parish.');
       return;
@@ -248,12 +296,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   };
 
-  const goNext = () => setStep((s) => (s < 3 ? ((s + 1) as RegStep) : s));
-  const goBack = () => setStep((s) => (s > 1 ? ((s - 1) as RegStep) : s));
-
   return (
     <div className="font-apple grid grid-cols-1 gap-6 lg:grid-cols-3" id="registration-form-view">
-      <form onSubmit={handleSubmit} className="apple-card space-y-7 p-6 lg:col-span-2 lg:p-8" id="member-form">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          // Extra guard: Enter in inputs must not submit until the final step.
+          if (e.key !== 'Enter') return;
+          const target = e.target as HTMLElement;
+          if (target.tagName === 'TEXTAREA') return;
+          if (step < 3) {
+            e.preventDefault();
+            goNext();
+          }
+        }}
+        className="apple-card space-y-7 p-6 lg:col-span-2 lg:p-8"
+        id="member-form"
+        noValidate
+      >
         <div
           className="sticky-below-header sticky z-10 -mx-6 border-b border-black/[0.06] bg-white/95 px-4 py-3 backdrop-blur-md lg:-mx-8 lg:px-8"
           role="navigation"
@@ -264,7 +324,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => setStep(s.id)}
+                onClick={() => {
+                  if (s.id === step) return;
+                  if (s.id < step) {
+                    setFormError('');
+                    setStep(s.id);
+                    return;
+                  }
+                  // Only advance via tabs after the current step validates.
+                  for (let i = step; i < s.id; i += 1) {
+                    const err = validateStep(i as RegStep);
+                    if (err) {
+                      setFormError(err);
+                      return;
+                    }
+                  }
+                  setFormError('');
+                  setStep(s.id);
+                }}
                 aria-current={step === s.id ? 'step' : undefined}
                 className={`btn-pill shrink-0 snap-start !min-h-[44px] !px-4 !text-[13px] ${
                   step === s.id ? 'btn-pill-primary' : 'btn-pill-secondary'
