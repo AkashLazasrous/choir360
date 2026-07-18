@@ -615,20 +615,30 @@ function AppInner() {
 
   const handleRemoveMember = async (member: Member): Promise<{ ok: boolean; error?: string }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    if (member.id === authState.user?.uid) {
+      const msg = 'You cannot permanently delete your own admin account.';
+      showToast({ tone: 'error', message: msg });
+      return { ok: false, error: msg };
+    }
     try {
       const response = await apiFetch(`/api/members/${encodeURIComponent(member.id)}/remove`, {
         method: 'POST',
+        body: JSON.stringify({ permanent: true }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const msg = payload?.error ?? 'Could not remove member.';
+        const msg = payload?.error ?? 'Could not permanently delete member.';
         showToast({ tone: 'error', message: msg });
         return { ok: false, error: msg };
       }
-      showToast({ message: `${member.firstName} ${member.lastName} removed from the roster.` });
+      // Optimistic hide until Firestore snapshot drops the hard-deleted doc.
+      memberSync.applyLocal(member.id, { status: 'deleted' } as unknown as Partial<Member>);
+      showToast({
+        message: `${member.firstName} ${member.lastName} permanently deleted — no roster trace remains.`,
+      });
       return { ok: true };
     } catch {
-      const msg = 'Could not remove member.';
+      const msg = 'Could not permanently delete member.';
       showToast({ tone: 'error', message: msg });
       return { ok: false, error: msg };
     }

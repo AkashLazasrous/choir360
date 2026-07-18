@@ -1072,8 +1072,100 @@ app.post("/api/members/:id/profile", requireFirebaseAuth, requireAdminRole, asyn
 });
 
 // ---------------------------------------------------------------------------
-// ADMIN: soft-remove member from parish roster
+// ADMIN: permanently purge member (hard delete — no soft-delete residue)
+// Wipes Auth, public/private profile, attendance, shares, media refs, etc.
 // ---------------------------------------------------------------------------
+
+async function deleteQueryDocs(
+  db: Firestore,
+  collectionName: string,
+  field: string,
+  value: string,
+): Promise<number> {
+  let deleted = 0;
+  for (;;) {
+    const snap = await db.collection(collectionName).where(field, "==", value).limit(400).get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    for (const docSnap of snap.docs) batch.delete(docSnap.ref);
+    await batch.commit();
+    deleted += snap.size;
+    if (snap.size < 400) break;
+  }
+  return deleted;
+}
+
+function cloudinaryPublicIdFromUrl(url: string): string | null {
+  if (!url || !url.includes("res.cloudinary.com") || !url.includes("/upload/")) return null;
+  try {
+    const rest = url.split("/upload/")[1] || "";
+    const segments = rest.split("/").filter(Boolean);
+    const versionIdx = segments.findIndex((part) => /^v\d+$/.test(part));
+    const idParts = versionIdx >= 0 ? segments.slice(versionIdx + 1) : segments;
+    if (!idParts.length) return null;
+    const joined = idParts.join("/");
+    return decodeURIComponent(joined.replace(/\.[a-zA-Z0-9]+$/, ""));
+  } catch {
+    return null;
+  }
+}
+
+async function destroyCloudinaryImage(photoUrl: string): Promise<boolean> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  const publicId = cloudinaryPublicIdFromUrl(photoUrl);
+  if (!cloudName || !apiKey || !apiSecret || !publicId) return false;
+
+  const timestamp = Math.round(Date.now() / 1000);
+  const signature = crypto
+    .createHash("sha1")
+    .update(`public_id=${publicId}&timestamp=${timestamp}${apiSecret}`)
+    .digest("hex");
+
+  const body = new URLSearchParams({
+    public_id: publicId,
+    timestamp: String(timestamp),
+    api_key: apiKey,
+    signature,
+  });
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  return response.ok;
+}
+
+async function stripMemberFromArrayField(
+  db: Firestore,
+  collectionName: string,
+  memberId: string,
+  parishId: string,
+): Promise<number> {
+  let updated = 0;
+  for (;;) {
+    const snap = await db.collection(collectionName)
+      .where("parishId", "==", parishId)
+      .where("attendingMemberIds", "array-contains", memberId)
+      .limit(200)
+      .get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    for (const docSnap of snap.docs) {
+      const ids = Array.isArray(docSnap.data().attendingMemberIds)
+        ? (docSnap.data().attendingMemberIds as string[]).filter((id) => id !== memberId)
+        : [];
+      batch.set(docSnap.ref, { attendingMemberIds: ids, updatedAt: new Date().toISOString() }, { merge: true });
+      updated += 1;
+    }
+    await batch.commit();
+    if (snap.size < 200) break;
+  }
+  return updated;
+}
+
 app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async (req, res) => {
   try {
     if (!admin.apps.length) {
@@ -1081,48 +1173,108 @@ app.post("/api/members/:id/remove", requireFirebaseAuth, requireAdminRole, async
     }
 
     const memberId = requireString(req.params.id, "id", 128);
+    const adminUid = (req as any).user.uid as string;
+    if (memberId === adminUid) {
+      return res.status(400).json({ error: "You cannot permanently delete your own admin account." });
+    }
+
     const db = admin.firestore();
     const memberRef = db.collection("members").doc(memberId);
     const privateRef = db.collection("privateMembers").doc(memberId);
-    const memberSnap = await memberRef.get();
-    if (!memberSnap.exists) {
+    const [memberSnap, privateSnap] = await Promise.all([memberRef.get(), privateRef.get()]);
+    if (!memberSnap.exists && !privateSnap.exists) {
       return res.status(404).json({ error: "Member not found." });
     }
 
-    const now = new Date().toISOString();
-    const adminUid = (req as any).user.uid as string;
-    const patch = {
-      status: "deleted",
-      deletedAt: now,
-      deletedBy: adminUid,
-      updatedAt: now,
-      updatedBy: adminUid,
-    };
+    const memberData = (memberSnap.data() || privateSnap.data() || {}) as Record<string, unknown>;
+    const parishId = String(memberData.parishId || (req as any).user?.parishId || "");
+    const photoUrl = typeof memberData.photoUrl === "string" ? memberData.photoUrl : "";
+    const displayName = `${memberData.firstName || ""} ${memberData.lastName || ""}`.trim() || memberId;
 
-    const batch = db.batch();
-    batch.set(memberRef, patch, { merge: true });
-    batch.set(privateRef, patch, { merge: true });
-    await batch.commit();
+    // 1) Related operational data
+    const attendanceDeleted = await deleteQueryDocs(db, "attendance", "memberId", memberId);
+    const sharesDeleted = await deleteQueryDocs(db, "paymentShares", "memberId", memberId);
+    const notificationsDeleted = await deleteQueryDocs(db, "notifications", "memberId", memberId);
+    const mediaDeleted = await deleteQueryDocs(db, "cloudinaryMedia", "memberId", memberId);
 
-    const member = { ...memberSnap.data(), ...patch } as Record<string, unknown>;
-    const tenant = {
-      archdioceseId: String(member.archdioceseId || "madras-mylapore"),
-      parishName: String(member.parishName || member.parish || ""),
-      tenantId: String(member.tenantId || member.archdioceseId || "madras-mylapore"),
-      parishId: String(member.parishId || ""),
-      choirId: String(member.choirId || `${member.parishId || "parish"}-choir`),
-    };
+    let massesUpdated = 0;
+    let rehearsalsUpdated = 0;
+    if (parishId) {
+      massesUpdated = await stripMemberFromArrayField(db, "masses", memberId, parishId);
+      rehearsalsUpdated = await stripMemberFromArrayField(db, "rehearsals", memberId, parishId);
 
-    try {
-      await setMemberClaims(memberId, { role: "public_user", ...tenant });
-    } catch (claimError: any) {
-      console.warn(`[Auth] remove claims skipped for ${memberId}:`, claimError?.message || claimError);
+      // Strip RSVP map entries on parish events (orphan keys would keep a trace).
+      const eventsSnap = await db.collection("events").where("parishId", "==", parishId).limit(400).get();
+      if (!eventsSnap.empty) {
+        const batch = db.batch();
+        let eventOps = 0;
+        for (const docSnap of eventsSnap.docs) {
+          const rsvps = docSnap.data().rsvps;
+          if (!rsvps || typeof rsvps !== "object" || !(memberId in rsvps)) continue;
+          const next = { ...(rsvps as Record<string, unknown>) };
+          delete next[memberId];
+          batch.set(docSnap.ref, { rsvps: next, updatedAt: new Date().toISOString() }, { merge: true });
+          eventOps += 1;
+        }
+        if (eventOps > 0) await batch.commit();
+      }
     }
 
-    console.log(`[Members] removed id=${memberId} by=${adminUid}`);
-    return res.json({ ok: true });
+    // 2) Profile docs + optional admins registry
+    const purgeBatch = db.batch();
+    if (memberSnap.exists) purgeBatch.delete(memberRef);
+    if (privateSnap.exists) purgeBatch.delete(privateRef);
+    const adminReg = db.collection("admins").doc(memberId);
+    const adminRegSnap = await adminReg.get();
+    if (adminRegSnap.exists) purgeBatch.delete(adminReg);
+    await purgeBatch.commit();
+
+    // 3) Auth identity
+    let authDeleted = false;
+    try {
+      await admin.auth().deleteUser(memberId);
+      authDeleted = true;
+    } catch (authError: any) {
+      // Already gone is fine; other errors are logged but do not restore Firestore docs.
+      if (authError?.code !== "auth/user-not-found") {
+        console.warn(`[Members] purge auth skipped for ${memberId}:`, authError?.message || authError);
+      }
+    }
+
+    // 4) Cloudinary portrait
+    let photoDeleted = false;
+    if (photoUrl) {
+      try {
+        photoDeleted = await destroyCloudinaryImage(photoUrl);
+      } catch (mediaError: any) {
+        console.warn(`[Members] purge photo skipped for ${memberId}:`, mediaError?.message || mediaError);
+      }
+    }
+
+    console.log(
+      `[Members] PURGED id=${memberId} name=${displayName} by=${adminUid} `
+      + `attendance=${attendanceDeleted} shares=${sharesDeleted} notifications=${notificationsDeleted} `
+      + `media=${mediaDeleted} masses=${massesUpdated} rehearsals=${rehearsalsUpdated} `
+      + `auth=${authDeleted} photo=${photoDeleted}`,
+    );
+
+    return res.json({
+      ok: true,
+      permanent: true,
+      purged: {
+        attendance: attendanceDeleted,
+        paymentShares: sharesDeleted,
+        notifications: notificationsDeleted,
+        cloudinaryMedia: mediaDeleted,
+        massesUpdated,
+        rehearsalsUpdated,
+        authDeleted,
+        photoDeleted,
+      },
+    });
   } catch (error: any) {
-    return res.status(400).json({ error: error?.message || "Failed to remove member." });
+    console.error("[Members] purge failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Failed to permanently delete member." });
   }
 });
 

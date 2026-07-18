@@ -166,10 +166,12 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
     setLoadError('');
     const result = await onRemoveMember(member);
     if (!result.ok) {
-      setLoadError(result.error ?? 'Could not remove member.');
+      setLoadError(result.error ?? 'Could not permanently delete member.');
       return;
     }
-    window.setTimeout(() => void loadRoster(), 600);
+    // Hard delete — drop from API roster immediately, then refresh.
+    setApiMembers((prev) => (prev ? prev.filter((m) => m.id !== member.id) : prev));
+    window.setTimeout(() => void loadRoster(), 400);
   };
 
   const adoptMember = async (memberId: string) => {

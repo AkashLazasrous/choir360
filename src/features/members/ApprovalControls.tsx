@@ -46,7 +46,21 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
 
   const handleRemove = () => {
     if (!onRemoveMember) return;
-    if (!window.confirm(`Remove ${m.firstName} ${m.lastName} from the parish roster?\n\nThey will lose choir portal access. This can be undone by re-approving if needed.`)) return;
+    const label = `${m.firstName} ${m.lastName}`.trim() || 'this member';
+    const ok = window.confirm(
+      `Permanently delete ${label}?\n\n`
+      + `This cannot be undone.\n`
+      + `• Profile, private contact data, and login are erased\n`
+      + `• Attendance marks and payment shares for this person are erased\n`
+      + `• Photo is removed from storage when possible\n\n`
+      + `Type OK in the next prompt to confirm.`,
+    );
+    if (!ok) return;
+    const typed = window.prompt(`Type DELETE to permanently erase ${label}:`);
+    if (typed?.trim().toUpperCase() !== 'DELETE') {
+      alert('Deletion cancelled — you must type DELETE to confirm.');
+      return;
+    }
     onRemoveMember(m);
   };
 
@@ -107,23 +121,10 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
         </>
       )}
 
-      {isActive && (
-        <>
-          {m.status === 'Admin' && (
-            <span className="apple-badge-gold mb-0.5 flex items-center justify-center gap-0.5">
-              <Shield className="w-2.5 h-2.5" /> Parish Admin
-            </span>
-          )}
-          {onRemoveMember && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="btn-pill btn-pill-xs w-full !text-[11px] !bg-[rgba(255,59,48,0.12)] !text-[#d70015]"
-            >
-              <Trash2 className="w-3 h-3" /> Remove member
-            </button>
-          )}
-        </>
+      {isActive && m.status === 'Admin' && (
+        <span className="apple-badge-gold mb-0.5 flex items-center justify-center gap-0.5">
+          <Shield className="w-2.5 h-2.5" /> Parish Admin
+        </span>
       )}
 
       {isRejected && (
@@ -133,6 +134,17 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
           className="btn-pill btn-pill-primary btn-pill-xs w-full !text-[11px]"
         >
           <UserCheck className="w-3 h-3" /> Reinstate
+        </button>
+      )}
+
+      {/* Permanent delete — available before or after approval */}
+      {onRemoveMember && (isPending || isActive || isRejected) && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="btn-pill btn-pill-xs w-full !text-[11px] !bg-[rgba(255,59,48,0.14)] !text-[#ff453a]"
+        >
+          <Trash2 className="w-3 h-3" /> Delete permanently
         </button>
       )}
     </div>
