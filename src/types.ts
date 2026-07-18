@@ -218,6 +218,8 @@ export interface Mass {
   attendingMemberIds?: string[];
   /** Links attendance logs to Sunday vs Special Mass sheets */
   activityKind?: ActivityKind;
+  /** Sunday Mass only — 1st Mass or 2nd Mass */
+  sundayMassSlot?: SundayMassSlot;
   /** Special mass only: free choir service vs paid rite */
   specialMassBilling?: SpecialMassBilling;
   /** Populated when specialMassBilling === 'paid' */
@@ -297,6 +299,9 @@ export type ActivityKind =
   | 'practice'
   | 'special_mass';
 
+/** Sunday Mass only: 1st and 2nd Mass on the same date. */
+export type SundayMassSlot = '1st' | '2nd';
+
 /** Top-level attendance taxonomy used by leaderboard columns + filters. */
 export type AttendanceCategory = 'mass' | 'special_mass' | 'practice';
 
@@ -306,6 +311,8 @@ export interface AttendanceRecord {
   entityType: 'Mass' | 'Rehearsal' | 'Event';
   /** Activity subtype for stats rules (Excused counts differently on practice). */
   activityKind?: ActivityKind;
+  /** Sunday Mass only — which liturgy of the day. */
+  sundayMassSlot?: SundayMassSlot;
   entityName: string;
   date: string;
   memberId: string;

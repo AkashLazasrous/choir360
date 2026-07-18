@@ -21,17 +21,26 @@ const member = (overrides: Partial<Member>): Member =>
 
 const record = (
   overrides: Partial<AttendanceRecord> & Pick<AttendanceRecord, 'memberId' | 'status' | 'activityKind'>,
-): AttendanceRecord => ({
-  id: `att-${overrides.memberId}-${overrides.date ?? '2026-01-01'}`,
-  entityId: 'mass-sunday_mass-2026-01-01',
-  entityType: overrides.entityType ?? 'Mass',
-  entityName: 'Sunday Mass',
-  date: overrides.date ?? '2026-01-01',
-  memberId: overrides.memberId,
-  memberName: overrides.memberName ?? 'Test Member',
-  status: overrides.status,
-  activityKind: overrides.activityKind,
-});
+): AttendanceRecord => {
+  const date = overrides.date ?? '2026-01-01';
+  const slot = overrides.sundayMassSlot;
+  const entityId = overrides.entityId
+    ?? (slot
+      ? `mass-sunday_mass-${slot}-${date}`
+      : `mass-${overrides.activityKind}-${date}`);
+  return {
+    id: overrides.id ?? `att-${entityId}-${overrides.memberId}`,
+    entityId,
+    entityType: overrides.entityType ?? (overrides.activityKind === 'practice' ? 'Rehearsal' : 'Mass'),
+    entityName: overrides.entityName ?? 'Sunday Mass',
+    date,
+    memberId: overrides.memberId,
+    memberName: overrides.memberName ?? 'Test Member',
+    status: overrides.status,
+    activityKind: overrides.activityKind,
+    ...(slot ? { sundayMassSlot: slot } : {}),
+  };
+};
 
 describe('countsAsPresentFinal', () => {
   it('treats Late as present for all kinds', () => {
@@ -59,9 +68,9 @@ describe('computeMemberStats', () => {
 
   it('computes raw and final percentages from sheet rules', () => {
     const records: AttendanceRecord[] = [
-      record({ memberId: 'm1', status: 'Present', activityKind: 'sunday_mass' }),
-      record({ memberId: 'm1', status: 'Late', activityKind: 'sunday_mass', date: '2026-01-08' }),
-      record({ memberId: 'm1', status: 'Absent', activityKind: 'sunday_mass', date: '2026-01-15' }),
+      record({ memberId: 'm1', status: 'Present', activityKind: 'sunday_mass', sundayMassSlot: '1st' }),
+      record({ memberId: 'm1', status: 'Late', activityKind: 'sunday_mass', date: '2026-01-08', sundayMassSlot: '1st' }),
+      record({ memberId: 'm1', status: 'Absent', activityKind: 'sunday_mass', date: '2026-01-15', sundayMassSlot: '1st' }),
       record({ memberId: 'm1', status: 'Excused', activityKind: 'practice', date: '2026-01-22', entityType: 'Rehearsal' }),
     ];
 
@@ -69,6 +78,49 @@ describe('computeMemberStats', () => {
     expect(stats[0].present).toBe(1);
     expect(stats[0].late).toBe(1);
     expect(stats[0].rawPercent).toBe(25);
+    expect(stats[0].finalPercent).toBe(50);
+  });
+
+  it('merges Sunday 1st/2nd Mass so either attendance is not Absent', () => {
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Absent',
+        activityKind: 'sunday_mass',
+        date: '2026-07-19',
+        sundayMassSlot: '1st',
+        entityId: 'mass-sunday_mass-1st-2026-07-19',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'sunday_mass',
+        date: '2026-07-19',
+        sundayMassSlot: '2nd',
+        entityId: 'mass-sunday_mass-2nd-2026-07-19',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Absent',
+        activityKind: 'sunday_mass',
+        date: '2026-07-26',
+        sundayMassSlot: '1st',
+        entityId: 'mass-sunday_mass-1st-2026-07-26',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Absent',
+        activityKind: 'sunday_mass',
+        date: '2026-07-26',
+        sundayMassSlot: '2nd',
+        entityId: 'mass-sunday_mass-2nd-2026-07-26',
+      }),
+    ];
+
+    const stats = computeMemberStats(records, members);
+    expect(stats[0].logged).toBe(2);
+    expect(stats[0].present).toBe(1);
+    expect(stats[0].absent).toBe(1);
     expect(stats[0].finalPercent).toBe(50);
   });
 });

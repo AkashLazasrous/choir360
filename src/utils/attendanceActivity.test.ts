@@ -6,6 +6,7 @@ import {
   dedupeImportSessions,
   marksForActivitySession,
   marksFromRecords,
+  mergeSundaySlotStatuses,
 } from './attendanceActivity';
 
 function record(overrides: Partial<AttendanceRecord> & Pick<AttendanceRecord, 'memberId' | 'date'>): AttendanceRecord {
@@ -71,5 +72,37 @@ describe('dedupeImportSessions', () => {
     ]);
     expect(merged).toHaveLength(1);
     expect(merged[0]?.marks).toEqual({ m1: 'Present', m2: 'Late', m3: 'Present' });
+  });
+
+  it('keeps Sunday 1st and 2nd Mass sessions separate', () => {
+    const merged = dedupeImportSessions([
+      { kind: 'sunday_mass', date: '2026-07-19', sundayMassSlot: '1st', marks: { m1: 'Present' } },
+      { kind: 'sunday_mass', date: '2026-07-19', sundayMassSlot: '2nd', marks: { m1: 'Absent' } },
+    ]);
+    expect(merged).toHaveLength(2);
+  });
+});
+
+describe('mergeSundaySlotStatuses', () => {
+  it('counts Present on either slot as Present', () => {
+    expect(mergeSundaySlotStatuses(['Absent', 'Present'])).toBe('Present');
+    expect(mergeSundaySlotStatuses(['Present', 'Late'])).toBe('Present');
+  });
+
+  it('counts Late when no Present', () => {
+    expect(mergeSundaySlotStatuses(['Absent', 'Late'])).toBe('Late');
+  });
+
+  it('counts Absent only when both slots are Absent/missing', () => {
+    expect(mergeSundaySlotStatuses(['Absent', 'Absent'])).toBe('Absent');
+    expect(mergeSundaySlotStatuses(['Absent'])).toBe('Absent');
+  });
+});
+
+describe('activityEntityId sunday slots', () => {
+  it('includes 1st/2nd in Sunday entity ids', () => {
+    expect(activityEntityId('sunday_mass', '2026-07-19', '1st')).toBe('mass-sunday_mass-1st-2026-07-19');
+    expect(activityEntityId('sunday_mass', '2026-07-19', '2nd')).toBe('mass-sunday_mass-2nd-2026-07-19');
+    expect(activityEntityId('sunday_mass', '2026-07-19')).toBe('mass-sunday_mass-2026-07-19');
   });
 });

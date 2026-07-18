@@ -1,5 +1,6 @@
 import type { AttendanceCategory, AttendanceRecord, AttendanceStatus, Member } from '../types';
 import { isActiveMember } from './choirStats';
+import { mergeSundaySlotStatuses, resolveSundayMassSlot } from './attendanceActivity';
 import { categoryForActivityKind, resolveActivityKind } from './attendanceTaxonomy';
 
 /**
@@ -83,15 +84,39 @@ function categoryBucket(
   return entry.mass;
 }
 
-/** One mark per member + kind + date (latest wins). Includes practice. */
+/**
+ * One mark per member + kind + date (latest wins).
+ * Sunday 1st/2nd Mass merge: attend either → not absent; late on either noted.
+ */
 function dedupeSessionRecords(records: AttendanceRecord[]): AttendanceRecord[] {
-  const map = new Map<string, AttendanceRecord>();
+  const sundayByMemberDate = new Map<string, Map<string, AttendanceRecord>>();
+  const other = new Map<string, AttendanceRecord>();
+
   for (const record of records) {
     const kind = resolveActivityKind(record);
-    const key = `${record.memberId}::${kind}::${record.date}`;
-    map.set(key, record);
+    if (kind === 'sunday_mass') {
+      const dayKey = `${record.memberId}::${record.date}`;
+      const slots = sundayByMemberDate.get(dayKey) ?? new Map<string, AttendanceRecord>();
+      const slotKey = resolveSundayMassSlot(record) ?? record.entityId ?? 'legacy';
+      slots.set(slotKey, record);
+      sundayByMemberDate.set(dayKey, slots);
+      continue;
+    }
+    other.set(`${record.memberId}::${kind}::${record.date}`, record);
   }
-  return [...map.values()];
+
+  const mergedSunday: AttendanceRecord[] = [];
+  for (const slots of sundayByMemberDate.values()) {
+    const list = [...slots.values()];
+    const base = list[list.length - 1]!;
+    const statuses = list.map((r) => r.status);
+    const merged = mergeSundaySlotStatuses(statuses);
+    // Keep a late note when Present on one slot and Late on the other.
+    const status = merged === 'Present' && statuses.includes('Late') ? 'Present' : merged;
+    mergedSunday.push({ ...base, status, sundayMassSlot: undefined });
+  }
+
+  return [...other.values(), ...mergedSunday];
 }
 
 function displayName(member: Member): string {

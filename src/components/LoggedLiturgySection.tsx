@@ -15,6 +15,8 @@ import {
   categoryForActivityKind,
   defaultTimeForKind,
   listActivitySessions,
+  resolveSundayMassSlot,
+  SUNDAY_MASS_SLOT_LABELS,
 } from '../utils/attendanceActivity';
 
 export type LiturgyLogKind = 'mass' | 'practice';
@@ -78,15 +80,17 @@ export function buildLiturgyLogEntries(
   for (const m of masses) {
     if (!isLiveDoc(m as SoftDeletable)) continue;
     const activityKind = (m.activityKind ?? 'sunday_mass') as ActivityKind;
-    const key = `${activityKind}::${m.date}`;
+    const slot = activityKind === 'sunday_mass' ? resolveSundayMassSlot(m) : undefined;
+    const key = `${activityKind}::${slot ?? 'legacy'}::${m.date}`;
+    const slotLabel = slot ? SUNDAY_MASS_SLOT_LABELS[slot] : '';
     map.set(key, {
-      id: m.id || activityEntityId(activityKind, m.date),
+      id: m.id || activityEntityId(activityKind, m.date, slot),
       kind: 'mass',
       activityKind,
       name: m.name,
       date: m.date,
       time: m.time || defaultTimeForKind(activityKind),
-      subtitle: m.category || ACTIVITY_KIND_LABELS[activityKind],
+      subtitle: [m.category || ACTIVITY_KIND_LABELS[activityKind], slotLabel].filter(Boolean).join(' · '),
       songNotes: (m.notes ?? '').trim(),
       loggedCount: m.attendingMemberIds?.length ?? 0,
     });
@@ -95,7 +99,7 @@ export function buildLiturgyLogEntries(
   for (const r of rehearsals) {
     if (!isLiveDoc(r as SoftDeletable)) continue;
     const activityKind: ActivityKind = 'practice';
-    const key = `${activityKind}::${r.date}`;
+    const key = `${activityKind}::legacy::${r.date}`;
     map.set(key, {
       id: r.id || activityEntityId(activityKind, r.date),
       kind: 'practice',
@@ -112,13 +116,15 @@ export function buildLiturgyLogEntries(
   // Attendance is source of truth for "logged" sessions — never drop a live session
   // just because the parent collection lagged or failed to load.
   for (const session of listActivitySessions(attendanceRecords)) {
-    const key = `${session.kind}::${session.date}`;
+    const slot = session.sundayMassSlot;
+    const key = `${session.kind}::${slot ?? 'legacy'}::${session.date}`;
     const existing = map.get(key);
     if (existing) {
       existing.loggedCount = Math.max(existing.loggedCount, session.loggedCount);
       if (!existing.name?.trim()) existing.name = session.entityName;
       continue;
     }
+    const slotLabel = slot ? SUNDAY_MASS_SLOT_LABELS[slot] : '';
     map.set(key, {
       id: session.entityId,
       kind: logKindForActivity(session.kind),
@@ -126,7 +132,7 @@ export function buildLiturgyLogEntries(
       name: session.entityName,
       date: session.date,
       time: defaultTimeForKind(session.kind),
-      subtitle: ACTIVITY_KIND_LABELS[session.kind],
+      subtitle: [ACTIVITY_KIND_LABELS[session.kind], slotLabel].filter(Boolean).join(' · '),
       songNotes: '',
       loggedCount: session.loggedCount,
     });

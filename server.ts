@@ -18,9 +18,10 @@ import {
   buildRehearsalFromActivity,
   defaultEntityName,
   kindToEntityType,
+  resolveSundayMassSlot,
 } from "./src/utils/attendanceActivity";
 import { resolveActivityKind } from "./src/utils/attendanceTaxonomy";
-import type { ActivityKind, AttendanceStatus, Mass, Member, Rehearsal } from "./src/types";
+import type { ActivityKind, AttendanceStatus, Mass, Member, Rehearsal, SundayMassSlot } from "./src/types";
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 
 dotenv.config({ path: ".env.local" });
@@ -1378,6 +1379,7 @@ type AttendanceSessionBody = {
   title?: string;
   notes?: string;
   marks: Record<string, AttendanceStatus | null>;
+  sundayMassSlot?: SundayMassSlot;
   specialMassBilling?: SpecialMassBilling;
   specialMassPayment?: SpecialMassPaymentDetails;
 };
@@ -1466,12 +1468,24 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
     }
   }
 
+  let sundayMassSlot: SundayMassSlot | undefined;
+  if (kind === "sunday_mass") {
+    const slotRaw = typeof body.sundayMassSlot === "string" ? body.sundayMassSlot.trim() : "";
+    if (slotRaw === "1st" || slotRaw === "2nd") {
+      sundayMassSlot = slotRaw;
+    } else {
+      // Default new Sunday logs to 1st Mass when slot omitted.
+      sundayMassSlot = "1st";
+    }
+  }
+
   return {
     kind,
     date,
     title: typeof body.title === "string" ? body.title.trim().slice(0, 200) : undefined,
     notes: typeof body.notes === "string" ? body.notes.trim().slice(0, 1000) : undefined,
     marks,
+    sundayMassSlot,
     specialMassBilling,
     specialMassPayment,
   };
@@ -1668,7 +1682,7 @@ async function upsertAttendanceSessions(opts: {
   const rehearsalIds: string[] = [];
   const attendanceIds: string[] = [];
   const prepared = sessions.map((session) => {
-    const entityId = activityEntityId(session.kind, session.date);
+    const entityId = activityEntityId(session.kind, session.date, session.sundayMassSlot);
     const recordIds = Object.entries(session.marks)
       .filter(([, status]) => status)
       .map(([memberId]) => {
@@ -1734,11 +1748,23 @@ async function upsertAttendanceSessions(opts: {
 
     const sessionAttendance = attendanceByDate.filter((row) => {
       if (row.data.date !== session.date || isSoftDeletedDoc(row.data)) return false;
-      return resolveActivityKind({
+      const rowKind = resolveActivityKind({
         activityKind: row.data.activityKind,
         entityType: row.data.entityType,
         entityName: row.data.entityName,
-      }) === session.kind;
+      });
+      if (rowKind !== session.kind) return false;
+      if (session.kind === "sunday_mass") {
+        const rowSlot = resolveSundayMassSlot({
+          sundayMassSlot: row.data.sundayMassSlot as SundayMassSlot | undefined,
+          entityId: String(row.data.entityId || row.id),
+          id: row.id,
+        });
+        // Match slotted session; treat legacy unslotted as 1st Mass.
+        const effectiveRowSlot = rowSlot ?? "1st";
+        return effectiveRowSlot === (session.sundayMassSlot ?? "1st");
+      }
+      return true;
     });
 
     if (sessionMarksAlreadyCanonical(resolvedMarks, entityId, sessionAttendance)) {
@@ -1751,7 +1777,7 @@ async function upsertAttendanceSessions(opts: {
       ? rehearsalExisting.get(entityId)
       : massExisting.get(entityId);
 
-    // Prefer metadata from a legacy parent for the same kind+date when canonical is new.
+    // Prefer metadata from a legacy parent for the same kind+date(+slot) when canonical is new.
     if (!parentPrev) {
       const parentPool = session.kind === "practice" ? rehearsalsByDate : massesByDate;
       const legacyParent = parentPool.find((row) => {
@@ -1763,11 +1789,20 @@ async function upsertAttendanceSessions(opts: {
             entityName: row.data.name,
           }) === "practice";
         }
-        return resolveActivityKind({
+        const rowKind = resolveActivityKind({
           activityKind: row.data.activityKind,
           entityType: "Mass",
           entityName: row.data.name,
-        }) === session.kind;
+        });
+        if (rowKind !== session.kind) return false;
+        if (session.kind === "sunday_mass") {
+          const rowSlot = resolveSundayMassSlot({
+            sundayMassSlot: row.data.sundayMassSlot as SundayMassSlot | undefined,
+            id: row.id,
+          });
+          return (rowSlot ?? "1st") === (session.sundayMassSlot ?? "1st");
+        }
+        return true;
       });
       if (legacyParent) parentPrev = legacyParent.data;
     }
@@ -1802,6 +1837,7 @@ async function upsertAttendanceSessions(opts: {
               specialMassPayment: session.specialMassPayment,
             }
           : undefined,
+        session.sundayMassSlot,
       );
       batch.set(
         db.collection("masses").doc(entityId),
@@ -1814,7 +1850,7 @@ async function upsertAttendanceSessions(opts: {
     }
     ops += 1;
 
-    // Soft-delete duplicate parent docs for the same logical session.
+    // Soft-delete duplicate parent docs for the same logical session (same Sunday slot).
     const parentPool = session.kind === "practice" ? rehearsalsByDate : massesByDate;
     for (const row of parentPool) {
       if (row.id === entityId || row.data.date !== session.date || isSoftDeletedDoc(row.data)) continue;
@@ -1824,6 +1860,13 @@ async function upsertAttendanceSessions(opts: {
         entityName: row.data.name,
       });
       if (rowKind !== session.kind) continue;
+      if (session.kind === "sunday_mass") {
+        const rowSlot = resolveSundayMassSlot({
+          sundayMassSlot: row.data.sundayMassSlot as SundayMassSlot | undefined,
+          id: row.id,
+        });
+        if ((rowSlot ?? "1st") !== (session.sundayMassSlot ?? "1st")) continue;
+      }
       batch.set(
         db.collection(session.kind === "practice" ? "rehearsals" : "masses").doc(row.id),
         softDeleteFields(adminUid, now),
@@ -1835,7 +1878,7 @@ async function upsertAttendanceSessions(opts: {
     }
 
     const entityName = session.title?.trim()
-      || (typeof parentPrev?.name === "string" ? parentPrev.name : defaultEntityName(session.kind, session.date));
+      || (typeof parentPrev?.name === "string" ? parentPrev.name : defaultEntityName(session.kind, session.date, session.sundayMassSlot));
     const records = buildAttendanceRecords(
       session.kind,
       entityId,
@@ -1843,6 +1886,7 @@ async function upsertAttendanceSessions(opts: {
       session.date,
       resolvedMarks,
       members,
+      session.sundayMassSlot,
     );
 
     const ensured = new Map(records.map((r) => [r.id, r]));
@@ -1856,6 +1900,7 @@ async function upsertAttendanceSessions(opts: {
         entityId,
         entityType: kindToEntityType(session.kind),
         activityKind: session.kind,
+        ...(session.sundayMassSlot ? { sundayMassSlot: session.sundayMassSlot } : {}),
         entityName,
         date: session.date,
         memberId,

@@ -7,7 +7,7 @@ import {
   Payment,
 } from '../types';
 import { isActiveMember, calculatePaymentShares } from './choirStats';
-import { isMassActivityKind } from './attendanceActivity';
+import { isMassActivityKind, mergeSundaySlotStatuses, resolveSundayMassSlot } from './attendanceActivity';
 import { ALL_ACTIVITY_KINDS, resolveActivityKind } from './attendanceTaxonomy';
 
 /** Present-only for raw spreadsheet %. */
@@ -80,13 +80,41 @@ function memberDisplayName(member: Member): string {
   return `${member.firstName} ${member.lastName}`.trim();
 }
 
+/**
+ * One logical mark per member + kind + date.
+ * Sunday 1st/2nd Mass collapse to a single day: Present/Late on either
+ * counts as attended; only missing both → Absent.
+ */
 function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[] {
-  const map = new Map<string, AttendanceRecord>();
+  const sundayByMemberDate = new Map<string, Map<string, AttendanceRecord>>();
+  const other = new Map<string, AttendanceRecord>();
+
   for (const record of records) {
-    const key = `${record.memberId}::${resolveKind(record)}::${record.date}`;
-    map.set(key, record);
+    const kind = resolveKind(record);
+    if (kind === 'sunday_mass') {
+      const dayKey = `${record.memberId}::${record.date}`;
+      const slots = sundayByMemberDate.get(dayKey) ?? new Map<string, AttendanceRecord>();
+      const slotKey = resolveSundayMassSlot(record) ?? record.entityId ?? 'legacy';
+      slots.set(slotKey, record);
+      sundayByMemberDate.set(dayKey, slots);
+      continue;
+    }
+    other.set(`${record.memberId}::${kind}::${record.date}`, record);
   }
-  return [...map.values()];
+
+  const mergedSunday: AttendanceRecord[] = [];
+  for (const slots of sundayByMemberDate.values()) {
+    const list = [...slots.values()];
+    const base = list[list.length - 1]!;
+    mergedSunday.push({
+      ...base,
+      status: mergeSundaySlotStatuses(list.map((r) => r.status)),
+      sundayMassSlot: undefined,
+      entityId: base.entityId,
+    });
+  }
+
+  return [...other.values(), ...mergedSunday];
 }
 
 /** Per-member payment share totals from special-mass attendance. */

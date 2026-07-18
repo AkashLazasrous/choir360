@@ -14,6 +14,7 @@ import {
   Rehearsal,
   SpecialMassBilling,
   SpecialMassPaymentDetails,
+  SundayMassSlot,
 } from '../../types';
 import { formatINR } from '../../utils/currency';
 import {
@@ -25,6 +26,8 @@ import {
   listActivitySessions,
   marksForActivitySession,
   MASS_BUCKET_KINDS,
+  SUNDAY_MASS_SLOT_LABELS,
+  SUNDAY_MASS_SLOTS,
 } from '../../utils/attendanceActivity';
 import {
   computeParishStats,
@@ -81,6 +84,8 @@ export interface ActivityAttendanceSavePayload {
   title?: string;
   notes?: string;
   marks: Record<string, AttendanceStatus | null>;
+  /** Sunday Mass only — 1st Mass or 2nd Mass */
+  sundayMassSlot?: SundayMassSlot;
   specialMassBilling?: SpecialMassBilling;
   specialMassPayment?: SpecialMassPaymentDetails;
 }
@@ -140,6 +145,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const [section, setSection] = useState<'log' | 'history' | 'overview'>('log');
   const [category, setCategory] = useState<AttendanceCategory>('mass');
   const [kind, setKind] = useState<ActivityKind>('sunday_mass');
+  const [sundayMassSlot, setSundayMassSlot] = useState<SundayMassSlot>('1st');
   const [historyCategoryFilter, setHistoryCategoryFilter] = useState<AttendanceCategory | 'all'>('all');
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState('');
@@ -161,10 +167,11 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     [members],
   );
 
-  const existingParent = findActivityParent(kind, date, masses, rehearsals);
+  const activeSundaySlot = kind === 'sunday_mass' ? sundayMassSlot : undefined;
+  const existingParent = findActivityParent(kind, date, masses, rehearsals, activeSundaySlot);
   const existingMarks = useMemo(
-    () => marksForActivitySession(attendanceRecords, kind, date),
-    [attendanceRecords, kind, date],
+    () => marksForActivitySession(attendanceRecords, kind, date, activeSundaySlot),
+    [attendanceRecords, kind, date, activeSundaySlot],
   );
 
   const loadedMarks = useMemo(() => {
@@ -233,6 +240,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setCategory(next);
     const kinds = kindsForCategory(next);
     setKind(kinds[0]!);
+    setSundayMassSlot('1st');
     setMarks({});
     setSaveMessage(null);
   };
@@ -245,9 +253,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     });
   };
 
-  const openSession = (sessionDate: string, sessionKind: ActivityKind) => {
+  const openSession = (
+    sessionDate: string,
+    sessionKind: ActivityKind,
+    sessionSlot?: SundayMassSlot,
+  ) => {
     setKind(sessionKind);
     setCategory(categoryForActivityKind(sessionKind));
+    setSundayMassSlot(sessionKind === 'sunday_mass' ? (sessionSlot ?? '1st') : '1st');
     setDate(sessionDate);
     setMarks({});
     setTitle('');
@@ -278,6 +291,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
       title: title || undefined,
       notes: notes || undefined,
       marks: loadedMarks,
+      ...(kind === 'sunday_mass' ? { sundayMassSlot } : {}),
       ...(kind === 'special_mass'
         ? {
             specialMassBilling: specialBilling,
@@ -473,9 +487,9 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <div className="max-h-[min(70vh,640px)] space-y-1 overflow-y-auto">
                 {fullHistory.map((session) => (
                   <button
-                    key={`${session.kind}-${session.date}`}
+                    key={`${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
                     type="button"
-                    onClick={() => openSession(session.date, session.kind)}
+                    onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
                     className="flex w-full min-h-[48px] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-black/[0.04]"
                   >
                     <div className="min-w-0">
@@ -484,6 +498,9 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                         {ATTENDANCE_CATEGORY_LABELS[categoryForActivityKind(session.kind)]}
                         {' · '}
                         {ACTIVITY_KIND_LABELS[session.kind]}
+                        {session.sundayMassSlot
+                          ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}`
+                          : ''}
                         {session.entityName ? ` · ${session.entityName}` : ''}
                       </p>
                     </div>
@@ -659,13 +676,42 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     <button
                       key={k}
                       type="button"
-                      onClick={() => { setKind(k); setMarks({}); }}
+                      onClick={() => {
+                        setKind(k);
+                        if (k === 'sunday_mass') setSundayMassSlot('1st');
+                        setMarks({});
+                      }}
                       className={`btn-pill btn-pill-sm ${kind === k ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
                     >
                       {ACTIVITY_KIND_LABELS[k]}
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {kind === 'sunday_mass' && (
+              <div>
+                <p className="apple-label mb-2">Sunday Mass</p>
+                <div className="flex flex-wrap gap-2">
+                  {SUNDAY_MASS_SLOTS.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => {
+                        setSundayMassSlot(slot);
+                        setMarks({});
+                      }}
+                      className={`btn-pill btn-pill-sm ${sundayMassSlot === slot ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
+                    >
+                      {SUNDAY_MASS_SLOT_LABELS[slot]}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-[12px] text-[#86868b] lg:text-[#a1a1a6]">
+                  Members may attend 1st, 2nd, or both. Present or Late at either mass counts as attended;
+                  Absent only if they miss both. Late is still noted per mass.
+                </p>
               </div>
             )}
 
@@ -693,7 +739,12 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     <input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder={existingParent?.name ?? ACTIVITY_KIND_LABELS[kind]}
+                      placeholder={
+                        existingParent?.name
+                        ?? (kind === 'sunday_mass'
+                          ? SUNDAY_MASS_SLOT_LABELS[sundayMassSlot]
+                          : ACTIVITY_KIND_LABELS[kind])
+                      }
                       className="apple-input"
                     />
                   </label>
@@ -867,12 +918,17 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   <div className="space-y-1">
                     {recentHistory.map((session) => (
                       <button
-                        key={`${session.kind}-${session.date}`}
+                        key={`${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
                         type="button"
-                        onClick={() => openSession(session.date, session.kind)}
+                        onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
                         className="flex w-full min-h-[44px] items-center justify-between rounded-xl px-2 text-left text-[13px] text-[#f5f5f7] hover:bg-white/10 max-lg:text-[#1d1d1f] max-lg:hover:bg-black/[0.04]"
                       >
-                        <span className="font-medium text-[#f5f5f7] max-lg:text-[#1d1d1f]">{session.date}</span>
+                        <span className="font-medium text-[#f5f5f7] max-lg:text-[#1d1d1f]">
+                          {session.date}
+                          {session.sundayMassSlot
+                            ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}`
+                            : ''}
+                        </span>
                         <span className="text-white/70 max-lg:text-[#86868b]">{session.loggedCount} marks</span>
                       </button>
                     ))}
