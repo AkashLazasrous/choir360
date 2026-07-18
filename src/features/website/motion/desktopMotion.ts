@@ -19,6 +19,16 @@ function getAppScroller(): HTMLElement | null {
   return document.querySelector('.app-main') as HTMLElement | null;
 }
 
+/** Full scrollable column — never the progress bar / first short child. */
+function getAppScrollContent(wrapper: HTMLElement): HTMLElement {
+  return (
+    (wrapper.querySelector('.app-main-scroll') as HTMLElement | null)
+    || (wrapper.querySelector('.app-content-rail') as HTMLElement | null)
+    || (wrapper.firstElementChild as HTMLElement | null)
+    || wrapper
+  );
+}
+
 function forceRevealVisible(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>('[data-reveal], [data-split] .website-split-unit').forEach((el) => {
     el.style.opacity = '';
@@ -108,13 +118,16 @@ export function useDesktopAppScroll(enabled: boolean) {
       bar.style.width = `${Math.min(100, Math.max(0, p * 100))}%`;
     };
 
+    const content = getAppScrollContent(wrapper);
+
     try {
       lenis = new Lenis({
         wrapper,
-        content: (wrapper.firstElementChild as HTMLElement) || wrapper,
+        content,
         duration: 1.1,
         smoothWheel: true,
         autoRaf: false,
+        autoResize: true,
       });
 
       onScroll = () => {
@@ -143,6 +156,25 @@ export function useDesktopAppScroll(enabled: boolean) {
 
     wrapper.addEventListener('scroll', updateProgress, { passive: true });
 
+    // Recalculate when async lists (attendance, members, etc.) change height.
+    const resizeObservers: ResizeObserver[] = [];
+    try {
+      const ro = new ResizeObserver(() => {
+        try {
+          lenis?.resize();
+          ScrollTrigger.refresh();
+          updateProgress();
+        } catch {
+          /* ignore */
+        }
+      });
+      ro.observe(content);
+      if (content !== wrapper) ro.observe(wrapper);
+      resizeObservers.push(ro);
+    } catch {
+      /* ResizeObserver unavailable */
+    }
+
     const onResize = () => {
       if (!isDesktopWebsite()) {
         try {
@@ -152,7 +184,9 @@ export function useDesktopAppScroll(enabled: boolean) {
         }
       } else {
         try {
+          lenis?.resize();
           ScrollTrigger.refresh();
+          updateProgress();
         } catch {
           /* ignore */
         }
@@ -163,6 +197,7 @@ export function useDesktopAppScroll(enabled: boolean) {
     return () => {
       window.removeEventListener('resize', onResize);
       wrapper.removeEventListener('scroll', updateProgress);
+      resizeObservers.forEach((ro) => ro.disconnect());
       if (ticker) gsap.ticker.remove(ticker);
       if (lenis && onScroll) {
         try {

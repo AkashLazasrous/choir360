@@ -861,7 +861,14 @@
   }
 
   .website-page-body {
-    padding: 2rem 3.5rem 0;
+    /* Bottom pad so the last cards/rows are reachable above the fold edge */
+    padding: 2rem 3.5rem 4.5rem;
+  }
+
+  .is-website-app .app-main-scroll,
+  .is-website-mode .app-main-scroll {
+    min-height: 100%;
+    padding-bottom: 3rem;
   }
 
   .website-panel,

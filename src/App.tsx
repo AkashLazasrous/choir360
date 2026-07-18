@@ -719,6 +719,8 @@ function AppInner() {
             (websiteApp ? ' lg:!pt-0' : '')
           }
         >
+          {/* Single content root so Lenis measures the full page height (not the progress bar). */}
+          <div className="app-main-scroll">
           {websiteApp && (
             <div className="website-app-progress hidden lg:block" aria-hidden>
               <span id="website-scroll-progress" />
@@ -928,6 +930,7 @@ function AppInner() {
             )}
           </Suspense>
           </PageTransition>
+          </div>
           </div>
         </main>
       </div>

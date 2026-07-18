@@ -88,6 +88,13 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Lenis measures this node — must grow with page content */
+  .app-main-scroll {
+    min-height: min-content;
+    width: 100%;
+    padding-bottom: 2.5rem;
+  }
+
   /* Nested stickies are inside the main scrollport (header is outside). */
   .app-main .sticky-below-header,
   .app-main .product-subnav {
