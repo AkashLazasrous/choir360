@@ -161,7 +161,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
   rehearsals,
   attendanceRecords = [],
   isAdmin,
-  limit = 12,
+  limit = 5,
   variant = 'desk',
   onNavigate,
   onSaveSongNotes,
@@ -256,7 +256,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
           </h3>
           {entries.length > 0 && (
             <p className={isMobile ? 'mt-0.5 text-[11px] text-[#86868b]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
-              {entries.length} shown · stays until an admin removes it
+              Latest {entries.length} by date · stays until an admin removes it
             </p>
           )}
         </div>
