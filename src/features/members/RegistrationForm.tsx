@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Award,
   AlertTriangle,
@@ -90,8 +90,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [emergencyRelation, setEmergencyRelation] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [step, setStep] = useState<RegStep>(1);
+  const stepRef = useRef<RegStep>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
 
   const resolvedWhatsapp = whatsappSameAsMobile ? mobile : whatsapp;
 
@@ -118,39 +123,67 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       if (!voiceType || !memberType) return 'Select voice type and member type before continuing.';
       return null;
     }
+    if (s === 3) {
+      if (!emergencyName.trim() || !emergencyRelation.trim() || !emergencyPhone.trim()) {
+        return 'Please fill emergency contact name, relationship, and phone before submitting.';
+      }
+      return null;
+    }
     return null;
   };
 
+  const goToStep = (next: RegStep) => {
+    stepRef.current = next;
+    setStep(next);
+  };
+
   const goNext = () => {
-    const err = validateStep(step);
+    const current = stepRef.current;
+    const err = validateStep(current);
     if (err) {
       setFormError(err);
       return;
     }
+    if (current >= 3) return;
     setFormError('');
-    setStep((s) => (s < 3 ? ((s + 1) as RegStep) : s));
+    goToStep((current + 1) as RegStep);
   };
 
   const goBack = () => {
+    const current = stepRef.current;
+    if (current <= 1) return;
     setFormError('');
-    setStep((s) => (s > 1 ? ((s - 1) as RegStep) : s));
+    goToStep((current - 1) as RegStep);
+  };
+
+  /** Steps 1–2 are NOT a <form>, so Enter never creates a member early. */
+  const handleWizardKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return;
+    if (stepRef.current >= 3) return;
+    e.preventDefault();
+    e.stopPropagation();
+    goNext();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setFormError('');
 
-    // Mobile keyboards (Enter / Go / Next) submit the <form>. Without this guard,
-    // steps 1–2 create the member and skip photo + emergency contact.
-    if (step < 3) {
+    // Only step 3 renders this <form>. Still hard-block if step somehow drifts.
+    if (stepRef.current !== 3) {
       goNext();
       return;
     }
 
-    const stepErr = validateStep(1) || validateStep(2);
+    const stepErr = validateStep(1) || validateStep(2) || validateStep(3);
     if (stepErr) {
       setFormError(stepErr);
-      setStep(1);
+      if (validateStep(1)) goToStep(1);
+      else if (validateStep(2)) goToStep(2);
+      else goToStep(3);
       return;
     }
 
@@ -188,7 +221,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setEmergencyName('');
       setEmergencyRelation('');
       setEmergencyPhone('');
-      setStep(1);
+      goToStep(1);
     };
 
     try {
@@ -213,9 +246,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           experience: Number(experience),
           photoUrl: finalPhotoUrl,
           emergencyContact: {
-            name: emergencyName || 'Guardian',
-            relationship: emergencyRelation || 'Family',
-            phone: emergencyPhone || mobile,
+            name: emergencyName.trim(),
+            relationship: emergencyRelation.trim(),
+            phone: emergencyPhone.trim(),
           },
         }),
       });
@@ -268,9 +301,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         skills,
         experience: Number(experience),
         emergencyContact: {
-          name: emergencyName || 'Guardian',
-          relationship: emergencyRelation || 'Family',
-          phone: emergencyPhone || mobile,
+          name: emergencyName.trim(),
+          relationship: emergencyRelation.trim(),
+          phone: emergencyPhone.trim(),
         },
         status: 'Pending',
         joiningDate: new Date().toISOString().split('T')[0],
@@ -298,21 +331,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   return (
     <div className="font-apple grid grid-cols-1 gap-6 lg:grid-cols-3" id="registration-form-view">
-      <form
-        onSubmit={handleSubmit}
-        onKeyDown={(e) => {
-          // Extra guard: Enter in inputs must not submit until the final step.
-          if (e.key !== 'Enter') return;
-          const target = e.target as HTMLElement;
-          if (target.tagName === 'TEXTAREA') return;
-          if (step < 3) {
-            e.preventDefault();
-            goNext();
-          }
-        }}
+      {/*
+        Steps 1–2 are NOT wrapped in <form>. Mobile browsers often treat Enter / “Go”
+        (and sometimes Next) as form submit, which created the member before Photo/Emergency.
+        Only step 3 uses a real form with type="submit".
+      */}
+      <div
         className="apple-card space-y-7 p-6 lg:col-span-2 lg:p-8"
         id="member-form"
-        noValidate
+        onKeyDown={handleWizardKeyDown}
       >
         <div
           className="sticky-below-header sticky z-10 -mx-6 border-b border-black/[0.06] bg-white/95 px-4 py-3 backdrop-blur-md lg:-mx-8 lg:px-8"
@@ -328,7 +355,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   if (s.id === step) return;
                   if (s.id < step) {
                     setFormError('');
-                    setStep(s.id);
+                    goToStep(s.id);
                     return;
                   }
                   // Only advance via tabs after the current step validates.
@@ -340,7 +367,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     }
                   }
                   setFormError('');
-                  setStep(s.id);
+                  goToStep(s.id);
                 }}
                 aria-current={step === s.id ? 'step' : undefined}
                 className={`btn-pill shrink-0 snap-start !min-h-[44px] !px-4 !text-[13px] ${
@@ -369,7 +396,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="e.g. Antony / Maria"
               className="apple-input"
-              required
             />
           </Field>
 
@@ -380,7 +406,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => setLastName(e.target.value)}
               placeholder="e.g. Susairaj"
               className="apple-input"
-              required
             />
           </Field>
 
@@ -402,7 +427,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               value={dob}
               onChange={(e) => setDob(e.target.value)}
               className="apple-input"
-              required
             />
             <p className="mt-1 text-[12px] text-[#86868b]">
               After approval, this becomes your login password as <span className="font-semibold text-[#0e3d4c]">{dobPasswordHint}</span> (DDMMYYYY).
@@ -442,7 +466,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => setMobile(e.target.value)}
               placeholder="e.g. 9876543210"
               className="apple-input"
-              required
             />
           </Field>
 
@@ -467,7 +490,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               placeholder="e.g. 9876543210"
               className="apple-input"
               disabled={whatsappSameAsMobile}
-              required={!whatsappSameAsMobile}
             />
           </Field>
 
@@ -478,7 +500,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="e.g. antony@gmail.com"
               className="apple-input"
-              required
             />
           </Field>
 
@@ -511,7 +532,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 const next = findParishById(nextId);
                 if (next) setChoirName(`${next.parishName} Choir`);
               }}
-              required
               className="apple-select"
             >
               <option value="">— Select parish —</option>
@@ -612,108 +632,130 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         )}
 
         {step === 3 && (
+          <form onSubmit={handleSubmit} noValidate className="space-y-7">
+            <div>
+              <h3 className="apple-title">Profile photo</h3>
+              <p className="apple-caption mt-1">Upload a photo for your choir roster card.</p>
+            </div>
+
+            <div className="apple-inset space-y-3 p-4">
+              <ProfilePhotoUpload
+                memberId={email.trim() ? `pending-${email.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 'pending-registration'}
+                uploadedByUserId="public_user"
+                currentPhotoUrl={
+                  (cloudinaryRecord ? pickCloudinaryPhotoUrl(cloudinaryRecord) : '') || photoUrl
+                }
+                onUploadComplete={(record) => setCloudinaryRecord(record)}
+              />
+            </div>
+
+            <hr className="apple-divider" />
+
+            <div>
+              <h3 className="apple-title">Emergency contact</h3>
+              <p className="apple-caption mt-1">Required before you can submit your application.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Full name" required>
+                <input
+                  type="text"
+                  value={emergencyName}
+                  onChange={(e) => setEmergencyName(e.target.value)}
+                  placeholder="e.g. Susairaj S"
+                  className="apple-input"
+                  autoComplete="name"
+                />
+              </Field>
+
+              <Field label="Relationship" required>
+                <select
+                  value={emergencyRelation}
+                  onChange={(e) => setEmergencyRelation(e.target.value)}
+                  className="apple-select"
+                >
+                  <option value="">— Select relationship —</option>
+                  {EMERGENCY_RELATIONSHIPS.map((rel) => (
+                    <option key={rel} value={rel}>{rel}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Contact phone" required>
+                <input
+                  type="tel"
+                  value={emergencyPhone}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                  placeholder="e.g. 9444000000"
+                  className="apple-input"
+                  autoComplete="tel"
+                />
+              </Field>
+            </div>
+
+            {formError && (
+              <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700">{formError}</p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-5">
+              <button
+                type="button"
+                onClick={goBack}
+                className="btn-pill btn-pill-secondary !min-h-[44px]"
+                disabled={isSubmitting}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                type="submit"
+                id="submit-registration-btn"
+                disabled={isSubmitting}
+                className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
+              >
+                <Send className="h-4 w-4" />
+                {isSubmitting ? 'Submitting...' : dict.submitApproval}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step < 3 && (
           <>
-        <div>
-          <h3 className="apple-title">Profile photo</h3>
-          <p className="apple-caption mt-1">Upload a photo for your choir roster card.</p>
-        </div>
+            {formError && (
+              <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700">{formError}</p>
+            )}
 
-        <div className="apple-inset space-y-3 p-4">
-          <ProfilePhotoUpload
-            memberId={email.trim() ? `pending-${email.trim().toLowerCase().replace(/[^a-z0-9]/g, '-')}` : 'pending-registration'}
-            uploadedByUserId="public_user"
-            currentPhotoUrl={
-              (cloudinaryRecord ? pickCloudinaryPhotoUrl(cloudinaryRecord) : '') || photoUrl
-            }
-            onUploadComplete={(record) => setCloudinaryRecord(record)}
-          />
-        </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-5">
+              {step > 1 ? (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="btn-pill btn-pill-secondary !min-h-[44px]"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </button>
+              ) : (
+                <span aria-hidden />
+              )}
 
-        <hr className="apple-divider" />
-
-        <div>
-          <h3 className="apple-title">Emergency contact</h3>
-          <p className="apple-caption mt-1">Someone we can reach if needed.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Field label="Full name">
-            <input
-              type="text"
-              value={emergencyName}
-              onChange={(e) => setEmergencyName(e.target.value)}
-              placeholder="e.g. Susairaj S"
-              className="apple-input"
-            />
-          </Field>
-
-          <Field label="Relationship">
-            <select
-              value={emergencyRelation}
-              onChange={(e) => setEmergencyRelation(e.target.value)}
-              className="apple-select"
-            >
-              <option value="">— Select relationship —</option>
-              {EMERGENCY_RELATIONSHIPS.map((rel) => (
-                <option key={rel} value={rel}>{rel}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Contact phone">
-            <input
-              type="tel"
-              value={emergencyPhone}
-              onChange={(e) => setEmergencyPhone(e.target.value)}
-              placeholder="e.g. 9444000000"
-              className="apple-input"
-            />
-          </Field>
-        </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </>
         )}
-
-        {formError && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700">{formError}</p>
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-5">
-          {step > 1 ? (
-            <button
-              type="button"
-              onClick={goBack}
-              className="btn-pill btn-pill-secondary !min-h-[44px]"
-              disabled={isSubmitting}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </button>
-          ) : (
-            <span aria-hidden />
-          )}
-
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              id="submit-registration-btn"
-              disabled={isSubmitting}
-              className="btn-pill btn-pill-primary !min-h-[44px] !text-[15px] ml-auto"
-            >
-              <Send className="h-4 w-4" />
-              {isSubmitting ? 'Submitting...' : dict.submitApproval}
-            </button>
-          )}
-        </div>
-      </form>
+      </div>
 
       <div className="space-y-4" id="workflow-steps-road">
         <div className="apple-hero-soft space-y-4 p-6">
