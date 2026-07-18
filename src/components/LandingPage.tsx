@@ -33,6 +33,7 @@ import { AppleButton } from './interactions/AppleButton';
 import { MobileHomeDashboard } from './mobileDashboard';
 import {
   LoggedLiturgySection,
+  type LiturgyLogRemove,
   type LiturgySongNotesSave,
 } from './LoggedLiturgySection';
 
@@ -49,6 +50,7 @@ interface LandingPageProps {
   loading?: boolean;
   isAdmin?: boolean;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
+  onRemoveLiturgyLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -63,6 +65,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   loading = false,
   isAdmin = false,
   onSaveLiturgySongNotes,
+  onRemoveLiturgyLog,
 }) => {
   const { selectedParish } = useParish();
   const parishName  = selectedParish?.parishName ?? 'your parish';
@@ -96,6 +99,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         loading={loading}
         isAdmin={isAdmin}
         onSaveLiturgySongNotes={onSaveLiturgySongNotes}
+        onRemoveLiturgyLog={onRemoveLiturgyLog}
         onNavigate={onNavigate}
       />
 
@@ -206,9 +210,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             variant="desk"
             masses={masses}
             rehearsals={rehearsals}
+            attendanceRecords={attendanceRecords}
             isAdmin={isAdmin}
             onNavigate={onNavigate}
             onSaveSongNotes={onSaveLiturgySongNotes}
+            onRemoveLog={onRemoveLiturgyLog}
           />
 
           <article className="apple-hero relative overflow-hidden p-6">

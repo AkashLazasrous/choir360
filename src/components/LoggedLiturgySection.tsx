@@ -6,26 +6,52 @@ import {
   Music2,
   Save,
   Mic2,
+  Trash2,
 } from 'lucide-react';
-import type { Mass, Rehearsal, Tab } from '../types';
+import type { ActivityKind, AttendanceRecord, Mass, Rehearsal, Tab } from '../types';
+import {
+  ACTIVITY_KIND_LABELS,
+  activityEntityId,
+  categoryForActivityKind,
+  defaultTimeForKind,
+  listActivitySessions,
+} from '../utils/attendanceActivity';
 
 export type LiturgyLogKind = 'mass' | 'practice';
 
 export type LiturgySongNotesSave = {
   id: string;
   kind: LiturgyLogKind;
+  activityKind: ActivityKind;
+  date: string;
+  name: string;
   songNotes: string;
+};
+
+export type LiturgyLogRemove = {
+  id: string;
+  kind: LiturgyLogKind;
+  activityKind: ActivityKind;
+  date: string;
 };
 
 export type LiturgyLogEntry = {
   id: string;
   kind: LiturgyLogKind;
+  activityKind: ActivityKind;
   name: string;
   date: string;
   time: string;
   subtitle: string;
   songNotes: string;
+  loggedCount: number;
 };
+
+type SoftDeletable = { status?: string; deletedAt?: string | null };
+
+function isLiveDoc(doc: SoftDeletable): boolean {
+  return doc.status !== 'deleted' && doc.deletedAt == null;
+}
 
 function songNotesFromRehearsal(r: Rehearsal): string {
   if (r.notes?.trim()) return r.notes.trim();
@@ -33,34 +59,80 @@ function songNotesFromRehearsal(r: Rehearsal): string {
   return '';
 }
 
-/** Merge masses + practices, newest first. */
+function logKindForActivity(kind: ActivityKind): LiturgyLogKind {
+  return kind === 'practice' ? 'practice' : 'mass';
+}
+
+/**
+ * Build durable log rows from masses + rehearsals + attendance sessions.
+ * Attendance keeps a session visible even if a parent doc is briefly missing;
+ * soft-deleted parents/marks are excluded until an admin restores them.
+ */
 export function buildLiturgyLogEntries(
   masses: Mass[],
   rehearsals: Rehearsal[],
+  attendanceRecords: AttendanceRecord[] = [],
 ): LiturgyLogEntry[] {
-  const massEntries: LiturgyLogEntry[] = masses.map((m) => ({
-    id: m.id,
-    kind: 'mass',
-    name: m.name,
-    date: m.date,
-    time: m.time,
-    subtitle: m.category,
-    songNotes: (m.notes ?? '').trim(),
-  }));
+  const map = new Map<string, LiturgyLogEntry>();
 
-  const practiceEntries: LiturgyLogEntry[] = rehearsals
-    .filter((r) => r.status !== 'Cancelled')
-    .map((r) => ({
-      id: r.id,
-      kind: 'practice' as const,
+  for (const m of masses) {
+    if (!isLiveDoc(m as SoftDeletable)) continue;
+    const activityKind = (m.activityKind ?? 'sunday_mass') as ActivityKind;
+    const key = `${activityKind}::${m.date}`;
+    map.set(key, {
+      id: m.id || activityEntityId(activityKind, m.date),
+      kind: 'mass',
+      activityKind,
+      name: m.name,
+      date: m.date,
+      time: m.time || defaultTimeForKind(activityKind),
+      subtitle: m.category || ACTIVITY_KIND_LABELS[activityKind],
+      songNotes: (m.notes ?? '').trim(),
+      loggedCount: m.attendingMemberIds?.length ?? 0,
+    });
+  }
+
+  for (const r of rehearsals) {
+    if (!isLiveDoc(r as SoftDeletable)) continue;
+    const activityKind: ActivityKind = 'practice';
+    const key = `${activityKind}::${r.date}`;
+    map.set(key, {
+      id: r.id || activityEntityId(activityKind, r.date),
+      kind: 'practice',
+      activityKind,
       name: r.name,
       date: r.date,
-      time: r.startTime,
-      subtitle: r.type,
+      time: r.startTime || defaultTimeForKind(activityKind),
+      subtitle: r.type || ACTIVITY_KIND_LABELS.practice,
       songNotes: songNotesFromRehearsal(r),
-    }));
+      loggedCount: r.attendingMemberIds?.length ?? 0,
+    });
+  }
 
-  return [...massEntries, ...practiceEntries].sort((a, b) => {
+  // Attendance is source of truth for "logged" sessions — never drop a live session
+  // just because the parent collection lagged or failed to load.
+  for (const session of listActivitySessions(attendanceRecords)) {
+    const key = `${session.kind}::${session.date}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.loggedCount = Math.max(existing.loggedCount, session.loggedCount);
+      if (!existing.name?.trim()) existing.name = session.entityName;
+      continue;
+    }
+    map.set(key, {
+      id: session.entityId,
+      kind: logKindForActivity(session.kind),
+      activityKind: session.kind,
+      name: session.entityName,
+      date: session.date,
+      time: defaultTimeForKind(session.kind),
+      subtitle: ACTIVITY_KIND_LABELS[session.kind],
+      songNotes: '',
+      loggedCount: session.loggedCount,
+    });
+  }
+
+  return [...map.values()].sort((a, b) => {
     const byDate = b.date.localeCompare(a.date);
     if (byDate !== 0) return byDate;
     return (b.time || '').localeCompare(a.time || '');
@@ -70,35 +142,40 @@ export function buildLiturgyLogEntries(
 type LoggedLiturgySectionProps = {
   masses: Mass[];
   rehearsals: Rehearsal[];
+  attendanceRecords?: AttendanceRecord[];
   isAdmin: boolean;
   limit?: number;
   /** desk = Overview apple-card; mobile = OLED home surface */
   variant?: 'desk' | 'mobile';
   onNavigate: (tab: Tab) => void;
   onSaveSongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
+  onRemoveLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
 };
 
 /**
  * Overview “Logged masses & practices” — shows liturgy + practice logs with
- * admin-only song-list notes. Shared by desktop Overview and mobile Home.
+ * admin-only song-list notes and admin-only removal. Shared by desktop + mobile.
  */
 export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
   masses,
   rehearsals,
+  attendanceRecords = [],
   isAdmin,
-  limit = 8,
+  limit = 12,
   variant = 'desk',
   onNavigate,
   onSaveSongNotes,
+  onRemoveLog,
 }) => {
   const entries = useMemo(
-    () => buildLiturgyLogEntries(masses, rehearsals).slice(0, limit),
-    [masses, rehearsals, limit],
+    () => buildLiturgyLogEntries(masses, rehearsals, attendanceRecords).slice(0, limit),
+    [masses, rehearsals, attendanceRecords, limit],
   );
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const isMobile = variant === 'mobile';
@@ -117,13 +194,44 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
     const songNotes = (drafts[entry.id] ?? entry.songNotes).trim();
     setSavingId(entry.id);
     setMessage(null);
-    const result = await onSaveSongNotes({ id: entry.id, kind: entry.kind, songNotes });
+    const result = await onSaveSongNotes({
+      id: entry.id,
+      kind: entry.kind,
+      activityKind: entry.activityKind,
+      date: entry.date,
+      name: entry.name,
+      songNotes,
+    });
     setSavingId(null);
     if (result.ok) {
       setMessage('Song list saved.');
       setTimeout(() => setMessage(null), 2500);
     } else {
       setMessage(result.error ?? 'Could not save song list.');
+    }
+  };
+
+  const handleRemove = async (entry: LiturgyLogEntry) => {
+    if (!isAdmin || !onRemoveLog) return;
+    const ok = window.confirm(
+      `Remove “${entry.name}” (${entry.date}) from the liturgy log?\n\nOnly an admin can do this. Attendance marks for this session will be hidden too.`,
+    );
+    if (!ok) return;
+    setRemovingId(entry.id);
+    setMessage(null);
+    const result = await onRemoveLog({
+      id: entry.id,
+      kind: entry.kind,
+      activityKind: entry.activityKind,
+      date: entry.date,
+    });
+    setRemovingId(null);
+    if (result.ok) {
+      setExpandedId(null);
+      setMessage('Log removed.');
+      setTimeout(() => setMessage(null), 2500);
+    } else {
+      setMessage(result.error ?? 'Could not remove log.');
     }
   };
 
@@ -146,6 +254,11 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
           <h3 className={isMobile ? 'mt-0.5 text-[16px] font-semibold tracking-[-0.02em] text-[#f5f5f7]' : 'apple-title mt-0.5'}>
             Logged masses & practices
           </h3>
+          {entries.length > 0 && (
+            <p className={isMobile ? 'mt-0.5 text-[11px] text-[#86868b]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
+              {entries.length} shown · stays until an admin removes it
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -163,7 +276,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
       {entries.length === 0 ? (
         <button
           type="button"
-          onClick={() => onNavigate('masses')}
+          onClick={() => onNavigate('attendance')}
           className={
             isMobile
               ? 'flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-white/14 px-4 py-6 text-center'
@@ -183,7 +296,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
             No masses or practices logged yet
           </h3>
           <p className={isMobile ? 'text-[12px] text-[#86868b]' : undefined}>
-            Log a liturgy or practice session to see it here.
+            Log attendance for a mass or practice — it will stay here until an admin removes it.
           </p>
         </button>
       ) : (
@@ -192,9 +305,10 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
             const open = expandedId === entry.id;
             const draft = drafts[entry.id] ?? entry.songNotes;
             const Icon = entry.kind === 'practice' ? Mic2 : BookOpen;
+            const category = categoryForActivityKind(entry.activityKind);
             return (
               <li
-                key={`${entry.kind}-${entry.id}`}
+                key={`${entry.activityKind}-${entry.id}-${entry.date}`}
                 className={
                   isMobile
                     ? 'rounded-xl border border-white/8 bg-white/[0.04]'
@@ -244,11 +358,12 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                             : 'apple-badge-forest !text-[10px]'
                         }
                       >
-                        {entry.kind === 'practice' ? 'Practice' : 'Mass'}
+                        {category === 'practice' ? 'Practice' : category === 'special_mass' ? 'Special' : 'Mass'}
                       </span>
                     </div>
                     <p className={isMobile ? 'mt-0.5 text-[11px] text-[#86868b]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
                       {entry.subtitle} · {entry.date} · {entry.time}
+                      {entry.loggedCount > 0 ? ` · ${entry.loggedCount} marked` : ''}
                     </p>
 
                     {!open && entry.songNotes ? (
@@ -287,6 +402,25 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                       >
                         Open
                       </button>
+                      {isAdmin && onRemoveLog ? (
+                        <button
+                          type="button"
+                          disabled={removingId === entry.id}
+                          onClick={() => void handleRemove(entry)}
+                          className={
+                            isMobile
+                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-rose-300 disabled:opacity-50'
+                              : 'btn-pill btn-pill-ghost btn-pill-xs inline-flex items-center gap-1 !text-[#d70015]'
+                          }
+                        >
+                          {removingId === entry.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                          Remove
+                        </button>
+                      ) : null}
                     </div>
 
                     {open && (

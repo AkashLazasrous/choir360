@@ -36,6 +36,7 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
   loading = false,
   isAdmin = false,
   onSaveLiturgySongNotes,
+  onRemoveLiturgyLog,
   onNavigate,
 }) => {
   const [range, setRange] = useState<TimeRange>('W');
@@ -299,10 +300,12 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         variant="mobile"
         masses={masses}
         rehearsals={rehearsals}
+        attendanceRecords={attendanceRecords}
         isAdmin={isAdmin}
         limit={6}
         onNavigate={onNavigate}
         onSaveSongNotes={onSaveLiturgySongNotes}
+        onRemoveLog={onRemoveLiturgyLog}
       />
 
       {nextPractice && (

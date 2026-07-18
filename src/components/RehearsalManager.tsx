@@ -39,7 +39,8 @@ export const RehearsalManager: React.FC<RehearsalManagerProps> = ({
   const [showForm, setShowForm]             = useState(false);
   const [expandedId, setExpandedId]         = useState<string | null>(null);
   const [attendanceOpen, setAttendanceOpen] = useState<string | null>(null);
-  const [filter, setFilter]                 = useState<'all' | 'upcoming' | 'completed'>('upcoming');
+  // Default to All so attendance-logged / past practices stay visible.
+  const [filter, setFilter]                 = useState<'all' | 'upcoming' | 'completed'>('all');
 
   // Form state
   const [name, setName]             = useState('Choir Practice');

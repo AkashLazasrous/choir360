@@ -24,6 +24,7 @@ export {
   ALL_ACTIVITY_KINDS,
   MASS_BUCKET_KINDS,
   categoryForActivityKind,
+  defaultTimeForKind,
   isMassBucketKind,
   isLiturgyActivityKind,
   kindsForCategory,

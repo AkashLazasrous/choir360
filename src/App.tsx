@@ -272,24 +272,106 @@ function AppInner() {
   const saveLiturgySongNotes = async (payload: {
     id: string;
     kind: 'mass' | 'practice';
+    activityKind: Mass['activityKind'] | 'practice';
+    date: string;
+    name: string;
     songNotes: string;
   }): Promise<{ ok: boolean; error?: string }> => {
     if (!guard.isAdmin) {
       return { ok: false, error: 'Only choir admins can add song lists.' };
     }
-    const uid = authState.user?.uid;
-    if (payload.kind === 'mass') {
-      return massSync.patch(payload.id, { notes: payload.songNotes } as Partial<Mass>, uid);
-    }
+    const uid = authState.user?.uid ?? 'admin';
     const songs = payload.songNotes
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean);
-    return rehearsalSync.patch(
-      payload.id,
-      { notes: payload.songNotes, songs } as Partial<Rehearsal>,
+
+    if (payload.kind === 'mass') {
+      const existing = masses.find((m) => m.id === payload.id);
+      if (existing) {
+        return massSync.patch(payload.id, { notes: payload.songNotes } as Partial<Mass>, uid);
+      }
+      return massSync.upsert(
+        {
+          id: payload.id,
+          name: payload.name,
+          category: 'Sunday Mass',
+          date: payload.date,
+          time: '07:00',
+          language: 'Tamil',
+          notes: payload.songNotes,
+          activityKind: payload.activityKind === 'practice' ? 'sunday_mass' : payload.activityKind,
+          ...createRecordMetadata(uid, 'active', tenantContext),
+        } as Mass & TenantScopedRecord,
+        uid,
+      );
+    }
+
+    const existing = rehearsals.find((r) => r.id === payload.id);
+    if (existing) {
+      return rehearsalSync.patch(
+        payload.id,
+        { notes: payload.songNotes, songs } as Partial<Rehearsal>,
+        uid,
+      );
+    }
+    return rehearsalSync.upsert(
+      {
+        ...createRecordMetadata(uid, 'active', tenantContext),
+        id: payload.id,
+        name: payload.name,
+        type: 'Regular Practice',
+        date: payload.date,
+        startTime: '18:00',
+        endTime: '19:30',
+        venue: 'Church Hall',
+        notes: payload.songNotes,
+        songs,
+        activityKind: 'practice',
+        status: 'Completed',
+      } as unknown as Rehearsal & TenantScopedRecord,
       uid,
     );
+  };
+
+  const removeLiturgyLog = async (payload: {
+    id: string;
+    kind: 'mass' | 'practice';
+    activityKind: string;
+    date: string;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) {
+      return { ok: false, error: 'Only choir admins can remove logged sessions.' };
+    }
+    const uid = authState.user?.uid;
+    const now = new Date().toISOString();
+    const softDelete = { status: 'deleted' as const, deletedAt: now };
+
+    if (payload.kind === 'mass') {
+      await massSync.patch(payload.id, softDelete as unknown as Partial<Mass & TenantScopedRecord>, uid);
+    } else {
+      await rehearsalSync.patch(payload.id, softDelete as unknown as Partial<Rehearsal & TenantScopedRecord>, uid);
+    }
+
+    const related = attendanceRecords.filter((record) => {
+      const row = record as AttendanceRecord & { deletedAt?: string | null };
+      if (row.deletedAt) return false;
+      if ((record.status as string) === 'deleted') return false;
+      if (record.entityId === payload.id) return true;
+      return record.date === payload.date
+        && (record.activityKind ?? (record.entityType === 'Rehearsal' ? 'practice' : 'sunday_mass'))
+          === payload.activityKind;
+    });
+
+    for (const record of related) {
+      await attendanceSync.patch(
+        record.id,
+        softDelete as unknown as Partial<AttendanceRecord & TenantScopedRecord>,
+        uid,
+      );
+    }
+
+    return { ok: true };
   };
 
   const importActivitySessions = async (
@@ -797,6 +879,7 @@ function AppInner() {
                 isAdmin={guard.isAdmin}
                 onNavigate={navigate}
                 onSaveLiturgySongNotes={saveLiturgySongNotes}
+                onRemoveLiturgyLog={removeLiturgyLog}
               />
             )}
             {activeTab === 'calendar' && (
@@ -889,6 +972,7 @@ function AppInner() {
                     isAdmin={guard.isAdmin}
                     onNavigate={navigate}
                     onSaveLiturgySongNotes={saveLiturgySongNotes}
+                    onRemoveLiturgyLog={removeLiturgyLog}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert(updateRecordMetadata(updated, authState.user?.uid ?? updated.id), authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);

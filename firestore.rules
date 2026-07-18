@@ -211,7 +211,9 @@ service cloud.firestore {
     // MASS MANAGEMENT (admin-write, member-read)
     // =========================================================================
     match /masses/{docId} {
-      allow read: if memberRole() && existingInTenant() && notDeleted();
+      // Soft-deletes filtered client-side — notDeleted() on list queries
+      // denies the whole listener (empty Liturgy / Overview logs).
+      allow read: if memberRole() && existingInTenant();
       allow create: if adminTenantCreate();
       allow update: if adminTenantUpdate();
       allow delete: if false;
@@ -471,7 +473,8 @@ service cloud.firestore {
     // REHEARSALS (admin-write, member-read; members can mark own attendance)
     // =========================================================================
     match /rehearsals/{docId} {
-      allow read: if memberRole() && existingInTenant() && notDeleted();
+      // Soft-deletes filtered client-side — same list-query pitfall as masses.
+      allow read: if memberRole() && existingInTenant();
       allow create: if adminTenantCreate();
       // Choir members can patch only the attendance fields on rehearsals
       allow update: if hasRequiredEnvelope()
