@@ -57,7 +57,7 @@ function RankBadge({ rank }: { rank: number }) {
   }
   return (
     <div
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(14,61,76,0.08)] text-[13px] font-semibold tabular-nums text-[#0e3d4c]"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(14,61,76,0.08)] text-[13px] font-semibold tabular-nums text-[#0e3d4c] lg:bg-white/10 lg:text-[#f5f5f7]"
       aria-label={`Rank ${rank}`}
     >
       {rank}
@@ -113,13 +113,13 @@ function ScoreBar({
 
   if (reduceMotion) {
     return (
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(14,61,76,0.08)]">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(14,61,76,0.08)] lg:bg-white/12">
         <div className="h-full rounded-full" style={fillStyle} />
       </div>
     );
   }
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(14,61,76,0.08)]">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(14,61,76,0.08)] lg:bg-white/12">
       <motion.div
         className="h-full rounded-full"
         style={{ backgroundImage: fillStyle.backgroundImage }}
@@ -134,20 +134,20 @@ function ScoreBar({
 function CategoryChip({ label, stats }: { label: string; stats: CategoryAttendanceStats }) {
   if (stats.logged === 0) {
     return (
-      <span className="rounded-lg bg-[rgba(14,61,76,0.04)] px-2 py-1 text-[10px] text-[#86868b]">
+      <span className="rounded-lg bg-[rgba(14,61,76,0.04)] px-2 py-1 text-[10px] text-[#86868b] lg:bg-white/8 lg:text-white/55">
         {label}: —
       </span>
     );
   }
   return (
     <span
-      className="rounded-lg bg-[rgba(14,61,76,0.06)] px-2 py-1 text-[10px] tabular-nums text-[#334155]"
+      className="rounded-lg bg-[rgba(14,61,76,0.06)] px-2 py-1 text-[10px] tabular-nums text-[#334155] lg:bg-white/8 lg:text-white/75"
       title={`${label}: Present ${stats.present}, Late ${stats.late}, Absent ${stats.absent}, Excused ${stats.excused}`}
     >
-      <span className="font-semibold text-[#0e3d4c]">{label}</span>{' '}
+      <span className="font-semibold text-[#0e3d4c] lg:text-sky-300">{label}</span>{' '}
       {stats.attended}/{stats.logged}
-      {stats.late > 0 && <span className="text-[#8a6a10]"> · L{stats.late}</span>}
-      {stats.absent > 0 && <span className="text-[#d70015]"> · A{stats.absent}</span>}
+      {stats.late > 0 && <span className="text-[#8a6a10] lg:text-amber-300"> · L{stats.late}</span>}
+      {stats.absent > 0 && <span className="text-[#d70015] lg:text-rose-300"> · A{stats.absent}</span>}
     </span>
   );
 }
@@ -166,22 +166,22 @@ const LeaderboardRow: React.FC<{
         compact ? 'sm:px-3' : 'sm:px-4'
       } ${
         isYou
-          ? 'border-[rgba(14,61,76,0.28)] bg-[rgba(14,61,76,0.06)] ring-1 ring-[rgba(14,61,76,0.12)]'
+          ? 'border-[rgba(14,61,76,0.28)] bg-[rgba(14,61,76,0.06)] ring-1 ring-[rgba(14,61,76,0.12)] lg:border-sky-400/35 lg:bg-sky-400/10 lg:ring-sky-400/20'
           : top3
-            ? 'border-[rgba(245,194,76,0.22)] bg-gradient-to-r from-[rgba(245,194,76,0.08)] to-white'
-            : 'border-black/[0.06] bg-white'
+            ? 'border-[rgba(245,194,76,0.22)] bg-gradient-to-r from-[rgba(245,194,76,0.08)] to-white lg:from-amber-400/20 lg:to-[#0a1628] lg:border-amber-300/35'
+            : 'border-black/[0.06] bg-white lg:border-white/10 lg:bg-white/[0.04]'
       }`}
     >
       <RankBadge rank={entry.rank} />
       <Avatar entry={entry} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-[15px] font-semibold tracking-tight text-[#1d1d1f]">
+          <p className="truncate text-[15px] font-semibold tracking-tight text-[#1d1d1f] lg:text-[#f5f5f7]">
             {entry.memberName}
           </p>
           {isYou && <span className="apple-badge-forest">You</span>}
         </div>
-        <p className="mt-0.5 truncate text-[12px] text-[#86868b]">
+        <p className="mt-0.5 truncate text-[12px] text-[#86868b] lg:text-white/65">
           {entry.memberType} · {entry.voiceType}
         </p>
         <div className="mt-2 space-y-1.5">
@@ -196,22 +196,22 @@ const LeaderboardRow: React.FC<{
             <CategoryChip label="Special" stats={entry.specialMass} />
             <CategoryChip label="Practice" stats={entry.practice} />
           </div>
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-[#64748b]">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-[#64748b] lg:text-white/60">
             <span>
               Overall{' '}
-              <strong className="font-semibold text-[#0e3d4c]">
+              <strong className="font-semibold text-[#0e3d4c] lg:text-sky-300">
                 {entry.sessionAttended}/{entry.sessionLogged}
               </strong>
             </span>
             <span>
-              Late <strong className="font-semibold text-[#8a6a10]">{entry.late}</strong>
+              Late <strong className="font-semibold text-[#8a6a10] lg:text-amber-300">{entry.late}</strong>
             </span>
             <span>
-              Absent <strong className="font-semibold text-[#d70015]">{entry.absent}</strong>
+              Absent <strong className="font-semibold text-[#d70015] lg:text-rose-300">{entry.absent}</strong>
             </span>
             <span className="sm:ml-auto">
               Rate{' '}
-              <strong className="font-semibold text-[#0e3d4c]">
+              <strong className="font-semibold text-[#0e3d4c] lg:text-[#f5c24c]">
                 {reduceMotion ? (
                   `${entry.scorePercent}%`
                 ) : (
@@ -275,11 +275,12 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
       aria-labelledby="attendance-leaderboard-title"
     >
       <div
-        className={`border-b border-black/[0.06] ${compact ? 'px-4 py-3' : 'px-5 py-4'}`}
+        className={`border-b border-black/[0.06] lg:border-white/10 ${compact ? 'px-4 py-3' : 'px-5 py-4'}`}
         style={{
           background:
             'linear-gradient(135deg, rgba(14,61,76,0.06) 0%, rgba(245,194,76,0.1) 48%, rgba(255,255,255,0.9) 100%)',
         }}
+        data-leaderboard-header
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -289,14 +290,14 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
             </div>
             <h3
               id="attendance-leaderboard-title"
-              className={`font-semibold tracking-tight text-[#0e3d4c] ${compact ? 'text-[17px]' : 'text-[19px]'}`}
+              className={`font-semibold tracking-tight text-[#0e3d4c] lg:text-[#f5f5f7] ${compact ? 'text-[17px]' : 'text-[19px]'}`}
             >
               Attendance Leaderboard
             </h3>
-            <p className="mt-1 text-[12px] leading-snug text-[#64748b]">{LEADERBOARD_CAPTION}</p>
+            <p className="mt-1 text-[12px] leading-snug text-[#64748b] lg:text-white/65">{LEADERBOARD_CAPTION}</p>
           </div>
           <span
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#0e3d4c] shadow-sm"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#0e3d4c] shadow-sm lg:bg-white/10 lg:text-amber-300 lg:shadow-none"
             title={LEADERBOARD_FORMULA_HINT}
             aria-label={LEADERBOARD_FORMULA_HINT}
           >
@@ -304,11 +305,11 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
           </span>
         </div>
         {you && (
-          <p className="mt-2 text-[12px] font-medium text-[#0e3d4c]">
+          <p className="mt-2 text-[12px] font-medium text-[#0e3d4c] lg:text-sky-300">
             Your rank: <span className="tabular-nums">#{you.rank}</span>
-            <span className="text-[#86868b]"> · {you.scorePercent}% reliability</span>
+            <span className="text-[#86868b] lg:text-white/60"> · {you.scorePercent}% reliability</span>
             {entries.length > 0 && (
-              <span className="text-[#86868b]"> of {entries.length}</span>
+              <span className="text-[#86868b] lg:text-white/60"> of {entries.length}</span>
             )}
           </p>
         )}
@@ -317,9 +318,9 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
       <div className={compact ? 'space-y-2 p-3' : 'space-y-2.5 p-4 sm:p-5'}>
         {visible.length === 0 ? (
           <div className="apple-empty py-10">
-            <Users className="mx-auto mb-2 h-9 w-9 text-[#c7c7cc]" />
-            <p className="text-[14px] font-medium text-[#3a3a3c]">No attendance yet</p>
-            <p className="mt-1 text-[12px] text-[#86868b]">
+            <Users className="mx-auto mb-2 h-9 w-9 text-[#c7c7cc] lg:text-white/40" />
+            <p className="text-[14px] font-medium text-[#3a3a3c] lg:text-[#f5f5f7]">No attendance yet</p>
+            <p className="mt-1 text-[12px] text-[#86868b] lg:text-white/60">
               Rankings appear once Mass, Special Mass, or Practice check-ins are logged.
             </p>
           </div>
@@ -337,7 +338,7 @@ export const AttendanceLeaderboard: React.FC<AttendanceLeaderboardProps> = ({
             ))}
             {youOffList && you && (
               <div className="pt-1">
-                <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wide text-[#86868b]">
+                <p className="mb-2 text-center text-[11px] font-medium uppercase tracking-wide text-[#86868b] lg:text-white/55">
                   Your position
                 </p>
                 <LeaderboardRow

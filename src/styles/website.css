@@ -972,6 +972,50 @@
   }
 
   /*
+   * Gradient “to-white / from-white” paper finishes stay light while ink is
+   * remapped to light — classic invisible text. Force gradient stops dark.
+   */
+  .is-website-app .to-white,
+  .website-page .to-white {
+    --tw-gradient-to: #0a1628 !important;
+  }
+
+  .is-website-app .from-white,
+  .website-page .from-white,
+  .is-website-app .via-white,
+  .website-page .via-white {
+    --tw-gradient-from: #0a1628 !important;
+    --tw-gradient-via: #050a14 !important;
+  }
+
+  .is-website-app .to-white\/90,
+  .is-website-app .to-white\/80,
+  .website-page .to-white\/90 {
+    --tw-gradient-to: rgba(10, 22, 40, 0.95) !important;
+  }
+
+  /* Inline style paper headers (leaderboard, etc.) */
+  .is-website-app [data-leaderboard-header] {
+    background: linear-gradient(
+      135deg,
+      rgba(14, 61, 76, 0.35) 0%,
+      rgba(245, 194, 76, 0.12) 48%,
+      #050a14 100%
+    ) !important;
+    color: var(--website-ink);
+  }
+
+  /*
+   * Safety net: remaining light-ish fills that were not remapped must keep
+   * dark ink so remapped light text never sits on paper white.
+   */
+  .is-website-app .website-light-surface,
+  .website-page .website-light-surface {
+    --website-local-ink: #0f172a;
+    --website-local-muted: #64748b;
+  }
+
+  /*
    * Light ink on dark stages — scoped so leftover light islands keep dark text
    * via .website-light-ink below.
    */
@@ -982,6 +1026,8 @@
   .is-website-app .website-page-body .text-slate-600,
   .is-website-app .website-page-body .text-slate-500,
   .is-website-app .website-page-body .text-slate-400,
+  .is-website-app .website-page-body .text-\[\#334155\],
+  .is-website-app .website-page-body .text-\[\#64748b\],
   .is-website-app .app-sidebar .text-slate-950,
   .is-website-app .app-sidebar .text-slate-900,
   .is-website-app .app-sidebar .text-slate-800,
