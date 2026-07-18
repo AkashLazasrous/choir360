@@ -1286,18 +1286,26 @@
     filter: invert(0.92) hue-rotate(180deg);
   }
 
-  /* List rows / grouped lists on dark stage */
+  /* List rows / grouped lists on dark stage.
+     brand.css paints .apple-list-row #fff — without this, titles remapped to
+     --website-ink become white-on-white (e.g. Parish liturgy log). */
   .website-page .apple-list-row,
   .is-website-app .apple-list-row,
   .website-page .apple-grouped,
   .is-website-app .apple-grouped {
+    background: transparent !important;
     border-color: var(--website-line) !important;
     color: var(--website-ink) !important;
   }
 
   .website-page .apple-list-row:hover,
   .is-website-app .apple-list-row:hover {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .website-page .apple-list-row:active,
+  .is-website-app .apple-list-row:active {
+    background: rgba(255, 255, 255, 0.09) !important;
   }
 
   .website-page .apple-empty,
