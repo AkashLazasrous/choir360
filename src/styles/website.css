@@ -1327,6 +1327,12 @@
     color: #fde68a !important;
   }
 
+  .website-page .apple-badge-muted,
+  .is-website-app .apple-badge-muted {
+    background: rgba(148, 163, 184, 0.18) !important;
+    color: #cbd5e1 !important;
+  }
+
   /* Tabs / segmented controls */
   .website-page [role='tablist'],
   .is-website-app [role='tablist'] {

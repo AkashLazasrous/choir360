@@ -96,6 +96,7 @@ export type MemberStatus =
   | 'Correction Requested'
   | 'Approved'
   | 'Active Member'
+  | 'Inactive'
   | 'Rejected'
   | 'Admin';
 

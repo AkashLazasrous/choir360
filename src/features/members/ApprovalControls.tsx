@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Shield, ShieldCheck, Trash2, UserCheck, UserX } from 'lucide-react';
+import { PauseCircle, Pencil, Shield, ShieldCheck, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Member, MemberStatus } from '../../types';
 
 interface ApprovalControlsProps {
@@ -39,6 +39,15 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
     onUpdateMemberStatus(m.id, 'Rejected', note || 'Application rejected by admin.');
   };
 
+  const handleMarkInactive = () => {
+    const label = `${m.firstName} ${m.lastName}`.trim() || 'this member';
+    if (!window.confirm(
+      `Mark ${label} as Inactive?\n\n`
+      + `They stay on the parish roster but lose active choir access until reactivated.`,
+    )) return;
+    onUpdateMemberStatus(m.id, 'Inactive', 'Marked inactive by parish admin');
+  };
+
   const handleRequestCorrection = () => {
     const note = prompt('Enter correction comments for this applicant:') || 'Please update your verification credentials.';
     onUpdateMemberStatus(m.id, 'Correction Requested', note);
@@ -66,6 +75,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
 
   const isPending = m.status === 'Pending' || m.status === 'Correction Requested';
   const isActive  = m.status === 'Active Member' || m.status === 'Admin';
+  const isInactive = m.status === 'Inactive';
   const isRejected = m.status === 'Rejected';
 
   return (
@@ -127,6 +137,26 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
         </span>
       )}
 
+      {isActive && (
+        <button
+          type="button"
+          onClick={handleMarkInactive}
+          className="btn-pill btn-pill-secondary btn-pill-xs w-full !text-[11px]"
+        >
+          <PauseCircle className="w-3 h-3" /> Mark Inactive
+        </button>
+      )}
+
+      {isInactive && (
+        <button
+          type="button"
+          onClick={handleAproveMember}
+          className="btn-pill btn-pill-primary btn-pill-xs w-full !text-[11px]"
+        >
+          <UserCheck className="w-3 h-3" /> Reactivate
+        </button>
+      )}
+
       {isRejected && (
         <button
           type="button"
@@ -138,7 +168,7 @@ export const ApprovalControls: React.FC<ApprovalControlsProps> = ({
       )}
 
       {/* Permanent delete — available before or after approval */}
-      {onRemoveMember && (isPending || isActive || isRejected) && (
+      {onRemoveMember && (isPending || isActive || isInactive || isRejected) && (
         <button
           type="button"
           onClick={handleRemove}

@@ -537,7 +537,9 @@ function AppInner() {
             ? 'Member approved — they can now sign in with email/mobile and DOB (DDMMYYYY).'
             : status === 'Admin'
               ? 'Parish Admin approved — they get parish portal access after sign-out and sign-in.'
-              : `Member status set to ${status}.`,
+              : status === 'Inactive'
+                ? 'Member marked Inactive — removed from active choir access until reactivated.'
+                : `Member status set to ${status}.`,
           onUndo: previousStatus && previousStatus !== status
             ? () => void handleUpdateMemberStatus(memberId, previousStatus)
             : undefined,

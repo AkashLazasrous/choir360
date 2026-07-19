@@ -33,7 +33,8 @@ const STATUS_ORDER: Record<string, number> = {
   Approved: 2,
   'Active Member': 3,
   Admin: 4,
-  Rejected: 5,
+  Inactive: 5,
+  Rejected: 6,
 };
 
 /** Admin approval desk: loads roster from API (reliable) + merges live listener data. */
@@ -135,6 +136,16 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
 
   const handleStatus = (memberId: string, status: MemberStatus, note?: string) => {
     onUpdateMemberStatus(memberId, status, note);
+    // Keep desk roster in sync immediately (API + live listener may lag briefly).
+    setApiMembers((prev) =>
+      prev
+        ? prev.map((m) =>
+          m.id === memberId
+            ? { ...m, status, correctionNote: note ?? m.correctionNote }
+            : m,
+        )
+        : prev,
+    );
     window.setTimeout(() => void loadRoster(), 800);
   };
 
@@ -220,6 +231,9 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
           <span className="apple-badge-forest">
             {members.filter((m) => m.status === 'Active Member' || m.status === 'Admin').length} Active
           </span>
+          <span className="apple-badge-muted">
+            {members.filter((m) => m.status === 'Inactive').length} Inactive
+          </span>
           <span className="apple-badge-danger">
             {members.filter((m) => m.status === 'Rejected').length} Rejected
           </span>
@@ -303,6 +317,7 @@ export const ApprovalDesk: React.FC<ApprovalDeskProps> = ({
               'Active Member': { bg: 'bg-[rgba(14,61,76,0.06)]', border: 'border-[rgba(14,61,76,0.14)]', badge: 'apple-badge-forest', dot: 'bg-[#0e3d4c]' },
               Admin: { bg: 'bg-[rgba(245,194,76,0.12)]', border: 'border-[rgba(245,194,76,0.35)]', badge: 'apple-badge-gold', dot: 'bg-[#f5c24c]' },
               Pending: { bg: 'bg-[rgba(245,194,76,0.1)]', border: 'border-[rgba(245,194,76,0.28)]', badge: 'apple-badge-gold', dot: 'bg-[#e8a820]' },
+              Inactive: { bg: 'bg-[rgba(100,116,139,0.1)]', border: 'border-[rgba(100,116,139,0.28)]', badge: 'apple-badge-muted', dot: 'bg-[#64748b]' },
               Rejected: { bg: 'bg-[rgba(255,59,48,0.06)]', border: 'border-[rgba(255,59,48,0.2)]', badge: 'apple-badge-danger', dot: 'bg-[#d70015]' },
               'Correction Requested': { bg: 'bg-[rgba(255,149,0,0.08)]', border: 'border-[rgba(255,149,0,0.22)]', badge: 'apple-badge-gold', dot: 'bg-[#ff9500]' },
               Approved: { bg: 'bg-[rgba(41,151,255,0.08)]', border: 'border-[rgba(41,151,255,0.22)]', badge: 'apple-badge-blue', dot: 'bg-[#2997ff]' },

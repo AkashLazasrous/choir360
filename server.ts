@@ -332,6 +332,7 @@ function tenantFromMember(member: Record<string, unknown> | undefined | null): O
 function roleFromMemberStatus(status: unknown): "parish_admin" | "choir_member" | "public_user" {
   if (status === "Admin") return "parish_admin";
   if (status === "Active Member") return "choir_member";
+  // Inactive / Pending / Rejected / Correction → no choir portal access
   return "public_user";
 }
 
@@ -739,9 +740,11 @@ app.post("/api/auth/sync-role", requireFirebaseAuth, async (req, res) => {
       memberStatus: member?.status ?? null,
       message: pendingApproval
         ? "Your registration is awaiting parish admin approval."
-        : member
-          ? "Your account does not have active member access yet."
-          : "No member registration found for this account.",
+        : member?.status === "Inactive"
+          ? "Your membership is inactive. Ask a parish admin to reactivate you."
+          : member
+            ? "Your account does not have active member access yet."
+            : "No member registration found for this account.",
     });
   } catch (error: any) {
     return res.status(400).json({ error: error?.message || "Failed to sync role." });
@@ -964,6 +967,7 @@ app.post("/api/members/:id/status", requireFirebaseAuth, requireAdminRole, async
       "Correction Requested",
       "Approved",
       "Active Member",
+      "Inactive",
       "Rejected",
       "Admin",
     ]);
