@@ -126,14 +126,14 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
   const mePhoto = currentMember?.photoUrl ?? '';
 
   return (
-    <div className="font-apple flex h-[min(72vh,720px)] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-[#e5ddd5] shadow-[0_12px_40px_rgba(0,0,0,0.08)] lg:h-[min(78vh,780px)]">
-      <header className="flex items-center gap-3 border-b border-black/10 bg-[#075e54] px-4 py-3 text-white">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[13px] font-semibold">
+    <div className="choir-chat-surface website-light-surface font-apple flex h-[min(72vh,720px)] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-[#e5ddd5] text-[#111b21] shadow-[0_12px_40px_rgba(0,0,0,0.08)] lg:h-[min(78vh,780px)]">
+      <header className="flex items-center gap-3 border-b border-black/10 bg-[#075e54] px-4 py-3 !text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[13px] font-semibold !text-white">
           {initials(parishName || 'Choir')}
         </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em]">Choir group</h2>
-          <p className="truncate text-[12px] text-white/75">
+        <div className="min-w-0 flex-1 !text-white">
+          <h2 className="truncate text-[16px] font-semibold tracking-[-0.02em] !text-white">Choir group</h2>
+          <p className="truncate text-[12px] !text-white/80">
             {parishName || 'Parish choir'} · messages vanish after 24 hours
             {isLive ? ' · live' : ''}
           </p>
@@ -141,14 +141,14 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
       </header>
 
       <div
-        className="relative flex-1 space-y-2 overflow-y-auto px-3 py-4 sm:px-4"
+        className="relative flex-1 space-y-2 overflow-y-auto px-3 py-4 text-[#111b21] sm:px-4"
         style={{
           backgroundImage:
             'linear-gradient(rgba(229,221,213,0.92), rgba(229,221,213,0.92)), url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23c4b8a8\' fill-opacity=\'0.35\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
         }}
       >
         {visible.length === 0 ? (
-          <div className="mx-auto mt-10 max-w-sm rounded-xl bg-white/90 px-4 py-3 text-center text-[13px] text-[#3a3a3c] shadow-sm">
+          <div className="choir-chat-empty mx-auto mt-10 max-w-sm rounded-xl bg-white px-4 py-3 text-center text-[13px] font-medium text-[#1f2937] shadow-sm">
             No messages yet. Say hello to your choir — chats auto-delete after one day.
           </div>
         ) : (
@@ -167,19 +167,19 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
                 {!mine && <Avatar name={name} photoUrl={photo} size="sm" />}
                 <div
                   className={
-                    'max-w-[min(78%,28rem)] rounded-2xl px-3 py-2 shadow-sm ' +
+                    'choir-chat-bubble max-w-[min(78%,28rem)] rounded-2xl px-3 py-2 text-[#111b21] shadow-sm ' +
                     (mine
-                      ? 'rounded-br-md bg-[#dcf8c6] text-[#111b21]'
-                      : 'rounded-bl-md bg-white text-[#111b21]')
+                      ? 'rounded-br-md bg-[#dcf8c6]'
+                      : 'rounded-bl-md bg-white')
                   }
                 >
                   {!mine && (
-                    <p className="mb-0.5 text-[12px] font-semibold text-[#075e54]">{name}</p>
+                    <p className="choir-chat-bubble-name mb-0.5 text-[12px] font-semibold text-[#075e54]">{name}</p>
                   )}
-                  <p className="whitespace-pre-wrap break-words text-[14.5px] leading-snug">
+                  <p className="whitespace-pre-wrap break-words text-[14.5px] leading-snug text-[#111b21]">
                     {message.text}
                   </p>
-                  <p className={`mt-1 text-[10px] text-[#667781] ${mine ? 'text-right' : ''}`}>
+                  <p className={`choir-chat-bubble-time mt-1 text-[10px] text-[#667781] ${mine ? 'text-right' : ''}`}>
                     {formatTime(message.createdAt)}
                   </p>
                 </div>
@@ -222,7 +222,7 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
               void handleSend();
             }
           }}
-          className="max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-2.5 text-[15px] text-[#111b21] outline-none ring-1 ring-black/5 placeholder:text-[#8696a0]"
+          className="choir-chat-input max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-2.5 text-[15px] text-[#111b21] outline-none ring-1 ring-black/5 placeholder:text-[#667781]"
         />
         <button
           type="button"

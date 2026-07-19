@@ -255,7 +255,14 @@ function AppInner() {
   // ("Missing or insufficient permissions") — same pattern as member profile edit.
   const persistActivitySession = async (
     payload: ActivityAttendanceSavePayload,
-  ): Promise<{ ok: boolean; error?: string }> => {
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    marksInserted?: number;
+    marksUpdated?: number;
+    duplicatesRemoved?: number;
+    skipped?: number;
+  }> => {
     if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
     try {
       const response = await apiFetch('/api/attendance/session', {
@@ -269,7 +276,13 @@ function AppInner() {
       if (!response.ok) {
         return { ok: false, error: data?.error ?? 'Save failed.' };
       }
-      return { ok: true };
+      return {
+        ok: true,
+        marksInserted: typeof data.marksInserted === 'number' ? data.marksInserted : undefined,
+        marksUpdated: typeof data.marksUpdated === 'number' ? data.marksUpdated : undefined,
+        duplicatesRemoved: typeof data.duplicatesRemoved === 'number' ? data.duplicatesRemoved : undefined,
+        skipped: typeof data.skipped === 'number' ? data.skipped : undefined,
+      };
     } catch {
       return { ok: false, error: 'Save failed.' };
     }

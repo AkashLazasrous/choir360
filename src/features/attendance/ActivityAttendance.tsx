@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Calendar, Check, Clock, ClipboardList, History, IndianRupee, Save, Upload,
+  Calendar, Check, Clock, ClipboardList, History, IndianRupee, Pencil, Save, Upload,
   UserCheck, Users, X, AlertCircle,
 } from 'lucide-react';
 import {
@@ -104,7 +104,14 @@ interface ActivityAttendanceProps {
   attendanceRecords: AttendanceRecord[];
   isAdmin: boolean;
   viewerMemberId?: string | null;
-  onSaveSession: (payload: ActivityAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
+  onSaveSession: (payload: ActivityAttendanceSavePayload) => Promise<{
+    ok: boolean;
+    error?: string;
+    marksInserted?: number;
+    marksUpdated?: number;
+    duplicatesRemoved?: number;
+    skipped?: number;
+  }>;
   onImportSessions: (payload: ActivityAttendanceImportPayload) => Promise<{
     ok: boolean;
     error?: string;
@@ -161,6 +168,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const [importing, setImporting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  /** When true, admin is editing an existing session (upsert — no duplicate). */
+  const [updateMode, setUpdateMode] = useState(false);
 
   const activeMembers = useMemo(
     () => members.filter((m) => ['Active Member', 'Approved', 'Admin'].includes(m.status)),
@@ -222,6 +231,9 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
 
   const massSubKinds = MASS_BUCKET_KINDS;
   const canEdit = canMutateKind(kind, isAdmin);
+  const existingMarkCount = Object.keys(existingMarks).length;
+  const isExistingSession = existingMarkCount > 0 || Boolean(existingParent);
+  const isUpdateFlow = updateMode || isExistingSession;
 
   // Sync billing fields when opening an existing special mass parent
   useEffect(() => {
@@ -235,6 +247,11 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setPaymentDate(mass.specialMassPayment?.dateReceived ?? '');
     setPaymentMode(mass.specialMassPayment?.paymentMode ?? 'Cash');
   }, [kind, date, existingParent]);
+
+  // Auto-switch to Update when the selected date/kind already has synced marks.
+  useEffect(() => {
+    if (isExistingSession) setUpdateMode(true);
+  }, [isExistingSession, date, kind, sundayMassSlot]);
 
   const selectCategory = (next: AttendanceCategory) => {
     setCategory(next);
@@ -263,8 +280,16 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     setSundayMassSlot(sessionKind === 'sunday_mass' ? (sessionSlot ?? '1st') : '1st');
     setDate(sessionDate);
     setMarks({});
-    setTitle('');
-    setNotes('');
+    const parent = findActivityParent(
+      sessionKind,
+      sessionDate,
+      masses,
+      rehearsals,
+      sessionKind === 'sunday_mass' ? (sessionSlot ?? '1st') : undefined,
+    );
+    setTitle(parent && 'name' in parent ? String(parent.name || '') : '');
+    setNotes(parent && 'notes' in parent ? String(parent.notes || '') : '');
+    setUpdateMode(true);
     setSection('log');
     setSaveMessage(null);
   };
@@ -300,8 +325,31 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
         : {}),
     });
     setSaving(false);
-    setSaveMessage(result.ok ? 'Attendance saved.' : (result.error ?? 'Save failed.'));
-    if (result.ok) setTimeout(() => setSaveMessage(null), 4000);
+    if (!result.ok) {
+      setSaveMessage(result.error ?? 'Save failed.');
+      return;
+    }
+    const updated = result.marksUpdated ?? 0;
+    const inserted = result.marksInserted ?? 0;
+    const dupes = result.duplicatesRemoved ?? 0;
+    const skipped = result.skipped ?? 0;
+    if (skipped > 0 && updated === 0 && inserted === 0) {
+      setSaveMessage('No changes — this session already matches the saved marks.');
+    } else if (isUpdateFlow || updated > 0) {
+      setSaveMessage(
+        `Attendance updated`
+        + `${updated || inserted ? ` · ${updated + inserted} marks synced` : ''}`
+        + `${dupes ? ` · ${dupes} duplicates cleaned` : ''}.`,
+      );
+    } else {
+      setSaveMessage(
+        `Attendance saved`
+        + `${inserted ? ` · ${inserted} marks` : ''}`
+        + `${dupes ? ` · ${dupes} duplicates cleaned` : ''}.`,
+      );
+    }
+    setUpdateMode(isExistingSession || updated > 0 || inserted > 0);
+    setTimeout(() => setSaveMessage(null), 5000);
   };
 
   const handleImportFiles = async (files: FileList | null) => {
@@ -493,7 +541,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     className="flex w-full min-h-[48px] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-black/[0.04]"
                   >
                     <div className="min-w-0">
-                      <p className="text-[15px] font-semibold text-[#1d1d1f]">{session.date}</p>
+                      <p className="text-[15px] font-semibold text-[#1d1d1f]">
+                        {session.date}
+                        {isAdmin ? (
+                          <span className="ml-2 text-[11px] font-semibold uppercase tracking-wide text-[#8a6a10]">
+                            Update
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="truncate text-[12px] text-[#86868b]">
                         {ATTENDANCE_CATEGORY_LABELS[categoryForActivityKind(session.kind)]}
                         {' · '}
@@ -669,6 +724,68 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 Re-import upserts by date — updates existing marks, never duplicates.
               </p>
               {importMessage && <p className="w-full text-[13px] text-[#18392f]">{importMessage}</p>}
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="apple-card space-y-3 p-4">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpdateMode(false);
+                    setDate(today);
+                    setMarks({});
+                    setTitle('');
+                    setNotes('');
+                    setSaveMessage(null);
+                  }}
+                  className={`btn-pill btn-pill-sm flex items-center gap-1.5 ${!isUpdateFlow ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  Log new
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpdateMode(true)}
+                  className={`btn-pill btn-pill-sm flex items-center gap-1.5 ${isUpdateFlow ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Update attendance
+                </button>
+              </div>
+              {isUpdateFlow ? (
+                <div className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-amber-100 max-lg:text-[#8a6a10]">
+                    Updating {ACTIVITY_KIND_LABELS[kind]}
+                    {kind === 'sunday_mass' ? ` · ${SUNDAY_MASS_SLOT_LABELS[sundayMassSlot]}` : ''}
+                    {' · '}{date}
+                    {existingMarkCount ? ` · ${existingMarkCount} marks loaded` : ''}
+                  </p>
+                  <p className="mt-1 text-[12px] text-amber-100/80 max-lg:text-[#86868b]">
+                    Changes upsert the same session — no duplicate entry. Pick a past date from Recent to load marks.
+                  </p>
+                  {recentHistory.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {recentHistory.slice(0, 6).map((session) => (
+                        <button
+                          key={`upd-${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
+                          type="button"
+                          onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
+                          className="btn-pill btn-pill-sm btn-pill-secondary !text-[11px]"
+                        >
+                          {session.date}
+                          {session.sundayMassSlot ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}` : ''}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#86868b]">
+                  Log a new session for today or another date. If that date already has marks, save becomes an update automatically.
+                </p>
+              )}
             </div>
           )}
 
@@ -950,7 +1067,10 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                             ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}`
                             : ''}
                         </span>
-                        <span className="text-white/70 max-lg:text-[#86868b]">{session.loggedCount} marks</span>
+                        <span className="flex items-center gap-1 text-amber-200 max-lg:text-[#8a6a10]">
+                          <Pencil className="h-3 w-3" />
+                          Update · {session.loggedCount}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -973,13 +1093,17 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   type="button"
                   onClick={() => void handleSave()}
                   disabled={saving || summary.logged === 0}
-                  className="btn-pill btn-pill-primary flex items-center justify-center gap-2"
+                  className={`btn-pill flex items-center justify-center gap-2 ${isUpdateFlow ? 'btn-pill-gold' : 'btn-pill-primary'}`}
                 >
-                  <Save className="h-4 w-4" />
-                  {saving ? 'Saving…' : 'Save attendance'}
+                  {isUpdateFlow ? <Pencil className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                  {saving
+                    ? (isUpdateFlow ? 'Updating…' : 'Saving…')
+                    : (isUpdateFlow ? 'Update attendance' : 'Save attendance')}
                 </button>
               </div>
-              {saveMessage && <p className="mt-2 text-[13px] text-[#18392f]">{saveMessage}</p>}
+              {saveMessage && (
+                <p className="mt-2 text-[13px] text-[#18392f] lg:text-emerald-200">{saveMessage}</p>
+              )}
             </div>
           )}
 

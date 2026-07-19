@@ -948,6 +948,51 @@
     color: #0f172a !important;
   }
 
+  /* Choir chat: always dark ink on light WhatsApp surface (overrides website-ink). */
+  .website-page .choir-chat-surface,
+  .is-website-app .choir-chat-surface {
+    color: #111b21 !important;
+  }
+
+  .website-page .choir-chat-surface .choir-chat-empty,
+  .is-website-app .choir-chat-surface .choir-chat-empty {
+    color: #1f2937 !important;
+    background: #fff !important;
+  }
+
+  .website-page .choir-chat-surface .choir-chat-bubble,
+  .is-website-app .choir-chat-surface .choir-chat-bubble {
+    color: #111b21 !important;
+  }
+
+  .website-page .choir-chat-surface .choir-chat-bubble-name,
+  .is-website-app .choir-chat-surface .choir-chat-bubble-name {
+    color: #075e54 !important;
+  }
+
+  .website-page .choir-chat-surface .choir-chat-bubble-time,
+  .is-website-app .choir-chat-surface .choir-chat-bubble-time {
+    color: #667781 !important;
+  }
+
+  .website-page .choir-chat-surface textarea,
+  .website-page .choir-chat-surface .choir-chat-input,
+  .is-website-app .choir-chat-surface textarea,
+  .is-website-app .choir-chat-surface .choir-chat-input {
+    background: #fff !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #111b21 !important;
+    -webkit-text-fill-color: #111b21 !important;
+    caret-color: #111b21 !important;
+  }
+
+  .website-page .choir-chat-surface textarea::placeholder,
+  .is-website-app .choir-chat-surface textarea::placeholder {
+    color: #667781 !important;
+    -webkit-text-fill-color: #667781 !important;
+    opacity: 1 !important;
+  }
+
   .website-page table,
   .is-website-app table {
     color: var(--website-ink);
