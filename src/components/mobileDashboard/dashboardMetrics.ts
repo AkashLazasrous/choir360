@@ -11,6 +11,7 @@ import {
   isActiveMember,
   sumPendingCollections,
 } from '../../utils/choirStats';
+import { computeMemberRosterStats } from '../../utils/attendanceStats';
 import { formatINR } from '../../utils/currency';
 import type {
   ChartPoint,
@@ -82,47 +83,74 @@ export function buildMetricCards(
   members: Member[],
   payments: Payment[],
   member?: Member | null,
+  attendanceRecords: AttendanceRecord[] = [],
+  masses: Mass[] = [],
 ): MetricCard[] {
   const health = calculateChoirHealth(members);
   const pending = sumPendingCollections(payments);
   const openInvoices = payments.filter((p) => p.status === 'Pending').length;
-  const attendanceValue = member?.attendanceRate ?? health.averageAttendance;
+
+  const liveMemberStats = member
+    ? computeMemberRosterStats(attendanceRecords, members, masses, payments)
+      .find((s) => s.memberId === member.id)
+    : null;
+  const attendanceValue = liveMemberStats?.finalPercent
+    ?? member?.attendanceRate
+    ?? health.averageAttendance;
+  const shareInr = liveMemberStats?.totalShareINR ?? 0;
 
   return [
     {
       id: 'attendance',
       label: member ? 'Your attendance' : 'Attendance rate',
       value: `${attendanceValue}%`,
-      sub: attendanceValue >= 75 ? 'Strong consistency' : 'Keep showing up',
+      sub: member
+        ? `${liveMemberStats?.finalAttended ?? 0}/${liveMemberStats?.logged ?? 0} sessions`
+        : attendanceValue >= 75
+          ? 'Strong consistency'
+          : 'Keep showing up',
       accent: 'teal',
       progress: attendanceValue,
     },
     {
       id: 'active',
-      label: 'Active choralists',
-      value: String(health.activeCount),
-      sub:
-        health.pendingCount > 0
+      label: member ? 'Your share' : 'Active choralists',
+      value: member ? formatINR(shareInr) : String(health.activeCount),
+      sub: member
+        ? shareInr > 0
+          ? 'From paid special masses'
+          : 'No share earned yet'
+        : health.pendingCount > 0
           ? `${health.pendingCount} pending approval`
           : 'All members active',
       accent: 'mint',
-      progress: health.confirmedPercent,
+      progress: member
+        ? Math.min(100, Math.round(shareInr / 50) || (shareInr > 0 ? 24 : 8))
+        : health.confirmedPercent,
     },
     {
       id: 'pending',
-      label: 'Pending ₹',
-      value: formatINR(pending),
-      sub: `${openInvoices} open invoice${openInvoices !== 1 ? 's' : ''}`,
+      label: member ? 'Choir health' : 'Pending ₹',
+      value: member ? health.healthLabel : formatINR(pending),
+      sub: member
+        ? `Parish score ${health.healthScore} / 100`
+        : `${openInvoices} open invoice${openInvoices !== 1 ? 's' : ''}`,
       accent: 'gold',
-      progress: openInvoices > 0 ? Math.min(100, openInvoices * 18) : 8,
+      progress: member
+        ? health.healthScore
+        : openInvoices > 0
+          ? Math.min(100, openInvoices * 18)
+          : 8,
     },
     {
       id: 'health',
-      label: 'Choir health',
-      value: health.healthLabel,
-      sub: `Score ${health.healthScore} / 100`,
+      label: member ? 'Active choralists' : 'Choir health',
+      value: member ? String(health.activeCount) : health.healthLabel,
+      sub: member
+        ? `${health.activeCount} singing with you`
+        : `Score ${health.healthScore} / 100`,
       accent: 'rose',
-      progress: health.healthScore,
+      progress: member ? health.confirmedPercent : health.healthScore,
     },
   ];
 }

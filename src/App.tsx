@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import { UserPlus, UsersRound } from 'lucide-react';
-import { Announcement, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
+import { Announcement, ChoirChatMessage, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS, MOCK_REHEARSALS } from './data/mockData';
@@ -27,7 +27,9 @@ import { ParishProvider } from './features/parish/ParishContext';
 import { ParishOnboardingModal } from './features/parish/ParishSelector';
 import { useParish } from './features/parish/ParishContext';
 import { apiFetch } from './services/apiClient';
-import { TAB_REQUIRED_ROLE } from './components/shell/navConfig';
+import { TAB_REQUIRED_ROLE, type NavAudience } from './components/shell/navConfig';
+import { isActiveMember } from './utils/choirStats';
+import { chatExpiresAtMs } from './utils/choirChat';
 import { AppHeader, MobileSearchSheet } from './components/shell/AppHeader';
 import { AppSidebar } from './components/shell/AppSidebar';
 import { AppBottomNav } from './components/shell/AppBottomNav';
@@ -54,6 +56,7 @@ const CatholicKnowledgeHub = React.lazy(() => import('./components/CatholicKnowl
 const LiturgicalPlanner = React.lazy(() => import('./components/LiturgicalPlanner').then((m) => ({ default: m.LiturgicalPlanner })));
 const GamificationProfileView = React.lazy(() => import('./components/GamificationProfile').then((m) => ({ default: m.GamificationProfileView })));
 const ActivityAttendance = React.lazy(() => import('./features/attendance/ActivityAttendance').then((m) => ({ default: m.ActivityAttendance })));
+const ChoirGroupChat = React.lazy(() => import('./features/choirChat/ChoirGroupChat').then((m) => ({ default: m.ChoirGroupChat })));
 
 const ModuleSkeleton = () => (
   <div className="space-y-4">
@@ -211,6 +214,9 @@ function AppInner() {
     useSyncedCollection<Rehearsal>('rehearsals', MOCK_REHEARSALS, syncEnabled, tenantContext, 1000);
   const { records: attendanceRecords, actions: attendanceSync } =
     useSyncedCollection<AttendanceRecord>('attendance', [], syncEnabled, tenantContext, 8000);
+  const chatSync =
+    useSyncedCollection<ChoirChatMessage>('choirChatMessages', [], syncEnabled, tenantContext, 500);
+  const chatMessages = chatSync.records;
 
   // Wait for Firebase session restore before kicking unsigned users off
   // protected deep links (otherwise a hard refresh on /attendance etc. races
@@ -649,6 +655,19 @@ function AppInner() {
   };
 
   const currentMember = members.find((m) => m.id === authState.user?.uid);
+  const isApprovedMember = Boolean(currentMember && isActiveMember(currentMember));
+  const navAudience: NavAudience = {
+    isAdmin: guard.isAdmin,
+    isApprovedMember,
+  };
+
+  // Approved members no longer use People — deep links land on Chat instead.
+  useEffect(() => {
+    if (activeTab !== 'registration') return;
+    if (guard.isAdmin || !isApprovedMember) return;
+    setActiveTab('choir_chat');
+    replaceTabPath('choir_chat');
+  }, [activeTab, guard.isAdmin, isApprovedMember]);
 
   const navLabel = (id: Tab) => t(currentLang, NAV_LABEL_KEYS[id] ?? 'navOverview');
   const activeLabel = navLabel(activeTab);
@@ -827,6 +846,7 @@ function AppInner() {
           onRefreshToken={authState.refreshToken}
           onOpenRegistration={() => navigate('registration')}
           websiteMode={websiteMode}
+          navAudience={navAudience}
         />
 
         {/* MAIN CONTENT */}
@@ -891,6 +911,7 @@ function AppInner() {
                 attendanceRecords={attendanceRecords}
                 loading={authState.isConfigured && !authState.isReady}
                 isAdmin={guard.isAdmin}
+                viewerMember={currentMember}
                 onNavigate={navigate}
                 onSaveLiturgySongNotes={saveLiturgySongNotes}
                 onRemoveLiturgyLog={removeLiturgyLog}
@@ -947,34 +968,75 @@ function AppInner() {
               ) : <AccessDenied requiredRole="choir_member" />
             )}
             {activeTab === 'registration' && (
-              <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
-                parishId={tenantContext.parishId}
-                parishName={tenantContext.parishName}
-                onPersistMember={async (member) => {
-                  // Prefer the parish chosen on the form (display name → id).
-                  const formParish = activeParishes().find((p) => p.displayName === member.parish)
-                    ?? findParishById(tenantContext.parishId);
-                  const context: TenantContext = formParish
-                    ? {
-                        archdioceseId: formParish.archdioceseId,
-                        parishName: formParish.displayName,
-                        tenantId: formParish.archdioceseId,
-                        parishId: formParish.id,
-                        choirId: `${formParish.id}-choir`,
-                      }
-                    : tenantContext;
-                  return memberSync.upsert(
-                    {
-                      ...member,
-                      parish: context.parishName,
-                      ...createRecordMetadata(member.id, 'Pending', context),
-                    },
-                    member.id,
-                  );
-                }}
-                onUpdateMemberStatus={handleUpdateMemberStatus}
-                onEditMember={handleEditMember}
-                onRemoveMember={handleRemoveMember} />
+              guard.isAdmin || !isApprovedMember ? (
+                <MemberRegistration currentLang={currentLang} currentUserRole={effectiveRole} members={members}
+                  parishId={tenantContext.parishId}
+                  parishName={tenantContext.parishName}
+                  onPersistMember={async (member) => {
+                    // Prefer the parish chosen on the form (display name → id).
+                    const formParish = activeParishes().find((p) => p.displayName === member.parish)
+                      ?? findParishById(tenantContext.parishId);
+                    const context: TenantContext = formParish
+                      ? {
+                          archdioceseId: formParish.archdioceseId,
+                          parishName: formParish.displayName,
+                          tenantId: formParish.archdioceseId,
+                          parishId: formParish.id,
+                          choirId: `${formParish.id}-choir`,
+                        }
+                      : tenantContext;
+                    return memberSync.upsert(
+                      {
+                        ...member,
+                        parish: context.parishName,
+                        ...createRecordMetadata(member.id, 'Pending', context),
+                      },
+                      member.id,
+                    );
+                  }}
+                  onUpdateMemberStatus={handleUpdateMemberStatus}
+                  onEditMember={handleEditMember}
+                  onRemoveMember={handleRemoveMember} />
+              ) : null
+            )}
+            {activeTab === 'choir_chat' && (
+              guard.canAccess('choir_member') && (guard.isAdmin || isApprovedMember) ? (
+                <ChoirGroupChat
+                  messages={chatMessages}
+                  members={members}
+                  currentUserId={authState.user?.uid ?? currentMember?.id ?? ''}
+                  currentMember={currentMember ?? null}
+                  parishName={tenantContext.parishName}
+                  isLive={chatSync.isLive}
+                  syncError={chatSync.syncError}
+                  onSend={async (text) => {
+                    const uid = authState.user?.uid;
+                    if (!uid) {
+                      return { ok: false, error: 'Sign in to chat.' };
+                    }
+                    if (!guard.isAdmin && !currentMember) {
+                      return { ok: false, error: 'Sign in as an approved member to chat.' };
+                    }
+                    const now = Date.now();
+                    const id = `chat_${now}_${uid.slice(0, 8)}`;
+                    const senderName = currentMember
+                      ? `${currentMember.firstName} ${currentMember.lastName}`.trim()
+                      : authState.user?.displayName || 'Parish admin';
+                    const message: ChoirChatMessage = {
+                      id,
+                      text: text.trim().slice(0, 2000),
+                      senderId: uid,
+                      senderName: senderName || 'Member',
+                      senderPhotoUrl: currentMember?.photoUrl || authState.user?.photoURL || '',
+                      expiresAtMs: chatExpiresAtMs(now),
+                      ...createRecordMetadata(uid, 'active', tenantContext),
+                    };
+                    return chatSync.actions.upsert(message, uid);
+                  }}
+                />
+              ) : (
+                <AccessDenied requiredRole="choir_member" />
+              )
             )}
             {activeTab === 'dashboard_member' && (
               guard.canAccess('choir_member') ? (
@@ -1071,6 +1133,7 @@ function AppInner() {
         moreOpen={mobileMoreOpen}
         onMoreOpenChange={setMobileMoreOpen}
         pendingPeopleCount={pendingCount}
+        navAudience={navAudience}
       />
     </div>
     </>

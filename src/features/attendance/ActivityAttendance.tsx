@@ -551,12 +551,28 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   <p className="text-[12px] text-[#86868b]">Reliability score</p>
                 </div>
                 <div className="text-[13px] text-[#3a3a3c] space-y-1">
-                  <p>Mass: <strong>{viewerStats.mass.attended}/{viewerStats.mass.logged}</strong>
-                    {viewerStats.mass.late ? ` · Late ${viewerStats.mass.late}` : ''}
-                    {viewerStats.mass.absent ? ` · Absent ${viewerStats.mass.absent}` : ''}
+                  <p>
+                    Sunday 1st:{' '}
+                    <strong>{viewerStats.sunday1st.attended}/{viewerStats.sunday1st.logged}</strong>
+                    {viewerStats.sunday1st.late ? ` · L${viewerStats.sunday1st.late}` : ''}
+                    {viewerStats.sunday1st.absent ? ` · A${viewerStats.sunday1st.absent}` : ''}
+                  </p>
+                  <p>
+                    Sunday 2nd:{' '}
+                    <strong>{viewerStats.sunday2nd.attended}/{viewerStats.sunday2nd.logged}</strong>
+                    {viewerStats.sunday2nd.late ? ` · L${viewerStats.sunday2nd.late}` : ''}
+                    {viewerStats.sunday2nd.absent ? ` · A${viewerStats.sunday2nd.absent}` : ''}
                   </p>
                   <p>Special: <strong>{viewerStats.specialMass.attended}/{viewerStats.specialMass.logged}</strong></p>
                   <p>Practice: <strong>{viewerStats.practice.attended}/{viewerStats.practice.logged}</strong></p>
+                  <p>
+                    Share:{' '}
+                    <strong>
+                      {formatINR(
+                        parishStats.rosterStats.find((r) => r.memberId === viewerStats.memberId)?.totalShareINR ?? 0,
+                      )}
+                    </strong>
+                  </p>
                 </div>
               </div>
             </div>
@@ -573,20 +589,24 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
             <div className="border-b border-black/[0.06] px-5 py-3">
               <h3 className="text-[17px] font-semibold text-[#1d1d1f]">Member attendance</h3>
               <p className="mt-0.5 text-[12px] text-[#86868b]">
-                Columns show attended / total · late · absent per category
+                Sunday Mass shows 1st / 2nd counts · Overall uses either-Mass attendance rule
               </p>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-left text-[13px]">
+              <table className="w-full min-w-[1100px] text-left text-[13px]">
                 <thead className="bg-[#f5f5f7] text-[11px] font-semibold uppercase tracking-wide text-[#86868b]">
                   <tr>
-                    <th className="px-4 py-2.5">Member</th>
-                    <th className="px-4 py-2.5">Mass</th>
-                    <th className="px-4 py-2.5">Special Mass</th>
-                    <th className="px-4 py-2.5">Practice</th>
-                    <th className="px-4 py-2.5">Overall</th>
-                    <th className="px-4 py-2.5">Score</th>
-                    <th className="px-4 py-2.5">Share</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Member</th>
+                    <th className="px-4 py-2.5 text-center" colSpan={2}>Sunday Mass</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Special Mass</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Practice</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Overall</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Score</th>
+                    <th className="px-4 py-2.5" rowSpan={2}>Share</th>
+                  </tr>
+                  <tr>
+                    <th className="px-4 py-2 text-[10px] font-semibold normal-case tracking-normal">1st Mass</th>
+                    <th className="px-4 py-2 text-[10px] font-semibold normal-case tracking-normal">2nd Mass</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -603,7 +623,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     return (
                       <tr key={row.memberId} className="border-t border-black/[0.04]">
                         <td className="px-4 py-3 font-medium text-[#1d1d1f]">{row.memberName}</td>
-                        <td className="px-4 py-3">{fmt(row.mass)}</td>
+                        <td className="px-4 py-3">{fmt(row.sunday1st)}</td>
+                        <td className="px-4 py-3">{fmt(row.sunday2nd)}</td>
                         <td className="px-4 py-3">{fmt(row.specialMass)}</td>
                         <td className="px-4 py-3">{fmt(row.practice)}</td>
                         <td className="px-4 py-3 tabular-nums">

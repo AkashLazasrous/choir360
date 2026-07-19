@@ -9,6 +9,7 @@ import {
   Command,
   HeartHandshake,
   LayoutDashboard,
+  MessageCircle,
   Music2,
   Sparkles,
   Star,
@@ -31,6 +32,7 @@ export const TAB_REQUIRED_ROLE: Record<Tab, Role> = {
   analytics: 'choir_admin',
   rehearsals: 'choir_member',
   attendance: 'choir_member',
+  choir_chat: 'choir_member',
 };
 
 export type NavItem = {
@@ -39,7 +41,13 @@ export type NavItem = {
   minRole: Role;
 };
 
-/** Full desktop / tablet sidebar order */
+const CHAT_NAV: NavItem = {
+  id: 'choir_chat',
+  icon: MessageCircle,
+  minRole: 'choir_member',
+};
+
+/** Full desktop / tablet sidebar order (People/Chat swapped by audience helper). */
 export const SIDEBAR_NAV: NavItem[] = [
   { id: 'landing', icon: LayoutDashboard, minRole: 'public_user' },
   { id: 'calendar', icon: CalendarDays, minRole: 'public_user' },
@@ -57,8 +65,43 @@ export const SIDEBAR_NAV: NavItem[] = [
   { id: 'rehearsals', icon: Music2, minRole: 'choir_member' },
 ];
 
+export type NavAudience = {
+  isAdmin: boolean;
+  /** Approved / Active Member / Admin status — can use group chat instead of People. */
+  isApprovedMember: boolean;
+};
+
+/**
+ * Approved members see Chat instead of People.
+ * Admins keep People and also get Chat.
+ * Pending / unapproved keep People only.
+ */
+export function sidebarNavForAudience(
+  canAccess: (role: Role) => boolean,
+  isConfigured: boolean,
+  audience: NavAudience,
+): NavItem[] {
+  const items: NavItem[] = [];
+  for (const item of SIDEBAR_NAV) {
+    if (item.id === 'registration') {
+      if (audience.isAdmin) {
+        items.push(item, CHAT_NAV);
+      } else if (audience.isApprovedMember) {
+        items.push(CHAT_NAV);
+      } else {
+        items.push(item);
+      }
+      continue;
+    }
+    items.push(item);
+  }
+  return items.filter(
+    (item) => !isConfigured || canAccess(item.minRole) || item.minRole === 'public_user',
+  );
+}
+
 /** Thumb-zone primary tabs — role-aware sets */
-const PRIMARY_MEMBER: Tab[] = ['landing', 'dashboard_member', 'masses', 'song_library'];
+const PRIMARY_MEMBER: Tab[] = ['landing', 'dashboard_member', 'choir_chat', 'song_library'];
 const PRIMARY_ADMIN: Tab[] = ['landing', 'masses', 'registration', 'song_library'];
 const PRIMARY_PUBLIC: Tab[] = ['landing', 'calendar', 'song_library', 'registration'];
 
@@ -69,6 +112,7 @@ const PRIMARY_ICONS: Partial<Record<Tab, ElementType>> = {
   song_library: Music2,
   registration: UsersRound,
   calendar: CalendarDays,
+  choir_chat: MessageCircle,
 };
 
 /** Compact labels for the bottom tab bar (full i18n labels stay in sidebar/More) */
@@ -79,13 +123,21 @@ export const BOTTOM_NAV_SHORT_LABEL: Partial<Record<Tab, string>> = {
   song_library: 'Music',
   registration: 'People',
   calendar: 'Calendar',
+  choir_chat: 'Chat',
 };
 
-export function primaryTabsForRole(canAccess: (role: Role) => boolean): NavItem[] {
+export function primaryTabsForRole(
+  canAccess: (role: Role) => boolean,
+  audience: NavAudience = { isAdmin: false, isApprovedMember: false },
+): NavItem[] {
   let ids: Tab[];
   if (canAccess('choir_admin')) ids = PRIMARY_ADMIN;
-  else if (canAccess('choir_member')) ids = PRIMARY_MEMBER;
-  else ids = PRIMARY_PUBLIC;
+  else if (canAccess('choir_member')) {
+    ids =
+      audience.isApprovedMember || audience.isAdmin
+        ? PRIMARY_MEMBER
+        : (['landing', 'dashboard_member', 'masses', 'song_library'] as Tab[]);
+  } else ids = PRIMARY_PUBLIC;
 
   return ids
     .filter((id) => canAccess(TAB_REQUIRED_ROLE[id]))
@@ -105,22 +157,32 @@ export type MoreSection = {
 export function moreSectionsForRole(
   canAccess: (role: Role) => boolean,
   primaryIds: Tab[],
+  audience: NavAudience = { isAdmin: false, isApprovedMember: false },
 ): MoreSection[] {
   const primary = new Set(primaryIds);
 
+  const ministryItems: NavItem[] = [
+    { id: 'attendance', icon: ClipboardList, minRole: 'choir_member' },
+    { id: 'rehearsals', icon: Music2, minRole: 'choir_member' },
+    { id: 'dashboard_member', icon: HeartHandshake, minRole: 'choir_member' },
+    { id: 'gamification', icon: Star, minRole: 'choir_member' },
+    { id: 'calendar', icon: CalendarDays, minRole: 'public_user' },
+    { id: 'masses', icon: Church, minRole: 'choir_member' },
+  ];
+
+  if (audience.isAdmin) {
+    ministryItems.push(
+      { id: 'registration', icon: UsersRound, minRole: 'public_user' },
+      CHAT_NAV,
+    );
+  } else if (audience.isApprovedMember) {
+    ministryItems.push(CHAT_NAV);
+  } else {
+    ministryItems.push({ id: 'registration', icon: UsersRound, minRole: 'public_user' });
+  }
+
   const sections: MoreSection[] = [
-    {
-      title: 'Ministry',
-      items: [
-        { id: 'attendance', icon: ClipboardList, minRole: 'choir_member' },
-        { id: 'rehearsals', icon: Music2, minRole: 'choir_member' },
-        { id: 'dashboard_member', icon: HeartHandshake, minRole: 'choir_member' },
-        { id: 'gamification', icon: Star, minRole: 'choir_member' },
-        { id: 'calendar', icon: CalendarDays, minRole: 'public_user' },
-        { id: 'masses', icon: Church, minRole: 'choir_member' },
-        { id: 'registration', icon: UsersRound, minRole: 'public_user' },
-      ],
-    },
+    { title: 'Ministry', items: ministryItems },
     {
       title: 'Library',
       items: [

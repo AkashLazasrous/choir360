@@ -2,6 +2,7 @@ import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from '
 import { getAuth, type Auth } from 'firebase/auth';
 import {
   collection,
+  deleteDoc,
   doc,
   getFirestore,
   limit,
@@ -98,6 +99,7 @@ export const COLLECTIONS = {
   dailyReadings: 'dailyReadings',
   rehearsals: 'rehearsals',
   media: 'cloudinaryMedia',
+  choirChatMessages: 'choirChatMessages',
 } as const;
 
 type CollectionName = keyof typeof COLLECTIONS;
@@ -193,6 +195,25 @@ export async function updateTenantRecord<T extends Partial<TenantScopedRecord>>(
 ) {
   const database = requireDb();
   await updateDoc(doc(database, COLLECTIONS[collectionName], recordId), stripUndefined(updateRecordMetadata(patch, userId) as DocumentData));
+}
+
+/** Hard-delete a tenant document (used for ephemeral choir chat TTL purge). */
+export async function deleteTenantRecord(collectionName: CollectionName, recordId: string) {
+  const database = requireDb();
+  await deleteDoc(doc(database, COLLECTIONS[collectionName], recordId));
+}
+
+/** Hard-delete many docs in batches of 400. */
+export async function deleteTenantRecords(collectionName: CollectionName, recordIds: string[]) {
+  if (recordIds.length === 0) return;
+  const database = requireDb();
+  const col = COLLECTIONS[collectionName];
+  for (let i = 0; i < recordIds.length; i += 400) {
+    const chunk = recordIds.slice(i, i + 400);
+    const batch = writeBatch(database);
+    chunk.forEach((id) => batch.delete(doc(database, col, id)));
+    await batch.commit();
+  }
 }
 
 export async function batchUpsertTenantRecords<T extends { id: string } & Partial<TenantScopedRecord>>(

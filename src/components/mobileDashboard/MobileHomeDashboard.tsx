@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { getISTGreeting } from '../../utils/timezone';
 import { calculateChoirHealth, isActiveMember, sumPendingCollections } from '../../utils/choirStats';
+import { computeMemberRosterStats } from '../../utils/attendanceStats';
 import { formatINR } from '../../utils/currency';
 import { BentoGrid } from './BentoGrid';
 import { MetricCarousel } from './MetricCarousel';
@@ -48,9 +49,14 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
     [members, member],
   );
   const metrics = useMemo(
-    () => buildMetricCards(members, payments, member),
-    [members, payments, member],
+    () => buildMetricCards(members, payments, member, attendanceRecords, masses),
+    [members, payments, member, attendanceRecords, masses],
   );
+  const personalStats = useMemo(() => {
+    if (!member) return null;
+    return computeMemberRosterStats(attendanceRecords, members, masses, payments)
+      .find((s) => s.memberId === member.id) ?? null;
+  }, [member, attendanceRecords, members, masses, payments]);
   const chartPoints = useMemo(
     () =>
       buildChartSeries(range, attendanceRecords, masses, member?.id),
@@ -292,6 +298,8 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
         masses={masses}
         payments={payments}
         streakDays={streak}
+        personalShareInr={personalStats?.totalShareINR ?? 0}
+        personalAttendancePercent={personalStats?.finalPercent}
         onNavigate={onNavigate}
         onOpenSheet={setSheet}
       />

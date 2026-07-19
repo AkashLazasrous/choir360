@@ -29,6 +29,10 @@ type BentoGridProps = {
   masses: Mass[];
   payments: Payment[];
   streakDays: number;
+  /** Member variant: personal special-mass share ₹ */
+  personalShareInr?: number;
+  /** Member variant: live attendance % */
+  personalAttendancePercent?: number;
   onNavigate: (tab: Tab) => void;
   onOpenSheet: (key: BentoWidgetKey) => void;
 };
@@ -68,6 +72,8 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   masses,
   payments,
   streakDays,
+  personalShareInr = 0,
+  personalAttendancePercent,
   onNavigate,
   onOpenSheet,
 }) => {
@@ -141,8 +147,8 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
     streak: 'Attendance streak',
     next_liturgy: 'Next liturgy',
     active_members: 'Active members',
-    pending_collection: 'Pending collection',
-    choir_health: 'Choir health',
+    pending_collection: variant === 'member' ? 'Your share' : 'Pending collection',
+    choir_health: variant === 'member' ? 'Your attendance' : 'Choir health',
     quick_links: 'Quick links',
   };
 
@@ -203,31 +209,52 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               <IndianRupee className="h-4 w-4" />
             </div>
             <p className="text-[20px] font-semibold tracking-[-0.03em] text-amber-200">
-              {formatINR(pendingInr)}
+              {formatINR(variant === 'member' ? personalShareInr : pendingInr)}
             </p>
-            <p className="text-[12px] text-[#a1a1a6]">to collect</p>
+            <p className="text-[12px] text-[#a1a1a6]">
+              {variant === 'member' ? 'from paid special masses' : 'to collect'}
+            </p>
           </>
         );
-      case 'choir_health':
+      case 'choir_health': {
+        const memberPct = personalAttendancePercent ?? health.averageAttendance;
         return (
           <>
             <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
               <TrendingUp className="h-4 w-4" />
             </div>
-            <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
-              {health.healthLabel}
-            </p>
-            <p className="mt-1 text-[12px] text-[#a1a1a6]">
-              Score {health.healthScore} · avg {health.averageAttendance}%
-            </p>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
-                style={{ width: `${health.healthScore}%` }}
-              />
-            </div>
+            {variant === 'member' ? (
+              <>
+                <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+                  {memberPct}%
+                </p>
+                <p className="mt-1 text-[12px] text-[#a1a1a6]">your attendance rate</p>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
+                    style={{ width: `${Math.min(100, memberPct)}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+                  {health.healthLabel}
+                </p>
+                <p className="mt-1 text-[12px] text-[#a1a1a6]">
+                  Score {health.healthScore} · avg {health.averageAttendance}%
+                </p>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
+                    style={{ width: `${health.healthScore}%` }}
+                  />
+                </div>
+              </>
+            )}
           </>
         );
+      }
       case 'quick_links':
         return (
           <>

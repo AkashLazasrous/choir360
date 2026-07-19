@@ -63,4 +63,8 @@ export const WEBSITE_PAGE_META: Record<Tab, WebsitePageMeta> = {
     eyebrow: 'Attendance',
     lede: 'Sessions, leaderboards, and imports — presence made visible.',
   },
+  choir_chat: {
+    eyebrow: 'Choir chat',
+    lede: 'Parish group chat with live sync — messages disappear after 24 hours.',
+  },
 };

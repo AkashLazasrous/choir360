@@ -25,6 +25,7 @@ export const TAB_PATHS: Record<Tab, string> = {
   gamification: '/achievements',
   rehearsals: '/rehearsals',
   attendance: '/attendance',
+  choir_chat: '/chat',
 };
 
 const PATH_TO_TAB: Record<string, Tab> = Object.fromEntries(

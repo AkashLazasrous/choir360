@@ -11,6 +11,7 @@ export type UiKey =
   | 'navBible'
   | 'navSongs'
   | 'navPeople'
+  | 'navChat'
   | 'navMinistry'
   | 'navCatholicHub'
   | 'navPlanner'
@@ -123,6 +124,7 @@ const en: Record<UiKey, string> = {
   navBible: 'Bible',
   navSongs: 'Music Library',
   navPeople: 'People',
+  navChat: 'Chat',
   navMinistry: 'My Ministry',
   navCatholicHub: 'Catholic Hub',
   navPlanner: 'AI Mass Planner',
@@ -236,6 +238,7 @@ const ta: Record<UiKey, string> = {
   navBible: 'வேதாகமம்',
   navSongs: 'பாடல் நூலகம்',
   navPeople: 'உறுப்பினர்கள்',
+  navChat: 'அரட்டை',
   navMinistry: 'என் ஊழியம்',
   navCatholicHub: 'கத்தோலிக்க மையம்',
   navPlanner: 'AI திருப்பலி திட்டம்',
@@ -349,6 +352,7 @@ const ml: Record<UiKey, string> = {
   navBible: 'ബൈബിൾ',
   navSongs: 'ഗാന ശേഖരം',
   navPeople: 'അംഗങ്ങൾ',
+  navChat: 'ചാറ്റ്',
   navMinistry: 'എന്റെ ശുശ്രൂഷ',
   navCatholicHub: 'കത്തോലിക്കാ ഹബ്',
   navPlanner: 'AI മാസ് പ്ലാനർ',
@@ -462,6 +466,7 @@ const te: Record<UiKey, string> = {
   navBible: 'బైబిల్',
   navSongs: 'పాటల లైబ్రరీ',
   navPeople: 'సభ్యులు',
+  navChat: 'చాట్',
   navMinistry: 'నా సేవ',
   navCatholicHub: 'కాథలిక్ హబ్',
   navPlanner: 'AI మాస్ ప్లానర్',
@@ -575,6 +580,7 @@ const hi: Record<UiKey, string> = {
   navBible: 'बाइबिल',
   navSongs: 'संगीत पुस्तकालय',
   navPeople: 'सदस्य',
+  navChat: 'चैट',
   navMinistry: 'मेरी सेवा',
   navCatholicHub: 'कैथोलिक हब',
   navPlanner: 'AI मिस्सा योजनाकार',
@@ -705,6 +711,7 @@ export const NAV_LABEL_KEYS: Record<string, UiKey> = {
   bible: 'navBible',
   song_library: 'navSongs',
   registration: 'navPeople',
+  choir_chat: 'navChat',
   dashboard_member: 'navMinistry',
   catholic_hub: 'navCatholicHub',
   liturgical_planner: 'navPlanner',

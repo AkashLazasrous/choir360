@@ -56,6 +56,9 @@ export interface LeaderboardEntry {
   mass: CategoryAttendanceStats;
   specialMass: CategoryAttendanceStats;
   practice: CategoryAttendanceStats;
+  /** Raw Sunday Mass slot counts (not OR-merged) for table columns */
+  sunday1st: CategoryAttendanceStats;
+  sunday2nd: CategoryAttendanceStats;
   /** @deprecated Prefer sessionLogged / mass.logged — kept for older call sites */
   massLogged: number;
   /** @deprecated Prefer sessionAttended / mass.attended */
@@ -131,6 +134,18 @@ export function pointsForStatus(status: AttendanceStatus): number {
  * Build attendance leaderboard from live records.
  * Active members with ≥1 mark across Mass / Special / Practice are ranked.
  */
+/** Dedupe raw Sunday slot marks: one status per member + date + slot. */
+function dedupeSundaySlotRecords(records: AttendanceRecord[]): AttendanceRecord[] {
+  const map = new Map<string, AttendanceRecord>();
+  for (const record of records) {
+    if (resolveActivityKind(record) !== 'sunday_mass') continue;
+    const slot = resolveSundayMassSlot(record) ?? '1st';
+    const key = `${record.memberId}::${record.date}::${slot}`;
+    map.set(key, { ...record, sundayMassSlot: slot });
+  }
+  return [...map.values()];
+}
+
 export function computeAttendanceLeaderboard(
   records: AttendanceRecord[],
   members: Member[],
@@ -156,33 +171,45 @@ export function computeAttendanceLeaderboard(
       mass: CategoryAttendanceStats;
       specialMass: CategoryAttendanceStats;
       practice: CategoryAttendanceStats;
+      sunday1st: CategoryAttendanceStats;
+      sunday2nd: CategoryAttendanceStats;
     }
   >();
+
+  const ensureBucket = (memberId: string, memberName: string) => {
+    let bucket = buckets.get(memberId);
+    if (bucket) return bucket;
+    const member = memberMap.get(memberId);
+    bucket = {
+      memberId,
+      memberName: memberName || (member ? displayName(member) : memberId),
+      photoUrl: member?.photoUrl ?? '',
+      voiceType: member?.voiceType ?? '—',
+      memberType: member?.memberType ?? '—',
+      points: 0,
+      sessionLogged: 0,
+      onTime: 0,
+      late: 0,
+      absent: 0,
+      excused: 0,
+      mass: emptyCategoryStats(),
+      specialMass: emptyCategoryStats(),
+      practice: emptyCategoryStats(),
+      sunday1st: emptyCategoryStats(),
+      sunday2nd: emptyCategoryStats(),
+    };
+    buckets.set(memberId, bucket);
+    return bucket;
+  };
 
   for (const record of sessionRecords) {
     const member = memberMap.get(record.memberId);
     if (member && !isActiveMember(member)) continue;
 
-    let bucket = buckets.get(record.memberId);
-    if (!bucket) {
-      bucket = {
-        memberId: record.memberId,
-        memberName: record.memberName || (member ? displayName(member) : record.memberId),
-        photoUrl: member?.photoUrl ?? '',
-        voiceType: member?.voiceType ?? '—',
-        memberType: member?.memberType ?? '—',
-        points: 0,
-        sessionLogged: 0,
-        onTime: 0,
-        late: 0,
-        absent: 0,
-        excused: 0,
-        mass: emptyCategoryStats(),
-        specialMass: emptyCategoryStats(),
-        practice: emptyCategoryStats(),
-      };
-      buckets.set(record.memberId, bucket);
-    }
+    const bucket = ensureBucket(
+      record.memberId,
+      record.memberName || (member ? displayName(member) : record.memberId),
+    );
 
     const kind = resolveActivityKind(record);
     const category = categoryForActivityKind(kind);
@@ -194,6 +221,16 @@ export function computeAttendanceLeaderboard(
     if (record.status === 'Late') bucket.late += 1;
     if (record.status === 'Absent') bucket.absent += 1;
     if (record.status === 'Excused') bucket.excused += 1;
+  }
+
+  // Separate 1st/2nd Mass tallies from raw Sunday marks (before OR-merge).
+  for (const record of dedupeSundaySlotRecords(records)) {
+    const member = memberMap.get(record.memberId);
+    if (member && !isActiveMember(member)) continue;
+    const bucket = buckets.get(record.memberId)
+      ?? ensureBucket(record.memberId, record.memberName || (member ? displayName(member) : record.memberId));
+    const slot = record.sundayMassSlot ?? '1st';
+    applyStatus(slot === '2nd' ? bucket.sunday2nd : bucket.sunday1st, record.status);
   }
 
   const rows = [...buckets.values()].map((b) => {
@@ -216,6 +253,8 @@ export function computeAttendanceLeaderboard(
       mass: b.mass,
       specialMass: b.specialMass,
       practice: b.practice,
+      sunday1st: b.sunday1st,
+      sunday2nd: b.sunday2nd,
       massLogged: b.mass.logged,
       massAttended: b.mass.attended,
     };

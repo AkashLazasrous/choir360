@@ -26,6 +26,7 @@ import {
 import { formatINR } from '../utils/currency';
 import { getISTGreeting } from '../utils/timezone';
 import { calculateChoirHealth, isActiveMember, sumPendingCollections } from '../utils/choirStats';
+import { computeMemberRosterStats } from '../utils/attendanceStats';
 import { useParish } from '../features/parish/ParishContext';
 import { Reveal } from './interactions/Reveal';
 import { CountUp } from './interactions/CountUp';
@@ -49,6 +50,8 @@ interface LandingPageProps {
   attendanceRecords?: AttendanceRecord[];
   loading?: boolean;
   isAdmin?: boolean;
+  /** Logged-in member — when set (non-admin), Overview shows personal attendance % and share ₹ */
+  viewerMember?: Member | null;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onRemoveLiturgyLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
 }
@@ -64,6 +67,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   attendanceRecords = [],
   loading = false,
   isAdmin = false,
+  viewerMember = null,
   onSaveLiturgySongNotes,
   onRemoveLiturgyLog,
 }) => {
@@ -80,6 +84,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const pendingCollections = sumPendingCollections(payments);
   const { averageAttendance, healthLabel, confirmedPercent } = calculateChoirHealth(members);
 
+  const personalStats = useMemo(() => {
+    if (!viewerMember || isAdmin) return null;
+    return computeMemberRosterStats(attendanceRecords, members, masses, payments)
+      .find((s) => s.memberId === viewerMember.id) ?? null;
+  }, [viewerMember, isAdmin, attendanceRecords, members, masses, payments]);
+
   const today      = new Date();
   const todayLabel = today.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
 
@@ -88,7 +98,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Award mobile Home — all 10 patterns; desktop keeps legacy layout */}
       <MobileHomeDashboard
-        variant="admin"
+        variant={isAdmin || !viewerMember ? 'admin' : 'member'}
         members={members}
         masses={masses}
         rehearsals={rehearsals}
@@ -96,6 +106,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         events={events}
         announcements={announcements}
         attendanceRecords={attendanceRecords}
+        member={!isAdmin ? viewerMember : null}
         loading={loading}
         isAdmin={isAdmin}
         onSaveLiturgySongNotes={onSaveLiturgySongNotes}
@@ -172,7 +183,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {[
             { label: 'Liturgy', sub: nextMass ? nextMass.name : 'Log masses & shares', tab: 'masses' as Tab, icon: BookOpen },
             { label: 'People', sub: `${activeMembers.length} active`, tab: 'registration' as Tab, icon: UsersRound },
-            { label: 'Attendance', sub: `${averageAttendance}% avg`, tab: 'attendance' as Tab, icon: UserCheck },
+            {
+              label: 'Attendance',
+              sub: personalStats
+                ? `${personalStats.finalPercent}% yours`
+                : `${averageAttendance}% avg`,
+              tab: 'attendance' as Tab,
+              icon: UserCheck,
+            },
             { label: 'Music', sub: 'Songbook & lyrics', tab: 'song_library' as Tab, icon: Music2 },
             { label: 'Calendar', sub: nextPractice?.name ?? 'Rehearsals & events', tab: 'calendar' as Tab, icon: CalendarDays },
             { label: 'Insights', sub: `Health ${healthLabel}`, tab: 'analytics' as Tab, icon: TrendingUp },
@@ -186,14 +204,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* Insights strip */}
+      {/* Insights strip — personal for members, parish-wide for admins */}
       <section className="website-desk-stats" data-reveal>
-        {[
-          { label: 'Active', value: activeMembers.length },
-          { label: 'Attendance', value: `${averageAttendance}%` },
-          { label: 'Pending ₹', value: formatINR(pendingCollections) },
-          { label: 'Health', value: healthLabel },
-        ].map((stat) => (
+        {(personalStats
+          ? [
+              { label: 'Your attendance', value: `${personalStats.finalPercent}%` },
+              { label: 'Your share', value: formatINR(personalStats.totalShareINR) },
+              {
+                label: 'Sessions',
+                value: `${personalStats.finalAttended}/${personalStats.logged}`,
+              },
+              { label: 'Active choir', value: activeMembers.length },
+            ]
+          : [
+              { label: 'Active', value: activeMembers.length },
+              { label: 'Attendance', value: `${averageAttendance}%` },
+              { label: 'Pending ₹', value: formatINR(pendingCollections) },
+              { label: 'Health', value: healthLabel },
+            ]
+        ).map((stat) => (
           <article key={stat.label} className="website-desk-stat">
             <p className="website-desk-stat-val">
               {typeof stat.value === 'number' ? <CountUp value={stat.value} /> : stat.value}

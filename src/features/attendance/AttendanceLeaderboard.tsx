@@ -192,7 +192,8 @@ const LeaderboardRow: React.FC<{
             accent={top3}
           />
           <div className="flex flex-wrap gap-1.5">
-            <CategoryChip label="Mass" stats={entry.mass} />
+            <CategoryChip label="1st Mass" stats={entry.sunday1st} />
+            <CategoryChip label="2nd Mass" stats={entry.sunday2nd} />
             <CategoryChip label="Special" stats={entry.specialMass} />
             <CategoryChip label="Practice" stats={entry.practice} />
           </div>

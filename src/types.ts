@@ -23,7 +23,8 @@ export type Tab =
   | 'liturgical_planner'
   | 'gamification'
   | 'rehearsals'
-  | 'attendance';
+  | 'attendance'
+  | 'choir_chat';
 
 export type RecordStatus = string;
 
@@ -479,6 +480,17 @@ export interface Announcement {
   date: string;
   publishedBy: string;
   category: 'News' | 'Circular' | 'Choir Notice' | 'Feast Update' | 'Finance' | 'Rehearsal';
+}
+
+/** Parish choir group chat — ephemeral (hard-deleted after expiresAtMs). */
+export interface ChoirChatMessage extends TenantScopedRecord {
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  senderPhotoUrl: string;
+  /** Unix ms — message is purged everywhere after this time (24h from send). */
+  expiresAtMs: number;
 }
 
 export interface SaintOfDay {

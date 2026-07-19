@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { AuthPanel } from '../AuthPanel';
 import { ParishSidebarCard } from '../../features/parish/ParishSelector';
-import { SIDEBAR_NAV } from './navConfig';
+import { sidebarNavForAudience, type NavAudience } from './navConfig';
 import type { Language, Role, Tab } from '../../types';
 import type { User } from 'firebase/auth';
 import type { SignInResult } from '../../hooks/useFirebaseAuth';
@@ -26,6 +26,7 @@ type AppSidebarProps = {
   onOpenRegistration: () => void;
   /** Signed-out marketing: hide sidebar so the page feels like a website */
   websiteMode?: boolean;
+  navAudience: NavAudience;
 };
 
 /**
@@ -50,6 +51,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onRefreshToken,
   onOpenRegistration,
   websiteMode = false,
+  navAudience,
 }) => (
   <aside
     className={
@@ -78,9 +80,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     </div>
 
     <nav className="mt-5 space-y-1 pb-4" aria-label="Main navigation">
-      {SIDEBAR_NAV.filter(
-        (item) => !isConfigured || canAccess(item.minRole) || item.minRole === 'public_user',
-      ).map((item) => {
+      {sidebarNavForAudience(canAccess, isConfigured, navAudience).map((item) => {
         const accessible = canAccess(item.minRole);
         const isActive = activeTab === item.id;
         const Icon = item.icon;

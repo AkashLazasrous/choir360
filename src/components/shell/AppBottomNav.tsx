@@ -6,6 +6,7 @@ import {
   BOTTOM_NAV_SHORT_LABEL,
   moreSectionsForRole,
   primaryTabsForRole,
+  type NavAudience,
   type NavItem,
 } from './navConfig';
 import type { Role } from '../../types';
@@ -18,6 +19,7 @@ type AppBottomNavProps = {
   moreOpen: boolean;
   onMoreOpenChange: (open: boolean) => void;
   pendingPeopleCount?: number;
+  navAudience?: NavAudience;
 };
 
 export const AppBottomNav: React.FC<AppBottomNavProps> = ({
@@ -28,10 +30,11 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
   moreOpen,
   onMoreOpenChange,
   pendingPeopleCount = 0,
+  navAudience = { isAdmin: false, isApprovedMember: false },
 }) => {
-  const primary = primaryTabsForRole(canAccess);
+  const primary = primaryTabsForRole(canAccess, navAudience);
   const primaryIds = primary.map((p) => p.id);
-  const sections = moreSectionsForRole(canAccess, primaryIds);
+  const sections = moreSectionsForRole(canAccess, primaryIds, navAudience);
   const moreActive =
     moreOpen ||
     sections.some((s) => s.items.some((item) => item.id === activeTab));

@@ -304,6 +304,38 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // CHOIR GROUP CHAT — member read/create; hard-delete after 24h TTL
+    // =========================================================================
+    match /choirChatMessages/{docId} {
+      allow read: if memberRole() && existingInTenant();
+
+      allow create: if memberRole()
+        && hasRequiredEnvelope()
+        && (superAdmin() || sameParishCreate())
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'text', 'senderId', 'senderName', 'senderPhotoUrl', 'expiresAtMs'
+        ])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.expiresAtMs is int;
+
+      // Messages are immutable; clients purge via hard delete.
+      allow update: if false;
+
+      // Author, admin, or anyone in-tenant once the TTL has passed.
+      allow delete: if memberRole()
+        && existingInTenant()
+        && (
+          adminRole()
+          || resource.data.createdBy == request.auth.uid
+          || resource.data.expiresAtMs < request.time.toMillis()
+        );
+    }
+
+    // =========================================================================
     // CHOIRS / CALENDARS / APPROVAL WORKFLOWS / SETTINGS
     // =========================================================================
     match /choirs/{docId} {

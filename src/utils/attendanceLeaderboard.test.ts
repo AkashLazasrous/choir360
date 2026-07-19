@@ -21,17 +21,26 @@ const member = (overrides: Partial<Member>): Member =>
 
 const record = (
   overrides: Partial<AttendanceRecord> & Pick<AttendanceRecord, 'memberId' | 'status' | 'activityKind'>,
-): AttendanceRecord => ({
-  id: `att-${overrides.memberId}-${overrides.date ?? '2026-01-01'}-${overrides.activityKind}`,
-  entityId: `mass-${overrides.activityKind}-${overrides.date ?? '2026-01-01'}`,
-  entityType: overrides.entityType ?? (overrides.activityKind === 'practice' ? 'Rehearsal' : 'Mass'),
-  entityName: 'Sunday Mass',
-  date: overrides.date ?? '2026-01-01',
-  memberId: overrides.memberId,
-  memberName: overrides.memberName ?? 'Test Member',
-  status: overrides.status,
-  activityKind: overrides.activityKind,
-});
+): AttendanceRecord => {
+  const date = overrides.date ?? '2026-01-01';
+  const slot = overrides.sundayMassSlot;
+  const entityId = overrides.entityId
+    ?? (overrides.activityKind === 'sunday_mass' && slot
+      ? `mass-sunday_mass-${slot}-${date}`
+      : `mass-${overrides.activityKind}-${date}`);
+  return {
+    id: overrides.id ?? `att-${entityId}-${overrides.memberId}`,
+    entityId,
+    entityType: overrides.entityType ?? (overrides.activityKind === 'practice' ? 'Rehearsal' : 'Mass'),
+    entityName: overrides.entityName ?? 'Sunday Mass',
+    date,
+    memberId: overrides.memberId,
+    memberName: overrides.memberName ?? 'Test Member',
+    status: overrides.status,
+    activityKind: overrides.activityKind,
+    ...(slot ? { sundayMassSlot: slot } : {}),
+  };
+};
 
 describe('pointsForStatus', () => {
   it('weights present > late > excused > absent', () => {
@@ -101,6 +110,42 @@ describe('computeAttendanceLeaderboard', () => {
     expect(board[1].scorePercent).toBe(50);
     expect(board[1].late).toBe(1);
     expect(board[1].absent).toBe(1);
+  });
+
+  it('tracks Sunday 1st and 2nd Mass counts separately while merging for overall mass', () => {
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'sunday_mass',
+        date: '2026-07-19',
+        sundayMassSlot: '1st',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Absent',
+        activityKind: 'sunday_mass',
+        date: '2026-07-19',
+        sundayMassSlot: '2nd',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Late',
+        activityKind: 'sunday_mass',
+        date: '2026-07-26',
+        sundayMassSlot: '2nd',
+      }),
+    ];
+    const board = computeAttendanceLeaderboard(records, members);
+    const m1 = board.find((e) => e.memberId === 'm1')!;
+    expect(m1.sunday1st.attended).toBe(1);
+    expect(m1.sunday1st.logged).toBe(1);
+    expect(m1.sunday2nd.attended).toBe(1);
+    expect(m1.sunday2nd.late).toBe(1);
+    expect(m1.sunday2nd.absent).toBe(1);
+    // OR-merge: Present on 1st + Absent on 2nd same day → one Present mass day
+    expect(m1.mass.logged).toBe(2);
+    expect(m1.mass.attended).toBe(2);
   });
 
   it('breaks ties by on-time count then name', () => {
