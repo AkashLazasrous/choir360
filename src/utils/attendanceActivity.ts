@@ -17,6 +17,7 @@ import {
   kindToMassCategory,
   resolveActivityKind,
 } from './attendanceTaxonomy';
+import { omitUndefinedDeep } from './omitUndefined';
 
 export {
   ACTIVITY_KIND_LABELS,
@@ -173,7 +174,11 @@ export function buildMassFromActivity(
       ? undefined
       : existing?.specialMassPayment;
 
-  return {
+  const paymentClean = specialMassPayment
+    ? omitUndefinedDeep({ ...specialMassPayment })
+    : undefined;
+
+  return omitUndefinedDeep({
     id,
     name: title?.trim() || existing?.name || defaultEntityName(kind, date, slot),
     category: kindToMassCategory(kind),
@@ -189,12 +194,12 @@ export function buildMassFromActivity(
     ...(isSpecial && specialMassBilling
       ? {
           specialMassBilling,
-          ...(specialMassBilling === 'paid' && specialMassPayment
-            ? { specialMassPayment }
+          ...(specialMassBilling === 'paid' && paymentClean && Object.keys(paymentClean).length > 0
+            ? { specialMassPayment: paymentClean }
             : {}),
         }
       : {}),
-  };
+  });
 }
 
 export function buildRehearsalFromActivity(
@@ -205,7 +210,7 @@ export function buildRehearsalFromActivity(
   existing?: Rehearsal,
 ): Rehearsal {
   const id = existing?.id ?? activityEntityId('practice', date);
-  return {
+  return omitUndefinedDeep({
     id,
     name: title?.trim() || existing?.name || defaultEntityName('practice', date),
     type: existing?.type ?? 'Regular Practice',
@@ -219,7 +224,7 @@ export function buildRehearsalFromActivity(
     status: existing?.status ?? 'Completed',
     conductor: existing?.conductor,
     songs: existing?.songs,
-  };
+  });
 }
 
 export function buildAttendanceRecords(

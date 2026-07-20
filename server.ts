@@ -1495,10 +1495,19 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
   };
 }
 
-function stripUndefinedDeep<T extends Record<string, unknown>>(payload: T): T {
-  return Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => value !== undefined),
-  ) as T;
+/** Recursively drop undefined so nested optional fields never hit Firestore. */
+function stripUndefinedDeep<T>(value: T): T {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefinedDeep(item)) as T;
+  }
+  if (Object.prototype.toString.call(value) !== "[object Object]") return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (child === undefined) continue;
+    out[key] = stripUndefinedDeep(child);
+  }
+  return out as T;
 }
 
 async function loadParishMembers(

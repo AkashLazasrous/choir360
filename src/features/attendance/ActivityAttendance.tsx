@@ -40,6 +40,7 @@ import {
   shouldSplitMassByWeekday,
 } from './parseAttendanceCsv';
 import { dedupeImportSessions } from '../../utils/attendanceActivity';
+import { omitUndefinedDeep } from '../../utils/omitUndefined';
 import { AttendanceLeaderboard } from './AttendanceLeaderboard';
 import { computeAttendanceLeaderboard } from '../../utils/attendanceLeaderboard';
 
@@ -297,13 +298,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const buildSpecialPayment = (): SpecialMassPaymentDetails | undefined => {
     if (kind !== 'special_mass' || specialBilling !== 'paid') return undefined;
     const amount = Number(paymentAmount);
-    return {
+    const payment = omitUndefinedDeep({
       amount: Number.isFinite(amount) && amount > 0 ? amount : undefined,
       whoPaid: paymentWho.trim() || undefined,
       notes: paymentNotes.trim() || undefined,
       dateReceived: paymentDate || undefined,
       paymentMode: paymentMode || undefined,
-    };
+    });
+    return Object.keys(payment).length > 0 ? payment : undefined;
   };
 
   const handleSave = async () => {

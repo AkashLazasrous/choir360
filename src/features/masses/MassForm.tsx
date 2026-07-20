@@ -4,6 +4,7 @@ import { Mass, MassCategory, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { derivePaymentStatus } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
+import { omitUndefinedDeep, optionalNumber, optionalString } from '../../utils/omitUndefined';
 
 interface MassFormProps {
   isAdmin: boolean;
@@ -41,7 +42,16 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
 
     const massId = createUniqueId('mass');
     const isSpecialLike = isPaymentMass(massCategory) || massCategory === 'Special Mass';
-    const newMass: Mass = {
+    const specialMassPayment = billingType === 'paid'
+      ? omitUndefinedDeep({
+          amount: optionalNumber(amountProposed > 0 ? amountProposed : undefined),
+          whoPaid: optionalString(whoPaid),
+          notes: optionalString(paymentRemarks),
+          dateReceived: optionalString(dateReceived),
+          paymentMode: optionalString(paymentMode),
+        })
+      : undefined;
+    const newMass = omitUndefinedDeep({
       id: massId,
       name: massName,
       category: massCategory,
@@ -51,20 +61,12 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       ...(isSpecialLike
         ? {
             specialMassBilling: billingType,
-            ...(billingType === 'paid'
-              ? {
-                  specialMassPayment: {
-                    amount: amountProposed || undefined,
-                    whoPaid: whoPaid || undefined,
-                    notes: paymentRemarks || undefined,
-                    dateReceived: dateReceived || undefined,
-                    paymentMode: paymentMode || undefined,
-                  },
-                }
+            ...(billingType === 'paid' && specialMassPayment
+              ? { specialMassPayment }
               : {}),
           }
         : {}),
-    };
+    }) as Mass;
 
     const massResult = await onAddMass(newMass);
     if (massResult && !massResult.ok) {
@@ -83,16 +85,24 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       const status   = derivePaymentStatus(amountProposed, amountReceived, receivedAmount);
       const pid      = createUniqueId('payment');
 
-      const newPayment: Payment = {
-        id: pid, massId, partyName, mobile: '',
-        massType: massCategory, massDate, massTime,
-        promisedAmount: amountProposed, receivedAmount: recvAmt,
-        pendingAmount: pending, dateReceived: dateReceived || undefined,
-        status, whoPaid: whoPaid || undefined,
-        paymentMode: paymentMode || undefined,
-        receiptNo: receiptNo || undefined,
-        remarks: paymentRemarks || undefined,
-      };
+      const newPayment = omitUndefinedDeep({
+        id: pid,
+        massId,
+        partyName,
+        mobile: '',
+        massType: massCategory,
+        massDate,
+        massTime,
+        promisedAmount: amountProposed,
+        receivedAmount: recvAmt,
+        pendingAmount: pending,
+        dateReceived: optionalString(dateReceived),
+        status,
+        whoPaid: optionalString(whoPaid),
+        paymentMode: optionalString(paymentMode),
+        receiptNo: optionalString(receiptNo),
+        remarks: optionalString(paymentRemarks),
+      }) as Payment;
 
       const paymentResult = await onAddPayment(newPayment);
       if (paymentResult && !paymentResult.ok) {

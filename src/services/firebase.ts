@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { DEFAULT_TENANT_CONTEXT, createRecordMetadata, updateRecordMetadata, type TenantContext } from './recordMetadata';
 import { TenantScopedRecord } from '../types';
+import { omitUndefinedDeep } from '../utils/omitUndefined';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -112,14 +113,11 @@ function requireDb() {
 }
 
 /**
- * Firestore rejects writes containing `undefined` field values. Optional
- * fields in our record types (e.g. Payment.receiptNo) are often set to
- * `undefined` when left blank, so drop them before writing.
+ * Firestore rejects writes containing `undefined` field values — including
+ * nested objects (e.g. specialMassPayment.notes). Strip recursively.
  */
 function stripUndefined<T extends Record<string, unknown>>(payload: T): T {
-  return Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => value !== undefined),
-  ) as T;
+  return omitUndefinedDeep(payload);
 }
 
 function tenantContextFromRecord(record: Partial<TenantScopedRecord>): TenantContext {
