@@ -33,6 +33,7 @@ import {
 import {
   computeParishStats,
 } from '../../utils/attendanceStats';
+import { isOptInSpecialMassKind } from '../../utils/attendanceTaxonomy';
 import {
   collectUnmatchedNames,
   kindFromFilename,
@@ -319,12 +320,21 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     if (!canEdit) return;
     setSaving(true);
     setSaveMessage(null);
+    // Special rites are opt-in: only explicit Present/Absent/Late/Excused are stored.
+    // Unmarked (null) are omitted so they are not counted as Absent; server clears
+    // prior marks for members left unmarked on this rite.
+    const marksToSave: Record<string, AttendanceStatus | null> = { ...loadedMarks };
+    if (isOptInSpecialMassKind(kind)) {
+      for (const memberId of Object.keys(marksToSave)) {
+        if (!marksToSave[memberId]) marksToSave[memberId] = null;
+      }
+    }
     const result = await onSaveSession({
       kind,
       date,
       title: title || undefined,
       notes: notes || undefined,
-      marks: loadedMarks,
+      marks: marksToSave,
       ...(kind === 'sunday_mass' ? { sundayMassSlot } : {}),
       ...(kind === 'special_mass'
         ? {
@@ -1001,6 +1011,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <p className="apple-label flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" /> Mark each member
               </p>
+              {isOptInSpecialMassKind(kind) && (
+                <p className="text-[13px] leading-snug text-[#636366] lg:text-white/65">
+                  Special rite (Wedding, Death Mass, Death Anniversary, First Holy Communion,
+                  Confirmation, Special Mass, …): only mark members who were Present, Absent,
+                  Late, or Excused. Unmarked members are not counted as Absent — tap a status
+                  again to clear it.
+                </p>
+              )}
               {activeMembers.length === 0 ? (
                 <p className="text-[14px] text-[#86868b]">No active members in this parish.</p>
               ) : (

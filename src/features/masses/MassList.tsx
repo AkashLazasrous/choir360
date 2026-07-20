@@ -8,6 +8,7 @@ import { formatINR } from '../../utils/currency';
 import { calculatePaymentShares } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { AmPmTimeField } from './AmPmTimeField';
+import { isOptInSpecialMassCategory } from '../../utils/attendanceTaxonomy';
 
 export type MassAttendanceSavePayload = {
   mass: Mass;
@@ -152,9 +153,18 @@ export const MassList: React.FC<MassListProps> = ({
   const handleSaveAttendance = async (mass: Mass) => {
     if (!onSaveMassAttendance) return;
     const present = presentMapFor(mass);
+    const optInSpecial = isOptInSpecialMassCategory(mass.category)
+      || mass.activityKind === 'special_mass';
     const marks: Record<string, AttendanceStatus | null> = {};
     for (const mem of activeMembers) {
-      marks[mem.id] = present[mem.id] ? 'Present' : 'Absent';
+      if (present[mem.id]) {
+        marks[mem.id] = 'Present';
+      } else if (optInSpecial) {
+        // Unmarked on special rites ≠ Absent — clear any prior auto-Absent.
+        marks[mem.id] = null;
+      } else {
+        marks[mem.id] = 'Absent';
+      }
     }
     const guests = guestsFor(mass);
     setSavingAttendanceId(mass.id);
@@ -355,12 +365,19 @@ export const MassList: React.FC<MassListProps> = ({
                         </span>
                       )}
                     </p>
+                    {(isOptInSpecialMassCategory(m.category) || m.activityKind === 'special_mass') && (
+                      <p className="mb-2 text-[12px] text-slate-600">
+                        Special rite: only tap members who attended. Unmarked members are not counted as Absent.
+                      </p>
+                    )}
                     {isAdmin && onSaveMassAttendance ? (
                       <>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                           {activeMembers.map((mem) => {
                             const present = !!presentMapFor(m)[mem.id];
                             const isInstrumentalist = !['Singer', 'Other'].includes(mem.memberType);
+                            const optIn = isOptInSpecialMassCategory(m.category) || m.activityKind === 'special_mass';
+                            const statusLabel = present ? 'Present' : (optIn ? 'Unmarked' : 'Absent');
                             return (
                               <button
                                 key={mem.id}
@@ -380,7 +397,7 @@ export const MassList: React.FC<MassListProps> = ({
                                     {mem.firstName} {mem.lastName}
                                   </span>
                                   <span className="block text-[12px] text-slate-600">
-                                    {mem.memberType} · {present ? 'Present' : 'Absent'}
+                                    {mem.memberType} · {statusLabel}
                                   </span>
                                 </span>
                                 {present && (

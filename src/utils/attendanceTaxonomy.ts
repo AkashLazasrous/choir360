@@ -61,6 +61,20 @@ export function isLiturgyActivityKind(kind: ActivityKind): boolean {
   return kind !== 'practice';
 }
 
+/**
+ * Opt-in attendance rites (Wedding, Death Mass, Death Anniversary, FHC,
+ * Confirmation, Special Mass, Ordination, …). Unmarked members must NOT be
+ * treated as Absent — only explicit Present / Absent / Late / Excused count.
+ */
+export function isOptInSpecialMassKind(kind: ActivityKind | string | null | undefined): boolean {
+  return kind === 'special_mass';
+}
+
+/** Mass categories that use opt-in attendance (same rule as special_mass kind). */
+export function isOptInSpecialMassCategory(category: MassCategory | string | null | undefined): boolean {
+  return massCategoryToActivityKind(category ?? '') === 'special_mass';
+}
+
 export function kindsForCategory(category: AttendanceCategory): ActivityKind[] {
   if (category === 'practice') return ['practice'];
   if (category === 'special_mass') return ['special_mass'];

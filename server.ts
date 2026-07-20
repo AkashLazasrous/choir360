@@ -1788,14 +1788,6 @@ async function upsertAttendanceSessions(opts: {
       .filter(([, status]) => status) as [string, AttendanceStatus][];
     const resolvableMarks = incomingMarks.filter(([memberId]) => memberById.has(memberId));
 
-    if (resolvableMarks.length === 0) {
-      emptySkipped += 1;
-      continue;
-    }
-
-    const resolvedMarks: Record<string, AttendanceStatus | null> = {};
-    for (const [memberId, status] of resolvableMarks) resolvedMarks[memberId] = status;
-
     const sessionAttendance = attendanceByDate.filter((row) => {
       if (row.data.date !== session.date || isSoftDeletedDoc(row.data)) return false;
       const rowKind = resolveActivityKind({
@@ -1804,6 +1796,11 @@ async function upsertAttendanceSessions(opts: {
         entityName: row.data.entityName,
       });
       if (rowKind !== session.kind) return false;
+      // Special / pinned rites: only this mass id — do not clear other specials on the same day.
+      if (pinnedEntity || session.kind === "special_mass") {
+        const rowEntityId = String(row.data.entityId || "");
+        if (rowEntityId && rowEntityId !== entityId) return false;
+      }
       if (session.kind === "sunday_mass") {
         const rowSlot = resolveSundayMassSlot({
           sundayMassSlot: row.data.sundayMassSlot as SundayMassSlot | undefined,
@@ -1816,6 +1813,30 @@ async function upsertAttendanceSessions(opts: {
       }
       return true;
     });
+
+    if (resolvableMarks.length === 0) {
+      // Opt-in special mass: empty / all-unmarked save clears prior marks for this rite
+      // so unmarked members are not left as Absent.
+      if (session.kind === "special_mass") {
+        for (const row of sessionAttendance) {
+          if (isSoftDeletedDoc(row.data)) continue;
+          batch.set(
+            db.collection("attendance").doc(row.id),
+            softDeleteFields(adminUid, now),
+            { merge: true },
+          );
+          ops += 1;
+          duplicatesRemoved += 1;
+          if (ops >= 400) await commitBatch();
+        }
+        if (ops > 0) await commitBatch();
+      }
+      emptySkipped += 1;
+      continue;
+    }
+
+    const resolvedMarks: Record<string, AttendanceStatus | null> = {};
+    for (const [memberId, status] of resolvableMarks) resolvedMarks[memberId] = status;
 
     if (sessionMarksAlreadyCanonical(resolvedMarks, entityId, sessionAttendance)) {
       skipped += 1;

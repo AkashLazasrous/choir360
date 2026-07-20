@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   categoryForActivityKind,
   isMassBucketKind,
+  isOptInSpecialMassCategory,
+  isOptInSpecialMassKind,
   kindsForCategory,
   kindToMassCategory,
+  massCategoryToActivityKind,
   resolveActivityKind,
 } from './attendanceTaxonomy';
 
@@ -42,5 +45,26 @@ describe('attendance taxonomy', () => {
     expect(resolveActivityKind({ entityName: 'Feast Day · 2026-08-15' })).toBe('feast_day');
     expect(resolveActivityKind({ entityName: 'Novena · 2026-05-01' })).toBe('novena');
     expect(resolveActivityKind({ entityName: 'Sunday Mass · 2026-01-04' })).toBe('sunday_mass');
+  });
+
+  it('treats special rites as opt-in attendance (unmarked ≠ Absent)', () => {
+    expect(isOptInSpecialMassKind('special_mass')).toBe(true);
+    expect(isOptInSpecialMassKind('sunday_mass')).toBe(false);
+    expect(isOptInSpecialMassKind('practice')).toBe(false);
+
+    for (const category of [
+      'Special Mass',
+      'Wedding',
+      'Death Mass',
+      'Death Anniversary Mass',
+      'First Holy Communion',
+      'Confirmation',
+      'Ordination',
+    ] as const) {
+      expect(massCategoryToActivityKind(category)).toBe('special_mass');
+      expect(isOptInSpecialMassCategory(category)).toBe(true);
+    }
+    expect(isOptInSpecialMassCategory('Sunday Mass')).toBe(false);
+    expect(isOptInSpecialMassCategory('Saturday Mass')).toBe(false);
   });
 });
