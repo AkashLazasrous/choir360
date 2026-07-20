@@ -27,7 +27,9 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
   const earnings = useMemo(() => {
     const rows: Array<{ id: string; name: string; date: string; amount: number; share: number; status: string }> = [];
     for (const shareDoc of paymentShares) {
-      const part = shareDoc.participatingMembers?.find((m) => m.memberId === memberId);
+      const part = shareDoc.participatingMembers?.find(
+        (m) => m.memberId === memberId && !m.isGuest && !m.memberId.startsWith('guest-'),
+      );
       if (!part) continue;
       const payment = payments.find((p) => p.id === shareDoc.paymentId);
       const status = payment?.status === 'Received' ? 'Disbursed' : (payment?.status ?? 'Pending');

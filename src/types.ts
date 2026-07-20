@@ -206,6 +206,17 @@ export function isPaymentMassCategory(cat: MassCategory): boolean {
   return PAYMENT_MASS_CATEGORIES.includes(cat);
 }
 
+/** Non-roster guest on a paid rite — fixed ₹ amount; remaining pool splits among members. */
+export type MassGuestRole = 'Singer' | 'Musician';
+
+export interface MassGuest {
+  id: string;
+  name: string;
+  role: MassGuestRole;
+  /** Fixed amount paid to this guest (₹); deducted before member share split */
+  amount: number;
+}
+
 export interface Mass {
   id: string;
   name: string;
@@ -218,6 +229,8 @@ export interface Mass {
   notes?: string;
   /** Choir members who attended this Mass */
   attendingMemberIds?: string[];
+  /** Ad-hoc guests included in paid-mass share splits */
+  guestAttendees?: MassGuest[];
   /** Links attendance logs to Sunday vs Special Mass sheets */
   activityKind?: ActivityKind;
   /** Sunday Mass only — 1st Mass or 2nd Mass */
@@ -277,12 +290,19 @@ export interface ShareCalculation {
   /** unitValue * 2 */
   instrumentalistShare: number;
   isLocked: boolean;
+  /** Sum of fixed guest payouts deducted before member split */
+  guestTotalAmount?: number;
+  /** Pool split among roster members after guest payouts */
+  memberPoolAmount?: number;
   participatingMembers: {
     memberId: string;
     name: string;
-    type: MemberType;
-    weight: 1 | 2;
+    type: MemberType | MassGuestRole;
+    /** 1 / 2 for members; 0 for fixed guest payouts */
+    weight: 0 | 1 | 2;
     share: number;
+    /** True when participant is a non-roster guest (fixed amount) */
+    isGuest?: boolean;
   }[];
 }
 

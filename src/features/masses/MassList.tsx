@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { BookOpen, Check, ChevronDown, ChevronUp, IndianRupee, Loader2, MoreHorizontal, Pencil, Trash2, Users, X } from 'lucide-react';
-import { AttendanceStatus, Mass, Member, Payment } from '../../types';
+import {
+  BookOpen, Check, ChevronDown, ChevronUp, IndianRupee, Loader2, MoreHorizontal,
+  Pencil, Plus, Trash2, UserPlus, Users, X,
+} from 'lucide-react';
+import { AttendanceStatus, Mass, MassGuest, MassGuestRole, Member, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { calculatePaymentShares } from '../../utils/choirStats';
-import { ALL_MASS_CATEGORIES, isPaymentMass } from './shared';
+import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { AmPmTimeField } from './AmPmTimeField';
 
 export type MassAttendanceSavePayload = {
   mass: Mass;
   marks: Record<string, AttendanceStatus | null>;
+  guests: MassGuest[];
 };
 
 interface MassListProps {
@@ -18,9 +22,34 @@ interface MassListProps {
   isAdmin: boolean;
   onUpdateMass?: (mass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
   onDeleteMass?: (massId: string) => void;
-  /** Admin: save Present/Absent for a mass (paid rites auto-split shares). */
   onSaveMassAttendance?: (payload: MassAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
 }
+
+function memberInitials(member: Member): string {
+  return `${member.firstName?.[0] || ''}${member.lastName?.[0] || ''}`.toUpperCase() || '?';
+}
+
+const MemberAvatar: React.FC<{ member: Member; present?: boolean }> = ({ member, present }) => {
+  if (member.photoUrl) {
+    return (
+      <img
+        src={member.photoUrl}
+        alt=""
+        className={`h-9 w-9 shrink-0 rounded-full object-cover ring-2 ${present ? 'ring-[#18392f]/40' : 'ring-black/10'}`}
+      />
+    );
+  }
+  return (
+    <span
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+        present ? 'bg-[#18392f] text-white' : 'bg-slate-200 text-slate-700'
+      }`}
+      aria-hidden
+    >
+      {memberInitials(member)}
+    </span>
+  );
+};
 
 /** Logged liturgies with attendance sheet and edit modal — mobile overflow actions. */
 export const MassList: React.FC<MassListProps> = ({
@@ -36,8 +65,12 @@ export const MassList: React.FC<MassListProps> = ({
   const [editingMass, setEditingMass] = useState<Mass | null>(null);
   const [editError, setEditError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  /** Draft Present toggles per mass (memberId → present). */
   const [draftPresent, setDraftPresent] = useState<Record<string, Record<string, boolean>>>({});
+  const [draftGuests, setDraftGuests] = useState<Record<string, MassGuest[]>>({});
+  const [guestFormOpen, setGuestFormOpen] = useState<string | null>(null);
+  const [guestName, setGuestName] = useState('');
+  const [guestRole, setGuestRole] = useState<MassGuestRole>('Singer');
+  const [guestAmount, setGuestAmount] = useState<string>('');
   const [savingAttendanceId, setSavingAttendanceId] = useState<string | null>(null);
   const [attendanceMsg, setAttendanceMsg] = useState<string | null>(null);
 
@@ -50,14 +83,26 @@ export const MassList: React.FC<MassListProps> = ({
     return map;
   };
 
+  const guestsFor = (mass: Mass): MassGuest[] => {
+    const raw = draftGuests[mass.id] ?? mass.guestAttendees ?? [];
+    return raw.map((g) => ({
+      ...g,
+      amount: Number(g.amount) > 0 ? Math.round(Number(g.amount)) : 0,
+    }));
+  };
+
   const openAttendance = (mass: Mass) => {
     const nextOpen = attendanceOpen === mass.id ? null : mass.id;
     setAttendanceOpen(nextOpen);
     setMenuOpenId(null);
+    setGuestFormOpen(null);
     if (nextOpen && !draftPresent[mass.id]) {
       const map: Record<string, boolean> = {};
       for (const id of mass.attendingMemberIds ?? []) map[id] = true;
       setDraftPresent((prev) => ({ ...prev, [mass.id]: map }));
+    }
+    if (nextOpen && !draftGuests[mass.id]) {
+      setDraftGuests((prev) => ({ ...prev, [mass.id]: [...(mass.guestAttendees ?? [])] }));
     }
   };
 
@@ -69,16 +114,56 @@ export const MassList: React.FC<MassListProps> = ({
     });
   };
 
+  const addGuest = (massId: string) => {
+    const name = guestName.trim();
+    const amount = Math.max(0, Math.round(Number(guestAmount) || 0));
+    if (!name || amount <= 0) return;
+    const guest: MassGuest = {
+      id: createUniqueId('guest'),
+      name,
+      role: guestRole,
+      amount,
+    };
+    setDraftGuests((prev) => ({
+      ...prev,
+      [massId]: [...(prev[massId] ?? []), guest],
+    }));
+    setGuestName('');
+    setGuestRole('Singer');
+    setGuestAmount('');
+    setGuestFormOpen(null);
+  };
+
+  const updateGuestAmount = (massId: string, guestId: string, amountRaw: string) => {
+    const amount = Math.max(0, Math.round(Number(amountRaw) || 0));
+    setDraftGuests((prev) => ({
+      ...prev,
+      [massId]: (prev[massId] ?? []).map((g) => (g.id === guestId ? { ...g, amount } : g)),
+    }));
+  };
+
+  const removeGuest = (massId: string, guestId: string) => {
+    setDraftGuests((prev) => ({
+      ...prev,
+      [massId]: (prev[massId] ?? []).filter((g) => g.id !== guestId),
+    }));
+  };
+
   const handleSaveAttendance = async (mass: Mass) => {
     if (!onSaveMassAttendance) return;
     const present = presentMapFor(mass);
     const marks: Record<string, AttendanceStatus | null> = {};
-    for (const m of activeMembers) {
-      marks[m.id] = present[m.id] ? 'Present' : 'Absent';
+    for (const mem of activeMembers) {
+      marks[mem.id] = present[mem.id] ? 'Present' : 'Absent';
     }
+    const guests = guestsFor(mass);
     setSavingAttendanceId(mass.id);
     setAttendanceMsg(null);
-    const result = await onSaveMassAttendance({ mass, marks });
+    const result = await onSaveMassAttendance({
+      mass: { ...mass, guestAttendees: guests },
+      marks,
+      guests,
+    });
     setSavingAttendanceId(null);
     if (result.ok) {
       setAttendanceMsg(
@@ -100,18 +185,52 @@ export const MassList: React.FC<MassListProps> = ({
       ? ids
       : (mass.attendingMemberIds ?? []);
     return source
-      .map((id) => activeMembers.find((m) => m.id === id))
+      .map((id) => activeMembers.find((mem) => mem.id === id))
       .filter(Boolean) as Member[];
   };
 
   const getPaymentBreakdown = (mass: Mass) => {
     const attendees = getAttendees(mass);
-    const singers = attendees.filter((m) => m.memberType === 'Singer' || m.memberType === 'Other');
-    const instrumentalists = attendees.filter((m) => !['Singer', 'Other'].includes(m.memberType));
-    const payment = payments.find((p) => p.massId === mass.id);
-    if (!payment) return null;
-    const c = calculatePaymentShares(payment.promisedAmount, singers.length, instrumentalists.length);
-    return { singers, instrumentalists, ...c, payment };
+    const guests = guestsFor(mass);
+    const singerMembers = attendees.filter((mem) => mem.memberType === 'Singer' || mem.memberType === 'Other');
+    const musicianMembers = attendees.filter((mem) => !['Singer', 'Other'].includes(mem.memberType));
+    const singerCount = singerMembers.length;
+    const musicianCount = musicianMembers.length;
+    const guestTotal = guests.reduce((sum, g) => sum + (Number(g.amount) > 0 ? Number(g.amount) : 0), 0);
+
+    const linked = payments.find((p) => p.massId === mass.id);
+    const hintAmount = Number(mass.specialMassPayment?.amount);
+    const amount = linked?.promisedAmount
+      ?? (Number.isFinite(hintAmount) && hintAmount > 0 ? hintAmount : 0);
+    if (amount <= 0) return null;
+
+    const payment = linked ?? {
+      id: `payment-${mass.id}`,
+      massId: mass.id,
+      partyName: mass.specialMassPayment?.whoPaid || 'Sponsor',
+      mobile: '',
+      massType: mass.category,
+      massDate: mass.date,
+      massTime: mass.time,
+      promisedAmount: amount,
+      receivedAmount: 0,
+      pendingAmount: amount,
+      status: 'Pending' as const,
+    };
+
+    const memberPool = Math.max(0, payment.promisedAmount - guestTotal);
+    const c = calculatePaymentShares(memberPool, singerCount, musicianCount);
+    return {
+      singerMembers,
+      musicianMembers,
+      guests,
+      singerCount,
+      musicianCount,
+      guestTotal,
+      memberPool,
+      ...c,
+      payment,
+    };
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -150,9 +269,11 @@ export const MassList: React.FC<MassListProps> = ({
         {masses.map((m) => {
           const isOpen = attendanceOpen === m.id;
           const attendees = getAttendees(m);
+          const guests = guestsFor(m);
           const bdown = getPaymentBreakdown(m);
-          const attendeeIds = m.attendingMemberIds ?? [];
+          const presentCount = Object.values(presentMapFor(m)).filter(Boolean).length;
           const menuOpen = menuOpenId === m.id;
+          const paid = isPaymentMass(m.category) || m.specialMassBilling === 'paid';
 
           return (
             <div key={m.id} className="overflow-hidden rounded-2xl border border-black/[0.06]">
@@ -174,7 +295,7 @@ export const MassList: React.FC<MassListProps> = ({
                     className="btn-pill btn-pill-secondary btn-pill-sm !min-h-[44px] flex-1 !text-[13px] sm:flex-none"
                   >
                     <Users className="h-4 w-4" />
-                    {attendeeIds.length > 0 ? `${attendeeIds.length} present` : (isAdmin ? 'Put attendance' : 'Attendance')}
+                    {presentCount > 0 ? `${presentCount} present` : (isAdmin ? 'Put attendance' : 'Attendance')}
                     {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
 
@@ -210,7 +331,7 @@ export const MassList: React.FC<MassListProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleDeleteMass(m.id, m.name)}
-                                className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px] text-[#d70015] hover:bg-[rgba(255,59,48,0.06)]"
+                                className="flex w-full min-h-[44px] items-center gap-2 px-4 text-left text-[15px] text-[#d70015] hover:bg-[rgba(14,61,76,0.06)]"
                               >
                                 <Trash2 className="h-4 w-4" /> Delete
                               </button>
@@ -224,11 +345,11 @@ export const MassList: React.FC<MassListProps> = ({
               </div>
 
               {isOpen && (
-                <div className="space-y-4 border-t border-black/[0.06] bg-[#f5f5f7] px-4 py-4">
+                <div className="website-light-surface space-y-4 border-t border-slate-200 bg-[#f5f5f7] px-4 py-4">
                   <div>
-                    <p className="apple-label mb-2 flex items-center gap-1">
+                    <p className="mb-2 flex flex-wrap items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                       <Users className="h-3.5 w-3.5" /> Attendance
-                      {(isPaymentMass(m.category) || m.specialMassBilling === 'paid') && (
+                      {paid && (
                         <span className="ml-1 font-normal normal-case tracking-normal text-[#8a6a10]">
                           · paid rite — shares use Singer ×1 · Musician ×2
                         </span>
@@ -245,25 +366,130 @@ export const MassList: React.FC<MassListProps> = ({
                                 key={mem.id}
                                 type="button"
                                 onClick={() => togglePresent(m.id, mem.id)}
-                                className={`flex min-h-[52px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-left text-[14px] transition ${
+                                className={`flex min-h-[56px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-left text-[14px] transition ${
                                   present
                                     ? isInstrumentalist
-                                      ? 'border-[rgba(245,194,76,0.55)] bg-[rgba(245,194,76,0.2)] text-[#8a6a10]'
-                                      : 'border-[rgba(24,57,47,0.35)] bg-[rgba(24,57,47,0.12)] text-[#18392f]'
-                                    : 'border-black/[0.08] bg-white text-[#86868b]'
+                                      ? 'liturgy-attendee-musician border-[rgba(245,194,76,0.55)] bg-[rgba(245,194,76,0.22)]'
+                                      : 'liturgy-attendee-present border-[rgba(24,57,47,0.35)] bg-[rgba(24,57,47,0.12)]'
+                                    : 'liturgy-attendee-muted border-slate-200 bg-white'
                                 }`}
                               >
-                                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${present ? 'bg-[#18392f] text-white' : 'bg-black/[0.06]'}`}>
-                                  {present ? <Check className="h-3.5 w-3.5" /> : null}
+                                <MemberAvatar member={mem} present={present} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate font-semibold text-slate-900">
+                                    {mem.firstName} {mem.lastName}
+                                  </span>
+                                  <span className="block text-[12px] text-slate-600">
+                                    {mem.memberType} · {present ? 'Present' : 'Absent'}
+                                  </span>
                                 </span>
-                                <span>
-                                  <span className="font-semibold text-[#1d1d1f]">{mem.firstName} {mem.lastName}</span>
-                                  <span className="block text-[12px] opacity-70">{mem.memberType} · {present ? 'Present' : 'Absent'}</span>
-                                </span>
+                                {present && (
+                                  <Check className={`h-4 w-4 shrink-0 ${isInstrumentalist ? 'text-[#8a6a10]' : 'text-[#18392f]'}`} />
+                                )}
                               </button>
                             );
                           })}
                         </div>
+
+                        {/* Guest pay — not attendance; fixed ₹ deducted before member split */}
+                        {paid && (
+                          <div className="mt-4 space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+                            <p className="text-[12px] font-semibold text-slate-800">
+                              Guest pay (fixed amount · not in attendance)
+                            </p>
+                            {guests.length > 0 && (
+                              <div className="space-y-2">
+                                {guests.map((g) => (
+                                  <div
+                                    key={g.id}
+                                    className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 sm:flex-row sm:items-center"
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-[14px] font-semibold text-slate-900">{g.name}</p>
+                                      <p className="text-[12px] text-slate-600">{g.role}</p>
+                                    </div>
+                                    <label className="flex items-center gap-2 text-[12px] font-medium text-slate-600">
+                                      Amount ₹
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        step={1}
+                                        value={g.amount || ''}
+                                        onChange={(e) => updateGuestAmount(m.id, g.id, e.target.value)}
+                                        className="apple-input w-28 text-sm tabular-nums"
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeGuest(m.id, g.id)}
+                                      className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-black/5"
+                                      aria-label={`Remove guest ${g.name}`}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {guestFormOpen === m.id ? (
+                              <div className="space-y-2 rounded-xl border border-dashed border-slate-300 p-3">
+                                <input
+                                  value={guestName}
+                                  onChange={(e) => setGuestName(e.target.value)}
+                                  placeholder="Guest name"
+                                  className="apple-input text-sm"
+                                />
+                                <select
+                                  value={guestRole}
+                                  onChange={(e) => setGuestRole(e.target.value as MassGuestRole)}
+                                  className="apple-select text-sm"
+                                >
+                                  <option value="Singer">Singer</option>
+                                  <option value="Musician">Musician</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  step={1}
+                                  value={guestAmount}
+                                  onChange={(e) => setGuestAmount(e.target.value)}
+                                  placeholder="Amount ₹"
+                                  className="apple-input text-sm tabular-nums"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setGuestFormOpen(null);
+                                      setGuestName('');
+                                      setGuestAmount('');
+                                    }}
+                                    className="btn-pill btn-pill-secondary flex-1"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => addGuest(m.id)}
+                                    disabled={!guestName.trim() || !(Number(guestAmount) > 0)}
+                                    className="btn-pill btn-pill-primary flex-1 inline-flex items-center justify-center gap-1"
+                                  >
+                                    <Plus className="h-4 w-4" /> Add guest
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setGuestFormOpen(m.id)}
+                                className="btn-pill btn-pill-secondary inline-flex items-center gap-2"
+                              >
+                                <UserPlus className="h-4 w-4" /> Guest
+                              </button>
+                            )}
+                          </div>
+                        )}
+
                         <button
                           type="button"
                           disabled={savingAttendanceId === m.id || activeMembers.length === 0}
@@ -271,13 +497,11 @@ export const MassList: React.FC<MassListProps> = ({
                           className="btn-pill btn-pill-primary mt-3 inline-flex items-center gap-2"
                         >
                           {savingAttendanceId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          Save attendance{isPaymentMass(m.category) || m.specialMassBilling === 'paid' ? ' & split shares' : ''}
+                          Save attendance{paid ? ' & split shares' : ''}
                         </button>
                       </>
-                    ) : attendeeIds.length === 0 ? (
-                      <p className="text-[14px] text-[#86868b]">
-                        No attendance logged yet.
-                      </p>
+                    ) : attendees.length === 0 ? (
+                      <p className="text-[14px] text-slate-600">No attendance logged yet.</p>
                     ) : (
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
                         {attendees.map((mem) => {
@@ -285,15 +509,16 @@ export const MassList: React.FC<MassListProps> = ({
                           return (
                             <div
                               key={mem.id}
-                              className={`flex min-h-[52px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-[14px] ${
+                              className={`flex min-h-[56px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-[14px] ${
                                 isInstrumentalist
-                                  ? 'border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.14)] text-[#8a6a10]'
-                                  : 'border-[rgba(24,57,47,0.25)] bg-[rgba(24,57,47,0.08)] text-[#18392f]'
+                                  ? 'liturgy-attendee-musician border-[rgba(245,194,76,0.45)] bg-[rgba(245,194,76,0.14)]'
+                                  : 'liturgy-attendee-present border-[rgba(24,57,47,0.25)] bg-[rgba(24,57,47,0.08)]'
                               }`}
                             >
+                              <MemberAvatar member={mem} present />
                               <span>
-                                <span className="font-semibold">{mem.firstName} {mem.lastName}</span>
-                                <span className="block text-[12px] opacity-70">{mem.memberType}</span>
+                                <span className="block font-semibold text-slate-900">{mem.firstName} {mem.lastName}</span>
+                                <span className="block text-[12px] text-slate-600">{mem.memberType}</span>
                               </span>
                             </div>
                           );
@@ -302,36 +527,56 @@ export const MassList: React.FC<MassListProps> = ({
                     )}
                   </div>
 
-                  {bdown && (attendees.length > 0 || Object.values(presentMapFor(m)).some(Boolean)) && (
+                  {bdown && (attendees.length > 0 || bdown.guests.length > 0) && (
                     <div className="rounded-2xl border border-[rgba(245,194,76,0.35)] bg-[rgba(245,194,76,0.12)] p-4">
-                      <p className="apple-label mb-3 flex items-center gap-1 text-[#8a6a10]">
-                        <IndianRupee className="h-3.5 w-3.5" /> Payment distribution (Singer ×1 · Musician ×2)
+                      <p className="mb-3 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-[#8a6a10]">
+                        <IndianRupee className="h-3.5 w-3.5" /> Payment distribution
                       </p>
-                      <div className="mb-3 flex flex-wrap gap-3 text-[13px] text-[#3a3a3c]">
+                      <div className="mb-3 flex flex-wrap gap-3 text-[13px] text-slate-700">
                         <span>Total: <strong className="text-[#18392f]">{formatINR(bdown.payment.promisedAmount)}</strong></span>
-                        <span>Singers: <strong>{bdown.singers.length}</strong></span>
-                        <span>Musicians: <strong>{bdown.instrumentalists.length}</strong></span>
+                        <span>Guests: <strong>{formatINR(bdown.guestTotal)}</strong></span>
+                        <span>Member pool: <strong>{formatINR(bdown.memberPool)}</strong></span>
+                        <span>Singers: <strong>{bdown.singerCount}</strong></span>
+                        <span>Musicians: <strong>{bdown.musicianCount}</strong></span>
                       </div>
-                      <div className="space-y-1.5">
-                        {bdown.singers.map((mem) => (
-                          <div key={mem.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5">
-                            <span className="text-[14px] font-medium text-[#1d1d1f]">{mem.firstName} {mem.lastName}</span>
-                            <span className="text-[14px] font-semibold tabular-nums text-[#18392f]">{formatINR(bdown.singerShare)}</span>
-                          </div>
-                        ))}
-                        {bdown.instrumentalists.map((mem) => (
-                          <div key={mem.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5">
-                            <span className="text-[14px] font-medium text-[#1d1d1f]">{mem.firstName} {mem.lastName}</span>
-                            <span className="text-[14px] font-semibold tabular-nums text-[#8a6a10]">{formatINR(bdown.instrumentalistShare)}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {bdown.guests.length > 0 && (
+                        <div className="mb-3 space-y-1.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Guest fixed pay</p>
+                          {bdown.guests.map((g) => (
+                            <div key={g.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5">
+                              <span className="text-[14px] font-medium text-slate-900">
+                                {g.name} <span className="text-slate-500">· {g.role}</span>
+                              </span>
+                              <span className="text-[14px] font-semibold tabular-nums text-slate-800">{formatINR(g.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(bdown.singerMembers.length > 0 || bdown.musicianMembers.length > 0) && (
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                            Members (remaining · Singer ×1 · Musician ×2)
+                          </p>
+                          {bdown.singerMembers.map((mem) => (
+                            <div key={mem.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5">
+                              <span className="text-[14px] font-medium text-slate-900">{mem.firstName} {mem.lastName}</span>
+                              <span className="text-[14px] font-semibold tabular-nums text-[#18392f]">{formatINR(bdown.singerShare)}</span>
+                            </div>
+                          ))}
+                          {bdown.musicianMembers.map((mem) => (
+                            <div key={mem.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2.5">
+                              <span className="text-[14px] font-medium text-slate-900">{mem.firstName} {mem.lastName}</span>
+                              <span className="text-[14px] font-semibold tabular-nums text-[#8a6a10]">{formatINR(bdown.instrumentalistShare)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {isPaymentMass(m.category) && !bdown && (
+                  {paid && !bdown && (
                     <p className="rounded-2xl bg-[rgba(245,194,76,0.14)] px-3 py-2.5 text-[13px] text-[#8a6a10]">
-                      No payment record linked yet — log billing on the mass or save paid attendance to create one.
+                      No payment amount yet — set billing amount when logging the mass, then save attendance to create payment & shares.
                     </p>
                   )}
 
@@ -347,13 +592,13 @@ export const MassList: React.FC<MassListProps> = ({
 
       {editingMass && (
         <div className="apple-modal-backdrop flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <div className="apple-modal w-full max-w-md space-y-4 rounded-t-3xl p-6 sm:rounded-3xl">
+          <div className="apple-modal website-light-surface w-full max-w-md space-y-4 rounded-t-3xl p-6 sm:rounded-3xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">Edit Liturgy</h3>
+              <h3 className="text-[19px] font-semibold tracking-[-0.02em] text-slate-900">Edit Liturgy</h3>
               <button
                 type="button"
                 onClick={() => setEditingMass(null)}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-[#86868b] hover:bg-black/[0.04]"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 hover:bg-black/[0.04]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -380,7 +625,7 @@ export const MassList: React.FC<MassListProps> = ({
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
                 <div className="space-y-1.5">
                   <label className="apple-label">Date</label>
                   <input type="date" value={editingMass.date}

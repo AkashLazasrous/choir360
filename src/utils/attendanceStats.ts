@@ -5,6 +5,7 @@ import {
   Mass,
   Member,
   Payment,
+  ShareCalculation,
 } from '../types';
 import { isActiveMember, calculatePaymentShares } from './choirStats';
 import { isMassActivityKind, mergeSundaySlotStatuses, resolveSundayMassSlot } from './attendanceActivity';
@@ -117,23 +118,41 @@ function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[
   return [...other.values(), ...mergedSunday];
 }
 
-/** Per-member payment share totals from special-mass attendance. */
+/** Per-member payment share totals — prefers locked paymentShares, else attendance × payments. */
 export function computeMemberShareTotals(
   members: Member[],
   masses: Mass[],
   payments: Payment[],
+  paymentShares: ShareCalculation[] = [],
 ): Map<string, number> {
   const totals = new Map<string, number>();
+  const coveredPaymentIds = new Set<string>();
+
+  for (const shareDoc of paymentShares) {
+    if (!shareDoc?.participatingMembers?.length) continue;
+    if (shareDoc.paymentId) coveredPaymentIds.add(shareDoc.paymentId);
+    for (const part of shareDoc.participatingMembers) {
+      if (!part.memberId || part.isGuest || part.memberId.startsWith('guest-')) continue;
+      const amount = Number(part.share) || 0;
+      if (amount <= 0) continue;
+      totals.set(part.memberId, (totals.get(part.memberId) ?? 0) + amount);
+    }
+  }
 
   for (const payment of payments) {
-    if (!payment.massId) continue;
+    if (!payment.massId || coveredPaymentIds.has(payment.id)) continue;
     const mass = masses.find((m) => m.id === payment.massId);
     if (!mass?.attendingMemberIds?.length) continue;
 
     const attendees = members.filter((m) => mass.attendingMemberIds!.includes(m.id));
+    const guestTotal = (mass.guestAttendees ?? []).reduce(
+      (sum, g) => sum + (Number(g.amount) > 0 ? Number(g.amount) : 0),
+      0,
+    );
+    const memberPool = Math.max(0, payment.promisedAmount - guestTotal);
     const singers = attendees.filter((m) => m.memberType === 'Singer' || m.memberType === 'Other').length;
     const instrumentalists = attendees.filter((m) => !['Singer', 'Other'].includes(m.memberType)).length;
-    const calc = calculatePaymentShares(payment.promisedAmount, singers, instrumentalists);
+    const calc = calculatePaymentShares(memberPool, singers, instrumentalists);
 
     for (const member of attendees) {
       const share = member.memberType === 'Singer' || member.memberType === 'Other'
@@ -249,10 +268,11 @@ export function computeMemberRosterStats(
   members: Member[],
   masses: Mass[],
   payments: Payment[],
+  paymentShares: ShareCalculation[] = [],
 ): MemberRosterStats[] {
   const loggedStats = computeMemberStats(records, members);
   const statsById = new Map(loggedStats.map((s) => [s.memberId, s]));
-  const shareTotals = computeMemberShareTotals(members, masses, payments);
+  const shareTotals = computeMemberShareTotals(members, masses, payments, paymentShares);
 
   return members
     .filter(isActiveMember)
@@ -274,10 +294,11 @@ export function computeParishStats(
   members: Member[],
   masses: Mass[] = [],
   payments: Payment[] = [],
+  paymentShares: ShareCalculation[] = [],
 ): ParishAttendanceStats {
   const uniqueRecords = dedupeAttendanceRecords(records);
   const memberStats = computeMemberStats(uniqueRecords, members);
-  const rosterStats = computeMemberRosterStats(uniqueRecords, members, masses, payments);
+  const rosterStats = computeMemberRosterStats(uniqueRecords, members, masses, payments, paymentShares);
   const activeStats = memberStats.filter((s) => {
     const m = members.find((mem) => mem.id === s.memberId);
     return m && isActiveMember(m);

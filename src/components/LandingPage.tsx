@@ -9,6 +9,7 @@ import {
   Member,
   Payment,
   Rehearsal,
+  ShareCalculation,
   Tab,
 } from '../types';
 import {
@@ -46,6 +47,7 @@ interface LandingPageProps {
   masses: Mass[];
   rehearsals?: Rehearsal[];
   payments: Payment[];
+  paymentShares?: ShareCalculation[];
   events: ChoirEvent[];
   announcements: Announcement[];
   attendanceRecords?: AttendanceRecord[];
@@ -64,6 +66,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   masses,
   rehearsals = [],
   payments,
+  paymentShares = [],
   events,
   announcements,
   attendanceRecords = [],
@@ -89,9 +92,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const personalStats = useMemo(() => {
     if (!viewerMember || isAdmin) return null;
-    return computeMemberRosterStats(attendanceRecords, members, masses, payments)
+    return computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
       .find((s) => s.memberId === viewerMember.id) ?? null;
-  }, [viewerMember, isAdmin, attendanceRecords, members, masses, payments]);
+  }, [viewerMember, isAdmin, attendanceRecords, members, masses, payments, paymentShares]);
 
   const today      = new Date();
   const todayLabel = today.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
@@ -106,6 +109,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         masses={masses}
         rehearsals={rehearsals}
         payments={payments}
+        paymentShares={paymentShares}
         events={events}
         announcements={announcements}
         attendanceRecords={attendanceRecords}

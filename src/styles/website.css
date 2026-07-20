@@ -1683,6 +1683,32 @@
     color: inherit;
   }
 
+  /* Light nested panels (attendance grids) must keep dark ink — apple-card ink is light. */
+  .is-website-app .apple-card .website-light-surface,
+  .website-page .apple-card .website-light-surface {
+    color: #0f172a !important;
+  }
+
+  .is-website-app .apple-card .website-light-surface button:not(.btn-pill-primary):not(.btn-pill-gold),
+  .website-page .apple-card .website-light-surface button:not(.btn-pill-primary):not(.btn-pill-gold) {
+    color: #0f172a !important;
+  }
+
+  .is-website-app .apple-card .website-light-surface .liturgy-attendee-present,
+  .website-page .apple-card .website-light-surface .liturgy-attendee-present {
+    color: #18392f !important;
+  }
+
+  .is-website-app .apple-card .website-light-surface .liturgy-attendee-musician,
+  .website-page .apple-card .website-light-surface .liturgy-attendee-musician {
+    color: #8a6a10 !important;
+  }
+
+  .is-website-app .apple-card .website-light-surface .liturgy-attendee-muted,
+  .website-page .apple-card .website-light-surface .liturgy-attendee-muted {
+    color: #475569 !important;
+  }
+
   .is-website-app .apple-card .font-medium:not(button.is-active):not(button[aria-selected='true']),
   .website-page .apple-card .font-medium:not(button.is-active):not(button[aria-selected='true']) {
     color: var(--website-ink);

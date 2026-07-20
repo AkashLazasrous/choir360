@@ -31,6 +31,7 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
   masses,
   rehearsals = [],
   payments,
+  paymentShares = [],
   events,
   attendanceRecords = [],
   member = null,
@@ -50,14 +51,14 @@ export const MobileHomeDashboard: React.FC<MobileDashboardData> = ({
     [members, member],
   );
   const metrics = useMemo(
-    () => buildMetricCards(members, payments, member, attendanceRecords, masses),
-    [members, payments, member, attendanceRecords, masses],
+    () => buildMetricCards(members, payments, member, attendanceRecords, masses, paymentShares),
+    [members, payments, member, attendanceRecords, masses, paymentShares],
   );
   const personalStats = useMemo(() => {
     if (!member) return null;
-    return computeMemberRosterStats(attendanceRecords, members, masses, payments)
+    return computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
       .find((s) => s.memberId === member.id) ?? null;
-  }, [member, attendanceRecords, members, masses, payments]);
+  }, [member, attendanceRecords, members, masses, payments, paymentShares]);
   const chartPoints = useMemo(
     () =>
       buildChartSeries(range, attendanceRecords, masses, member?.id),

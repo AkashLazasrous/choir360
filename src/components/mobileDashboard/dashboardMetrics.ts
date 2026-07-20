@@ -4,6 +4,7 @@ import type {
   Mass,
   Member,
   Payment,
+  ShareCalculation,
   Tab,
 } from '../../types';
 import {
@@ -85,13 +86,14 @@ export function buildMetricCards(
   member?: Member | null,
   attendanceRecords: AttendanceRecord[] = [],
   masses: Mass[] = [],
+  paymentShares: ShareCalculation[] = [],
 ): MetricCard[] {
   const health = calculateChoirHealth(members);
   const pending = sumPendingCollections(payments);
   const openInvoices = payments.filter((p) => p.status === 'Pending').length;
 
   const liveMemberStats = member
-    ? computeMemberRosterStats(attendanceRecords, members, masses, payments)
+    ? computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
       .find((s) => s.memberId === member.id)
     : null;
   const attendanceValue = liveMemberStats?.finalPercent

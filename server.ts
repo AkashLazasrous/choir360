@@ -1377,6 +1377,14 @@ type SpecialMassPaymentDetails = {
   paymentMode?: string;
 };
 
+type MassGuestBody = {
+  id: string;
+  name: string;
+  role: "Singer" | "Musician";
+  /** Fixed ₹ paid to guest; deducted before member share pool */
+  amount: number;
+};
+
 type AttendanceSessionBody = {
   kind: ActivityKind;
   date: string;
@@ -1392,6 +1400,8 @@ type AttendanceSessionBody = {
    * colliding unique special masses on the same day.
    */
   entityId?: string;
+  /** Non-roster guests included in paid share splits. */
+  guests?: MassGuestBody[];
 };
 
 type TenantEnvelope = {
@@ -1492,6 +1502,21 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
   const entityIdRaw = typeof body.entityId === "string" ? body.entityId.trim() : "";
   const entityId = entityIdRaw && entityIdRaw.length <= 160 ? entityIdRaw : undefined;
 
+  const guestsRaw = Array.isArray(body.guests) ? body.guests : [];
+  const guests: MassGuestBody[] = [];
+  for (const raw of guestsRaw.slice(0, 40)) {
+    if (!raw || typeof raw !== "object") continue;
+    const g = raw as Record<string, unknown>;
+    const id = typeof g.id === "string" ? g.id.trim().slice(0, 80) : "";
+    const name = typeof g.name === "string" ? g.name.trim().slice(0, 120) : "";
+    const roleRaw = typeof g.role === "string" ? g.role.trim() : "";
+    const role = roleRaw === "Musician" ? "Musician" : roleRaw === "Singer" ? "Singer" : null;
+    const amountNum = typeof g.amount === "number" ? g.amount : Number(g.amount);
+    const amount = Number.isFinite(amountNum) && amountNum >= 0 ? Math.round(amountNum) : 0;
+    if (!id || !name || !role) continue;
+    guests.push({ id, name, role, amount });
+  }
+
   return {
     kind,
     date,
@@ -1502,6 +1527,7 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
     specialMassBilling,
     specialMassPayment,
     entityId,
+    guests: guests.length > 0 ? guests : undefined,
   };
 }
 
@@ -1867,6 +1893,7 @@ async function upsertAttendanceSessions(opts: {
         db.collection("masses").doc(entityId),
         stripUndefinedDeep({
           ...mass,
+          guestAttendees: Array.isArray(session.guests) ? session.guests : (parentPrev?.guestAttendees || []),
           ...envelopeForWrite(tenant, adminUid, "active", parentPrev, now),
         }),
         { merge: true },
@@ -2061,6 +2088,23 @@ async function syncPaidMassPaymentAndShares(opts: {
   const billing = session.specialMassBilling
     || (typeof massData.specialMassBilling === "string" ? massData.specialMassBilling : undefined);
   const payHint = session.specialMassPayment || (massData.specialMassPayment as Record<string, unknown> | undefined);
+  const normalizeGuest = (g: any): MassGuestBody | null => {
+    if (!g || !g.id || !g.name) return null;
+    const role = g.role === "Musician" ? "Musician" : g.role === "Singer" ? "Singer" : null;
+    if (!role) return null;
+    const amountNum = typeof g.amount === "number" ? g.amount : Number(g.amount);
+    return {
+      id: String(g.id),
+      name: String(g.name),
+      role,
+      amount: Number.isFinite(amountNum) && amountNum >= 0 ? Math.round(amountNum) : 0,
+    };
+  };
+  const guests: MassGuestBody[] = (
+    Array.isArray(session.guests)
+      ? session.guests
+      : (Array.isArray(massData.guestAttendees) ? massData.guestAttendees : [])
+  ).map(normalizeGuest).filter(Boolean) as MassGuestBody[];
 
   const paymentByCanonical = await db.collection("payments").doc(`payment-${massId}`).get();
   const paymentQuery = await db.collection("payments")
@@ -2135,18 +2179,43 @@ async function syncPaidMassPaymentAndShares(opts: {
     .filter(Boolean) as Member[];
   const singers = attendees.filter((m) => isSingerMemberType(m.memberType));
   const instrumentalists = attendees.filter((m) => !isSingerMemberType(m.memberType));
-  const calc = calculatePaymentSharesServer(promised, singers.length, instrumentalists.length);
+  const guestTotalAmount = guests.reduce((sum, g) => sum + (g.amount > 0 ? g.amount : 0), 0);
+  const memberPoolAmount = Math.max(0, promised - guestTotalAmount);
+  const singersCount = singers.length;
+  const instrumentalistsCount = instrumentalists.length;
+  const calc = calculatePaymentSharesServer(memberPoolAmount, singersCount, instrumentalistsCount);
 
-  const participatingMembers = attendees.map((m) => {
-    const singer = isSingerMemberType(m.memberType);
-    return {
-      memberId: m.id,
-      name: `${m.firstName} ${m.lastName}`.trim(),
-      type: m.memberType,
-      weight: (singer ? 1 : 2) as 1 | 2,
-      share: singer ? calc.singerShare : calc.instrumentalistShare,
-    };
-  });
+  const participatingMembers = [
+    ...guests.map((g) => ({
+      memberId: g.id.startsWith("guest-") ? g.id : `guest-${g.id}`,
+      name: g.name,
+      type: g.role,
+      weight: 0 as 0,
+      share: g.amount > 0 ? g.amount : 0,
+      isGuest: true,
+    })),
+    ...attendees.map((m) => {
+      const singer = isSingerMemberType(m.memberType);
+      return {
+        memberId: m.id,
+        name: `${m.firstName} ${m.lastName}`.trim(),
+        type: m.memberType,
+        weight: (singer ? 1 : 2) as 1 | 2,
+        share: singer ? calc.singerShare : calc.instrumentalistShare,
+        isGuest: false,
+      };
+    }),
+  ];
+
+  // Persist guests on the mass so desk/UI stay synced (not shown in Attendance tab).
+  await db.collection("masses").doc(massId).set(
+    stripUndefinedDeep({
+      guestAttendees: guests,
+      updatedAt: now,
+      updatedBy: adminUid,
+    }),
+    { merge: true },
+  );
 
   const shareId = `share-${paymentId}`;
   const sharePrev = (await db.collection("paymentShares").doc(shareId).get()).data();
@@ -2158,8 +2227,10 @@ async function syncPaidMassPaymentAndShares(opts: {
       massName,
       date: session.date,
       totalAmount: promised,
-      singersCount: singers.length,
-      instrumentalistsCount: instrumentalists.length,
+      guestTotalAmount,
+      memberPoolAmount,
+      singersCount,
+      instrumentalistsCount,
       totalUnits: calc.totalUnits,
       unitValue: calc.unitValue,
       singerShare: calc.singerShare,

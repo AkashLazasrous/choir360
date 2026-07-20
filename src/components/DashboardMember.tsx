@@ -63,7 +63,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   loading = false,
 }) => {
   const member = members.find(m => m.id === memberId) || members[0];
-  const liveStats = computeMemberRosterStats(attendanceRecords, members, masses, payments)
+  const liveStats = computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
     .find((s) => s.memberId === (member?.id ?? memberId));
 
   const [dashTab, setDashTab] = useState<'overview' | 'id_card'>('overview');
@@ -124,6 +124,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         masses={masses}
         rehearsals={rehearsals}
         payments={payments}
+        paymentShares={paymentShares}
         events={events}
         attendanceRecords={attendanceRecords}
         member={member}
@@ -139,12 +140,21 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
       {/* Header Summary */}
       <div className="apple-card website-panel font-apple flex flex-col items-center justify-between gap-5 p-5 sm:gap-6 sm:p-6 md:flex-row md:items-start" data-reveal id="dashboard-member-header">
         <div className="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
+          {member.photoUrl ? (
           <img
             src={member.photoUrl}
             alt={member.firstName}
             referrerPolicy="no-referrer"
             className="h-16 w-16 rounded-full object-cover ring-2 ring-[#0e3d4c]/20 sm:h-[4.5rem] sm:w-[4.5rem]"
           />
+          ) : (
+          <span
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-[#0e3d4c] text-[18px] font-semibold text-amber-200 ring-2 ring-[#0e3d4c]/20 sm:h-[4.5rem] sm:w-[4.5rem]"
+            aria-hidden
+          >
+            {`${member.firstName?.[0] || ''}${member.lastName?.[0] || ''}`.toUpperCase() || '?'}
+          </span>
+          )}
           <div>
             <h3 className="flex flex-wrap items-center justify-center gap-2 text-[20px] font-semibold tracking-[-0.02em] text-[#1d1d1f] sm:text-[21px] md:justify-start">
               {member.firstName} {member.lastName}

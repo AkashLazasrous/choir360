@@ -82,7 +82,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       return;
     }
 
-    if (isPaymentMass(massCategory) && billingType === 'paid' && partyName && amountProposed > 0) {
+    if (isPaymentMass(massCategory) && billingType === 'paid' && amountProposed > 0) {
       const recvAmt  = amountReceived ? receivedAmount : 0;
       const pending  = Math.max(amountProposed - recvAmt, 0);
       const status   = derivePaymentStatus(amountProposed, amountReceived, receivedAmount);
@@ -91,7 +91,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       const newPayment = omitUndefinedDeep({
         id: pid,
         massId,
-        partyName,
+        partyName: partyName.trim() || whoPaid.trim() || 'Sponsor',
         mobile: '',
         massType: massCategory,
         massDate,
@@ -168,7 +168,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase">Date</label>
             <input type="date" value={massDate} onChange={(e) => setMassDate(e.target.value)}

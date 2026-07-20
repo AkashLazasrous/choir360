@@ -12,6 +12,7 @@ import {
   Member,
   Payment,
   Rehearsal,
+  ShareCalculation,
   SpecialMassBilling,
   SpecialMassPaymentDetails,
   SundayMassSlot,
@@ -91,6 +92,8 @@ export interface ActivityAttendanceSavePayload {
   specialMassPayment?: SpecialMassPaymentDetails;
   /** Pin marks to an existing mass/rehearsal id (Masses desk). */
   entityId?: string;
+  /** Non-roster guests with fixed ₹ (Masses desk only — not shown in Attendance UI). */
+  guests?: Array<{ id: string; name: string; role: 'Singer' | 'Musician'; amount: number }>;
 }
 
 export interface ActivityAttendanceImportPayload {
@@ -103,6 +106,7 @@ interface ActivityAttendanceProps {
   members: Member[];
   masses: Mass[];
   payments: Payment[];
+  paymentShares?: ShareCalculation[];
   rehearsals: Rehearsal[];
   attendanceRecords: AttendanceRecord[];
   isAdmin: boolean;
@@ -142,6 +146,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   members,
   masses,
   payments,
+  paymentShares = [],
   rehearsals,
   attendanceRecords,
   isAdmin,
@@ -195,8 +200,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   }, [activeMembers, marks, existingMarks]);
 
   const parishStats = useMemo(
-    () => computeParishStats(attendanceRecords, members, masses, payments),
-    [attendanceRecords, members, masses, payments],
+    () => computeParishStats(attendanceRecords, members, masses, payments, paymentShares),
+    [attendanceRecords, members, masses, payments, paymentShares],
   );
 
   const leaderboardRows = useMemo(

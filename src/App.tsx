@@ -296,7 +296,7 @@ function AppInner() {
   const saveMassAttendance = async (
     payload: MassAttendanceSavePayload,
   ): Promise<{ ok: boolean; error?: string }> => {
-    const { mass, marks } = payload;
+    const { mass, marks, guests } = payload;
     const kind = mass.activityKind ?? massCategoryToActivityKind(mass.category);
     return persistActivitySession({
       kind,
@@ -308,6 +308,7 @@ function AppInner() {
       sundayMassSlot: mass.sundayMassSlot,
       specialMassBilling: mass.specialMassBilling,
       specialMassPayment: mass.specialMassPayment,
+      guests,
     });
   };
 
@@ -1025,7 +1026,7 @@ function AppInner() {
             <>
             {activeTab === 'landing' && (
               <LandingPage currentLang={currentLang} members={members} masses={masses} rehearsals={rehearsals}
-                payments={payments} events={events} announcements={announcements}
+                payments={payments} paymentShares={paymentShares} events={events} announcements={announcements}
                 attendanceRecords={attendanceRecords}
                 loading={authState.isConfigured && !authState.isReady}
                 isAdmin={guard.isAdmin}
@@ -1191,7 +1192,7 @@ function AppInner() {
             )}
             {activeTab === 'analytics' && (
               guard.canAccess('choir_admin') ? (
-                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} attendanceRecords={attendanceRecords} />
+                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} paymentShares={paymentShares} attendanceRecords={attendanceRecords} />
               ) : <AccessDenied requiredRole="choir_admin" />
             )}
             {activeTab === 'catholic_hub' && <CatholicKnowledgeHub />}
@@ -1224,6 +1225,7 @@ function AppInner() {
                   members={members}
                   masses={masses}
                   payments={payments}
+                  paymentShares={paymentShares}
                   rehearsals={rehearsals}
                   attendanceRecords={attendanceRecords}
                   isAdmin={guard.isAdmin}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Member, Mass, Payment, Language, AttendanceRecord } from '../types';
+import { Member, Mass, Payment, Language, AttendanceRecord, ShareCalculation } from '../types';
 import { BarChart2, IndianRupee, Layers, Users, TrendingUp, Music2, ChevronRight, UserCheck } from 'lucide-react';
 import { MULTILINGUAL_DICTIONARY } from '../data/mockData';
 import { formatINR } from '../utils/currency';
@@ -13,6 +13,7 @@ interface AnalyticsDashboardProps {
   members: Member[];
   masses: Mass[];
   payments: Payment[];
+  paymentShares?: ShareCalculation[];
   attendanceRecords?: AttendanceRecord[];
 }
 
@@ -25,13 +26,13 @@ const NoteIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
-  currentLang, members, masses, payments, attendanceRecords = [],
+  currentLang, members, masses, payments, paymentShares = [], attendanceRecords = [],
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
   const { selectedParish } = useParish();
 
   const activeMembers    = members.filter(isActiveMember);
-  const parishAttendance = computeParishStats(attendanceRecords, members, masses, payments);
+  const parishAttendance = computeParishStats(attendanceRecords, members, masses, payments, paymentShares);
   const { pendingCount } = calculateChoirHealth(members);
   const avgAttendance = attendanceRecords.length > 0
     ? parishAttendance.averageFinalPercent

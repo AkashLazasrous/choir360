@@ -65,7 +65,7 @@ type AmPmTimeFieldProps = {
 };
 
 /**
- * Start-time control: clock picker + AM/PM toggle, stored as "HH:MM AM|PM".
+ * Start-time control: readable HH:MM field, separate clock button, AM/PM toggle.
  */
 export const AmPmTimeField: React.FC<AmPmTimeFieldProps> = ({
   value,
@@ -99,7 +99,7 @@ export const AmPmTimeField: React.FC<AmPmTimeFieldProps> = ({
         el.showPicker();
         return;
       } catch {
-        // Fall through to click/focus for browsers that block showPicker.
+        // Fall through.
       }
     }
     el.click();
@@ -107,68 +107,68 @@ export const AmPmTimeField: React.FC<AmPmTimeFieldProps> = ({
   };
 
   return (
-    <div className={`space-y-1 ${className}`}>
+    <div className={`min-w-0 space-y-1 ${className}`}>
       {label ? (
         <label htmlFor={fieldId} className="text-[10px] font-bold uppercase text-slate-400">
           {label}
         </label>
       ) : null}
 
-      <div className="flex min-h-[44px] items-stretch gap-1.5">
-        <div className="relative min-w-0 flex-1">
-          <input
-            id={fieldId}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            disabled={disabled}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              const match = /^(\d{1,2}):(\d{2})$/.exec(draft.trim());
-              if (!match) {
-                setDraft(`${String(parts.hour12).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`);
-                return;
-              }
-              let hour12 = Number(match[1]);
-              const minute = Math.min(59, Math.max(0, Number(match[2])));
-              if (hour12 === 0) hour12 = 12;
-              if (hour12 > 12) hour12 = hour12 % 12 || 12;
-              commit({ hour12, minute });
-            }}
-            className="apple-input h-full w-full pr-10 text-sm tabular-nums"
-            placeholder="06:30"
-            aria-label={`${label} hours and minutes`}
-          />
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={openClock}
-            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-[#86868b] transition hover:text-[#0e3d4c] disabled:opacity-40"
-            aria-label="Open clock to choose time"
-            title="Choose time"
-          >
-            <Clock className="h-4 w-4" />
-          </button>
-          <input
-            ref={clockInputRef}
-            type="time"
-            tabIndex={-1}
-            disabled={disabled}
-            value={toInputTimeValue(parts)}
-            onChange={(e) => {
-              if (!e.target.value) return;
-              onChange(formatAmPmTime(fromInputTimeValue(e.target.value, parts)));
-            }}
-            className="pointer-events-none absolute h-0 w-0 opacity-0"
-            aria-hidden
-          />
-        </div>
+      <div className="flex min-h-[44px] w-full min-w-0 flex-wrap items-stretch gap-2">
+        <input
+          id={fieldId}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          disabled={disabled}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            const match = /^(\d{1,2}):(\d{2})$/.exec(draft.trim());
+            if (!match) {
+              setDraft(`${String(parts.hour12).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`);
+              return;
+            }
+            let hour12 = Number(match[1]);
+            const minute = Math.min(59, Math.max(0, Number(match[2])));
+            if (hour12 === 0) hour12 = 12;
+            if (hour12 > 12) hour12 = hour12 % 12 || 12;
+            commit({ hour12, minute });
+          }}
+          className="apple-input min-h-[44px] min-w-[5.5rem] flex-1 basis-[5.5rem] text-sm tabular-nums tracking-wide"
+          placeholder="06:30"
+          aria-label={`${label} hours and minutes`}
+        />
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={openClock}
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] text-[#0e3d4c] transition hover:bg-black/[0.08] disabled:opacity-40"
+          aria-label="Open clock to choose time"
+          title="Choose time"
+        >
+          <Clock className="h-4 w-4" />
+        </button>
+
+        <input
+          ref={clockInputRef}
+          type="time"
+          tabIndex={-1}
+          disabled={disabled}
+          value={toInputTimeValue(parts)}
+          onChange={(e) => {
+            if (!e.target.value) return;
+            onChange(formatAmPmTime(fromInputTimeValue(e.target.value, parts)));
+          }}
+          className="pointer-events-none absolute h-0 w-0 opacity-0"
+          aria-hidden
+        />
 
         <div
           role="group"
           aria-label="AM or PM"
-          className="inline-flex shrink-0 overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.04] p-0.5"
+          className="inline-flex h-11 shrink-0 overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.04] p-0.5"
         >
           {(['AM', 'PM'] as const).map((period) => {
             const selected = parts.meridiem === period;
@@ -179,10 +179,10 @@ export const AmPmTimeField: React.FC<AmPmTimeFieldProps> = ({
                 disabled={disabled}
                 onClick={() => commit({ meridiem: period })}
                 aria-pressed={selected}
-                className={`min-w-[40px] px-2.5 text-[12px] font-bold tracking-wide transition ${
+                className={`min-w-[44px] px-3 text-[12px] font-bold tracking-wide transition ${
                   selected
                     ? 'rounded-lg bg-[#0e3d4c] text-amber-200 shadow-sm'
-                    : 'text-[#64748b] hover:text-[#0e3d4c]'
+                    : 'text-[#334155] hover:text-[#0e3d4c]'
                 } disabled:opacity-40`}
               >
                 {period}
