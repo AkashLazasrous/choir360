@@ -6,6 +6,7 @@ import {
   Member,
   Payment,
   ShareCalculation,
+  ShareSettlement,
 } from '../types';
 import { isActiveMember, calculatePaymentShares } from './choirStats';
 import {
@@ -235,6 +236,7 @@ function collectSpecialMassPaymentSources(
 /**
  * Per-member payment share totals for special / paid masses.
  * Prefers locked paymentShares; else derives from payments + Present/Late attendance.
+ * Subtracts shareSettlements so settled members show ₹0 outstanding until new earnings.
  */
 export function computeMemberShareTotals(
   members: Member[],
@@ -242,6 +244,7 @@ export function computeMemberShareTotals(
   payments: Payment[],
   paymentShares: ShareCalculation[] = [],
   attendanceRecords: AttendanceRecord[] = [],
+  shareSettlements: ShareSettlement[] = [],
 ): Map<string, number> {
   const totals = new Map<string, number>();
   const coveredPaymentIds = new Set<string>();
@@ -293,6 +296,16 @@ export function computeMemberShareTotals(
       if (share <= 0) continue;
       totals.set(member.id, (totals.get(member.id) ?? 0) + share);
     }
+  }
+
+  for (const settlement of shareSettlements) {
+    if (isSoftDeletedRow(settlement as { status?: string; deletedAt?: string | null })) continue;
+    const memberId = settlement.memberId;
+    if (!memberId) continue;
+    const amount = Number(settlement.amount) || 0;
+    if (amount <= 0) continue;
+    const next = Math.max(0, (totals.get(memberId) ?? 0) - amount);
+    totals.set(memberId, next);
   }
 
   return totals;
@@ -402,6 +415,7 @@ export function computeMemberRosterStats(
   masses: Mass[],
   payments: Payment[],
   paymentShares: ShareCalculation[] = [],
+  shareSettlements: ShareSettlement[] = [],
 ): MemberRosterStats[] {
   const loggedStats = computeMemberStats(records, members);
   const statsById = new Map(loggedStats.map((s) => [s.memberId, s]));
@@ -411,6 +425,7 @@ export function computeMemberRosterStats(
     payments,
     paymentShares,
     records,
+    shareSettlements,
   );
 
   return members
@@ -434,10 +449,18 @@ export function computeParishStats(
   masses: Mass[] = [],
   payments: Payment[] = [],
   paymentShares: ShareCalculation[] = [],
+  shareSettlements: ShareSettlement[] = [],
 ): ParishAttendanceStats {
   const uniqueRecords = dedupeAttendanceRecords(records);
   const memberStats = computeMemberStats(uniqueRecords, members);
-  const rosterStats = computeMemberRosterStats(uniqueRecords, members, masses, payments, paymentShares);
+  const rosterStats = computeMemberRosterStats(
+    uniqueRecords,
+    members,
+    masses,
+    payments,
+    paymentShares,
+    shareSettlements,
+  );
   const activeStats = memberStats.filter((s) => {
     const m = members.find((mem) => mem.id === s.memberId);
     return m && isActiveMember(m);

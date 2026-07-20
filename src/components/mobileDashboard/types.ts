@@ -7,6 +7,7 @@ import type {
   Payment,
   Rehearsal,
   ShareCalculation,
+  ShareSettlement,
   Tab,
 } from '../../types';
 import type { LiturgyLogClear, LiturgyLogRemove, LiturgySongNotesSave } from '../LoggedLiturgySection';
@@ -61,6 +62,7 @@ export interface MobileDashboardData {
   rehearsals?: Rehearsal[];
   payments: Payment[];
   paymentShares?: ShareCalculation[];
+  shareSettlements?: ShareSettlement[];
   events: ChoirEvent[];
   announcements?: Announcement[];
   attendanceRecords?: AttendanceRecord[];

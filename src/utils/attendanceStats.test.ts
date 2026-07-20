@@ -243,4 +243,54 @@ describe('special mass share sync', () => {
     expect(roster.find((r) => r.memberId === 'm2')?.totalShareINR).toBe(2000);
     expect(roster.find((r) => r.memberId === 'm3')?.totalShareINR).toBe(0);
   });
+
+  it('zeros outstanding share after settle ledger entry', () => {
+    const members = [
+      member({ id: 'm1', firstName: 'A', lastName: 'Singer', memberType: 'Singer' }),
+    ];
+    const masses: Mass[] = [{
+      id: 'mass-wedding-1',
+      name: 'Wedding Mass',
+      category: 'Wedding',
+      date: '2026-06-07',
+      time: '04:00 PM',
+      language: 'Tamil',
+      activityKind: 'special_mass',
+      specialMassBilling: 'paid',
+      specialMassPayment: { amount: 1000 },
+    }];
+    const payments: Payment[] = [{
+      id: 'payment-mass-wedding-1',
+      massId: 'mass-wedding-1',
+      partyName: 'Sponsor',
+      mobile: '',
+      massType: 'Wedding',
+      massDate: '2026-06-07',
+      massTime: '04:00 PM',
+      promisedAmount: 1000,
+      receivedAmount: 0,
+      pendingAmount: 1000,
+      status: 'Pending',
+    }];
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+      }),
+    ];
+    const before = computeMemberRosterStats(records, members, masses, payments, []);
+    expect(before.find((r) => r.memberId === 'm1')?.totalShareINR).toBe(1000);
+
+    const after = computeMemberRosterStats(records, members, masses, payments, [], [{
+      id: 'settle-1',
+      memberId: 'm1',
+      memberName: 'A Singer',
+      amount: 1000,
+      settledAt: '2026-06-08T00:00:00.000Z',
+    }]);
+    expect(after.find((r) => r.memberId === 'm1')?.totalShareINR).toBe(0);
+  });
 });

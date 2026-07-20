@@ -90,6 +90,7 @@ export const COLLECTIONS = {
   attendance: 'attendance',
   payments: 'payments',
   paymentShares: 'paymentShares',
+  shareSettlements: 'shareSettlements',
   songs: 'songs',
   calendars: 'calendars',
   notifications: 'notifications',

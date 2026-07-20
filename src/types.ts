@@ -315,6 +315,21 @@ export interface ShareCalculation {
   }[];
 }
 
+/**
+ * Admin payout ledger: settling a member records the outstanding amount paid out
+ * so displayed share balances go to ₹0 until new paid rites earn more.
+ */
+export interface ShareSettlement {
+  id: string;
+  memberId: string;
+  memberName: string;
+  /** Amount settled (₹) — reduces outstanding share balance */
+  amount: number;
+  settledAt: string;
+  notes?: string;
+  settledBy?: string;
+}
+
 // =============================================================================
 // Attendance
 // =============================================================================

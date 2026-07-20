@@ -8,7 +8,7 @@ import { formatINR } from '../../utils/currency';
 import { calculatePaymentShares } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { AmPmTimeField } from './AmPmTimeField';
-import { isOptInSpecialMassCategory } from '../../utils/attendanceTaxonomy';
+import { isOptInSpecialMassCategory, massCategoryToActivityKind } from '../../utils/attendanceTaxonomy';
 
 export type MassAttendanceSavePayload = {
   mass: Mass;
@@ -247,7 +247,12 @@ export const MassList: React.FC<MassListProps> = ({
     e.preventDefault();
     if (!editingMass || !onUpdateMass) return;
     setEditError('');
-    const result = await onUpdateMass(editingMass);
+    const next: Mass = {
+      ...editingMass,
+      activityKind: massCategoryToActivityKind(editingMass.category),
+      name: editingMass.name.trim(),
+    };
+    const result = await onUpdateMass(next);
     if (result && !result.ok) {
       setEditError(`Save failed: ${result.error}`);
       return;
@@ -634,13 +639,31 @@ export const MassList: React.FC<MassListProps> = ({
               </div>
               <div className="space-y-1.5">
                 <label className="apple-label">Category</label>
-                <select value={editingMass.category}
-                  onChange={(e) => setEditingMass({ ...editingMass, category: e.target.value as Mass['category'] })}
-                  className="apple-select">
+                <select
+                  value={editingMass.category}
+                  onChange={(e) => {
+                    const category = e.target.value as Mass['category'];
+                    setEditingMass({
+                      ...editingMass,
+                      category,
+                      activityKind: massCategoryToActivityKind(category),
+                    });
+                  }}
+                  className="apple-select"
+                >
                   {ALL_MASS_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="apple-label">Notes (optional)</label>
+                <input
+                  value={editingMass.notes ?? ''}
+                  onChange={(e) => setEditingMass({ ...editingMass, notes: e.target.value })}
+                  className="apple-input"
+                  placeholder="Song list or remarks"
+                />
               </div>
               <div className="space-y-2">
                 <div className="space-y-1.5">

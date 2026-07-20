@@ -264,6 +264,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Member share payout settlements (outstanding balance → ₹0).
+    match /shareSettlements/{docId} {
+      allow read: if memberRole() && existingInTenant();
+      allow create: if adminTenantCreate();
+      allow update: if adminTenantUpdate();
+      allow delete: if false;
+    }
+
     // =========================================================================
     // ATTENDANCE
     // =========================================================================

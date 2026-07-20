@@ -8,14 +8,18 @@ import { MassForm } from '../features/masses/MassForm';
 import { PaymentsTable } from '../features/masses/PaymentsTable';
 import { ShareCalculator } from '../features/masses/ShareCalculator';
 import { MassList, type MassAttendanceSavePayload } from '../features/masses/MassList';
+import { SettleSharesPanel, type SettleMemberResult } from '../features/masses/SettleSharesPanel';
 import { FreshStartPanel } from '../features/masses/FreshStartPanel';
 import { LockedCalc } from '../features/masses/shared';
+import type { AttendanceRecord, ShareSettlement } from '../types';
 
 interface MassManagementProps {
   currentLang: Language;
   masses: Mass[];
   payments: Payment[];
   paymentShares?: ShareCalculation[];
+  shareSettlements?: ShareSettlement[];
+  attendanceRecords?: AttendanceRecord[];
   members: Member[];
   isAdmin: boolean;
   onAddMass: (newMass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
@@ -24,6 +28,7 @@ interface MassManagementProps {
   onAddPayment: (newPayment: Payment) => Promise<{ ok: boolean; error?: string }> | void;
   onUpdatePayment: (paymentId: string, receivedAmount: number, status: 'Pending' | 'Received') => void;
   onSaveMassAttendance?: (payload: MassAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
+  onSettleMemberShare?: (memberId: string, amount: number) => Promise<SettleMemberResult>;
   onFreshStart?: (confirm: string) => Promise<{ ok: boolean; error?: string; totalDeleted?: number }>;
 }
 
@@ -36,6 +41,8 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   masses,
   payments,
   paymentShares = [],
+  shareSettlements = [],
+  attendanceRecords = [],
   members,
   isAdmin,
   onAddMass,
@@ -44,6 +51,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   onAddPayment,
   onUpdatePayment,
   onSaveMassAttendance,
+  onSettleMemberShare,
   onFreshStart,
 }) => {
   // ── Share calculator state ──────────────────────────────────────────────────
@@ -52,6 +60,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   const [instrumentalistCount, setInstrumentalistCount] = useState(2);
   const [lockedCalcs, setLockedCalcs] = useState<Record<string, LockedCalc>>({});
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+  const [liturgyTab, setLiturgyTab] = useState<'logged' | 'settle'>('logged');
 
   const activePayment = payments.find((p) => p.id === selectedPaymentId) || payments[0];
   const lockedShare = activePayment
@@ -187,16 +196,51 @@ export const MassManagement: React.FC<MassManagementProps> = ({
         />
       )}
 
-      {/* ── All Logged Liturgies ── */}
-      <MassList
-        masses={masses}
-        payments={payments}
-        members={members}
-        isAdmin={isAdmin}
-        onUpdateMass={onUpdateMass}
-        onDeleteMass={onDeleteMass}
-        onSaveMassAttendance={onSaveMassAttendance}
-      />
+      {/* ── All Logged Liturgies / Settle ── */}
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setLiturgyTab('logged')}
+            className={`btn-pill btn-pill-sm ${liturgyTab === 'logged' ? 'btn-pill-primary' : 'btn-pill-secondary'}`}
+          >
+            <BookOpen className="h-3.5 w-3.5" /> All Logged Liturgies
+            <span className="opacity-70">({masses.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setLiturgyTab('settle')}
+            className={`btn-pill btn-pill-sm ${liturgyTab === 'settle' ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
+          >
+            Settle All Logged Liturgies
+          </button>
+        </div>
+
+        {liturgyTab === 'logged' ? (
+          <MassList
+            masses={masses}
+            payments={payments}
+            members={members}
+            isAdmin={isAdmin}
+            onUpdateMass={onUpdateMass}
+            onDeleteMass={onDeleteMass}
+            onSaveMassAttendance={onSaveMassAttendance}
+          />
+        ) : onSettleMemberShare ? (
+          <SettleSharesPanel
+            isAdmin={isAdmin}
+            members={members}
+            masses={masses}
+            payments={payments}
+            paymentShares={paymentShares}
+            shareSettlements={shareSettlements}
+            attendanceRecords={attendanceRecords}
+            onSettleMember={onSettleMemberShare}
+          />
+        ) : (
+          <p className="apple-card p-5 text-[14px] text-[#86868b]">Settle is available for choir admins.</p>
+        )}
+      </div>
     </div>
   );
 };

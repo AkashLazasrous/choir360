@@ -13,6 +13,7 @@ import {
   Payment,
   Rehearsal,
   ShareCalculation,
+  ShareSettlement,
   SpecialMassBilling,
   SpecialMassPaymentDetails,
   SundayMassSlot,
@@ -109,6 +110,7 @@ interface ActivityAttendanceProps {
   masses: Mass[];
   payments: Payment[];
   paymentShares?: ShareCalculation[];
+  shareSettlements?: ShareSettlement[];
   rehearsals: Rehearsal[];
   attendanceRecords: AttendanceRecord[];
   isAdmin: boolean;
@@ -149,6 +151,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   masses,
   payments,
   paymentShares = [],
+  shareSettlements = [],
   rehearsals,
   attendanceRecords,
   isAdmin,
@@ -218,8 +221,15 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   }, [activeMembers, marks, existingMarks]);
 
   const parishStats = useMemo(
-    () => computeParishStats(attendanceRecords, members, masses, payments, paymentShares),
-    [attendanceRecords, members, masses, payments, paymentShares],
+    () => computeParishStats(
+      attendanceRecords,
+      members,
+      masses,
+      payments,
+      paymentShares,
+      shareSettlements,
+    ),
+    [attendanceRecords, members, masses, payments, paymentShares, shareSettlements],
   );
 
   const leaderboardRows = useMemo(

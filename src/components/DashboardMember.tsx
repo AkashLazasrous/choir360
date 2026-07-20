@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Rehearsal, ShareCalculation, Tab } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Rehearsal, ShareCalculation, ShareSettlement, Tab } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -28,6 +28,7 @@ interface DashboardMemberProps {
   rehearsals?: Rehearsal[];
   payments?: Payment[];
   paymentShares?: ShareCalculation[];
+  shareSettlements?: ShareSettlement[];
   attendanceRecords?: AttendanceRecord[];
   isAdmin?: boolean;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
@@ -52,6 +53,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   rehearsals = [],
   payments = [],
   paymentShares = [],
+  shareSettlements = [],
   attendanceRecords = [],
   isAdmin = false,
   onSaveLiturgySongNotes,
@@ -63,8 +65,14 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   loading = false,
 }) => {
   const member = members.find(m => m.id === memberId) || members[0];
-  const liveStats = computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
-    .find((s) => s.memberId === (member?.id ?? memberId));
+  const liveStats = computeMemberRosterStats(
+    attendanceRecords,
+    members,
+    masses,
+    payments,
+    paymentShares,
+    shareSettlements,
+  ).find((s) => s.memberId === (member?.id ?? memberId));
 
   const [dashTab, setDashTab] = useState<'overview' | 'id_card'>('overview');
   const [hasRequestedChange, setHasRequestedChange] = useState(false);
@@ -125,6 +133,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         rehearsals={rehearsals}
         payments={payments}
         paymentShares={paymentShares}
+        shareSettlements={shareSettlements}
         events={events}
         attendanceRecords={attendanceRecords}
         member={member}

@@ -10,6 +10,7 @@ import {
   Payment,
   Rehearsal,
   ShareCalculation,
+  ShareSettlement,
   Tab,
 } from '../types';
 import {
@@ -48,6 +49,7 @@ interface LandingPageProps {
   rehearsals?: Rehearsal[];
   payments: Payment[];
   paymentShares?: ShareCalculation[];
+  shareSettlements?: ShareSettlement[];
   events: ChoirEvent[];
   announcements: Announcement[];
   attendanceRecords?: AttendanceRecord[];
@@ -67,6 +69,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   rehearsals = [],
   payments,
   paymentShares = [],
+  shareSettlements = [],
   events,
   announcements,
   attendanceRecords = [],
@@ -92,9 +95,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const personalStats = useMemo(() => {
     if (!viewerMember || isAdmin) return null;
-    return computeMemberRosterStats(attendanceRecords, members, masses, payments, paymentShares)
-      .find((s) => s.memberId === viewerMember.id) ?? null;
-  }, [viewerMember, isAdmin, attendanceRecords, members, masses, payments, paymentShares]);
+    return computeMemberRosterStats(
+      attendanceRecords,
+      members,
+      masses,
+      payments,
+      paymentShares,
+      shareSettlements,
+    ).find((s) => s.memberId === viewerMember.id) ?? null;
+  }, [viewerMember, isAdmin, attendanceRecords, members, masses, payments, paymentShares, shareSettlements]);
 
   const today      = new Date();
   const todayLabel = today.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
@@ -110,6 +119,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         rehearsals={rehearsals}
         payments={payments}
         paymentShares={paymentShares}
+        shareSettlements={shareSettlements}
         events={events}
         announcements={announcements}
         attendanceRecords={attendanceRecords}

@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import { UserPlus, UsersRound } from 'lucide-react';
-import { Announcement, ChoirChatMessage, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, ShareCalculation, Song, Tab, TenantScopedRecord } from './types';
+import { Announcement, ChoirChatMessage, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, ShareCalculation, ShareSettlement, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS, MOCK_REHEARSALS } from './data/mockData';
@@ -210,6 +210,8 @@ function AppInner() {
     useSyncedCollection<Payment>('payments', MOCK_PAYMENTS, syncEnabled, tenantContext);
   const { records: paymentShares } =
     useSyncedCollection<ShareCalculation>('paymentShares', [], syncEnabled, tenantContext);
+  const { records: shareSettlements } =
+    useSyncedCollection<ShareSettlement>('shareSettlements', [], syncEnabled, tenantContext);
   const { records: events, actions: eventSync } =
     useSyncedCollection<ChoirEvent>('events', MOCK_EVENTS, syncEnabled, tenantContext);
   const { records: announcements } =
@@ -1026,7 +1028,8 @@ function AppInner() {
             <>
             {activeTab === 'landing' && (
               <LandingPage currentLang={currentLang} members={members} masses={masses} rehearsals={rehearsals}
-                payments={payments} paymentShares={paymentShares} events={events} announcements={announcements}
+                payments={payments} paymentShares={paymentShares} shareSettlements={shareSettlements}
+                events={events} announcements={announcements}
                 attendanceRecords={attendanceRecords}
                 loading={authState.isConfigured && !authState.isReady}
                 isAdmin={guard.isAdmin}
@@ -1048,6 +1051,8 @@ function AppInner() {
               guard.canAccess('choir_member') ? (
                 <MassManagement currentLang={currentLang} masses={masses} payments={payments}
                   paymentShares={paymentShares}
+                  shareSettlements={shareSettlements}
+                  attendanceRecords={attendanceRecords}
                   members={members}
                   isAdmin={guard.isAdmin}
                   onAddMass={(mass) => {
@@ -1056,11 +1061,70 @@ function AppInner() {
                     }
                     return massSync.upsert({ ...mass, ...createRecordMetadata(authState.user?.uid ?? 'admin', 'active', tenantContext) }, authState.user?.uid);
                   }}
-                  onUpdateMass={(mass) => {
+                  onUpdateMass={async (mass) => {
                     if (!guard.isAdmin) {
-                      return Promise.resolve({ ok: false, error: 'Admin access required.' });
+                      return { ok: false, error: 'Admin access required.' };
                     }
-                    return massSync.patch(mass.id, mass as any, authState.user?.uid);
+                    try {
+                      const response = await apiFetch('/api/admin/mass-update', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          massId: mass.id,
+                          parishId: tenantContext.parishId,
+                          patch: {
+                            name: mass.name,
+                            category: mass.category,
+                            date: mass.date,
+                            time: mass.time,
+                            language: mass.language,
+                            notes: mass.notes ?? '',
+                            activityKind: mass.activityKind
+                              ?? massCategoryToActivityKind(mass.category),
+                          },
+                        }),
+                      });
+                      const data = await response.json().catch(() => ({}));
+                      if (!response.ok) {
+                        return { ok: false, error: data?.error ?? 'Could not update liturgy.' };
+                      }
+                      // Optimistic local patch (listener will reconcile).
+                      await massSync.patch(mass.id, {
+                        name: mass.name,
+                        category: mass.category,
+                        date: mass.date,
+                        time: mass.time,
+                        language: mass.language,
+                        notes: mass.notes,
+                        activityKind: mass.activityKind
+                          ?? massCategoryToActivityKind(mass.category),
+                      } as Partial<Mass>, authState.user?.uid);
+                      return { ok: true };
+                    } catch {
+                      return { ok: false, error: 'Could not update liturgy.' };
+                    }
+                  }}
+                  onSettleMemberShare={async (memberId, amount) => {
+                    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+                    try {
+                      const response = await apiFetch('/api/admin/settle-member-share', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          memberId,
+                          amount,
+                          parishId: tenantContext.parishId,
+                        }),
+                      });
+                      const data = await response.json().catch(() => ({}));
+                      if (!response.ok) {
+                        return { ok: false, error: data?.error ?? 'Settle failed.' };
+                      }
+                      return {
+                        ok: true,
+                        amountSettled: typeof data.amountSettled === 'number' ? data.amountSettled : amount,
+                      };
+                    } catch {
+                      return { ok: false, error: 'Settle failed.' };
+                    }
                   }}
                   onDeleteMass={(massId) => {
                     if (!guard.isAdmin) return;
@@ -1168,7 +1232,8 @@ function AppInner() {
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
                     members={members} events={events} masses={masses} rehearsals={rehearsals}
-                    payments={payments} paymentShares={paymentShares} attendanceRecords={attendanceRecords}
+                    payments={payments} paymentShares={paymentShares} shareSettlements={shareSettlements}
+                    attendanceRecords={attendanceRecords}
                     loading={authState.isConfigured && !authState.isReady}
                     isAdmin={guard.isAdmin}
                     onNavigate={navigate}
@@ -1192,7 +1257,7 @@ function AppInner() {
             )}
             {activeTab === 'analytics' && (
               guard.canAccess('choir_admin') ? (
-                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} paymentShares={paymentShares} attendanceRecords={attendanceRecords} />
+                <AnalyticsDashboard currentLang={currentLang} members={members} masses={masses} payments={payments} paymentShares={paymentShares} shareSettlements={shareSettlements} attendanceRecords={attendanceRecords} />
               ) : <AccessDenied requiredRole="choir_admin" />
             )}
             {activeTab === 'catholic_hub' && <CatholicKnowledgeHub />}
@@ -1226,6 +1291,7 @@ function AppInner() {
                   masses={masses}
                   payments={payments}
                   paymentShares={paymentShares}
+                  shareSettlements={shareSettlements}
                   rehearsals={rehearsals}
                   attendanceRecords={attendanceRecords}
                   isAdmin={guard.isAdmin}

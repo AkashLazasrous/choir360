@@ -2295,6 +2295,236 @@ async function hardDeleteParishCollection(
   return deleted;
 }
 
+app.post("/api/admin/mass-update", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const massId = typeof body.massId === "string" ? body.massId.trim() : "";
+    if (!massId || massId.length > 160) {
+      return res.status(400).json({ error: "massId is required." });
+    }
+    const patchRaw = body.patch && typeof body.patch === "object" ? body.patch as Record<string, unknown> : {};
+    const tenant = resolveAdminTenant((req as any).user, typeof body.parishId === "string" ? body.parishId : undefined);
+    const adminUid = (req as any).user.uid as string;
+    const db = admin.firestore();
+    const massRef = db.collection("masses").doc(massId);
+    const massSnap = await massRef.get();
+    if (!massSnap.exists) {
+      return res.status(404).json({ error: "Mass not found." });
+    }
+    const prev = massSnap.data() || {};
+    if (String(prev.parishId || "") !== tenant.parishId) {
+      return res.status(403).json({ error: "Mass belongs to another parish." });
+    }
+    if (isSoftDeletedDoc(prev)) {
+      return res.status(400).json({ error: "Cannot edit a deleted mass." });
+    }
+
+    const name = typeof patchRaw.name === "string" ? patchRaw.name.trim().slice(0, 200) : String(prev.name || "");
+    const category = typeof patchRaw.category === "string" ? patchRaw.category.trim().slice(0, 80) : String(prev.category || "Sunday Mass");
+    const date = typeof patchRaw.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(patchRaw.date)
+      ? patchRaw.date
+      : String(prev.date || "");
+    const time = typeof patchRaw.time === "string" ? patchRaw.time.trim().slice(0, 40) : String(prev.time || "");
+    const language = typeof patchRaw.language === "string" ? patchRaw.language.trim().slice(0, 40) : String(prev.language || "Tamil");
+    const notes = typeof patchRaw.notes === "string" ? patchRaw.notes.trim().slice(0, 4000) : (prev.notes ?? null);
+    const activityKind = typeof patchRaw.activityKind === "string"
+      ? patchRaw.activityKind.trim().slice(0, 40)
+      : (prev.activityKind ?? undefined);
+
+    const now = new Date().toISOString();
+    const massPatch = stripUndefinedDeep({
+      ...envelopeForWrite(tenant, adminUid, "active", prev, now),
+      name,
+      category,
+      date,
+      time,
+      language,
+      notes: notes || null,
+      ...(activityKind ? { activityKind } : {}),
+      status: "active",
+      deletedAt: null,
+      deletedBy: null,
+    });
+    await massRef.set(massPatch, { merge: true });
+
+    // Keep linked payment in sync with liturgy metadata.
+    const paymentId = `payment-${massId}`;
+    const paymentRef = db.collection("payments").doc(paymentId);
+    const paymentSnap = await paymentRef.get();
+    if (paymentSnap.exists) {
+      const payPrev = paymentSnap.data() || {};
+      await paymentRef.set(
+        stripUndefinedDeep({
+          ...envelopeForWrite(tenant, adminUid, String(payPrev.status || "Pending"), payPrev, now),
+          massId,
+          massType: category,
+          massDate: date,
+          massTime: time,
+          partyName: typeof payPrev.partyName === "string" && payPrev.partyName.trim()
+            ? payPrev.partyName
+            : name,
+        }),
+        { merge: true },
+      );
+    }
+
+    // Sync attendance rows pinned to this mass (date / display name).
+    const attSnap = await db.collection("attendance")
+      .where("parishId", "==", tenant.parishId)
+      .where("entityId", "==", massId)
+      .limit(500)
+      .get();
+    if (!attSnap.empty) {
+      let batch = db.batch();
+      let ops = 0;
+      for (const docSnap of attSnap.docs) {
+        const data = docSnap.data() || {};
+        if (isSoftDeletedDoc(data)) continue;
+        batch.set(
+          docSnap.ref,
+          stripUndefinedDeep({
+            date,
+            entityName: name,
+            updatedAt: now,
+            updatedBy: adminUid,
+          }),
+          { merge: true },
+        );
+        ops += 1;
+        if (ops >= 400) {
+          await batch.commit();
+          batch = db.batch();
+          ops = 0;
+        }
+      }
+      if (ops > 0) await batch.commit();
+    }
+
+    // Keep paymentShares massName/date aligned when present.
+    const shareId = `share-${paymentId}`;
+    const shareRef = db.collection("paymentShares").doc(shareId);
+    const shareSnap = await shareRef.get();
+    if (shareSnap.exists) {
+      const sharePrev = shareSnap.data() || {};
+      await shareRef.set(
+        stripUndefinedDeep({
+          ...envelopeForWrite(tenant, adminUid, "active", sharePrev, now),
+          massName: name,
+          date,
+        }),
+        { merge: true },
+      );
+    }
+
+    console.log(`[Admin] mass-update id=${massId} parish=${tenant.parishId} by=${adminUid}`);
+    return res.json({ ok: true, massId });
+  } catch (error: any) {
+    console.error("[Admin] mass-update failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Mass update failed." });
+  }
+});
+
+app.post("/api/admin/settle-member-share", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const memberId = typeof body.memberId === "string" ? body.memberId.trim() : "";
+    if (!memberId || memberId.length > 128) {
+      return res.status(400).json({ error: "memberId is required." });
+    }
+    const tenant = resolveAdminTenant((req as any).user, typeof body.parishId === "string" ? body.parishId : undefined);
+    const adminUid = (req as any).user.uid as string;
+    const db = admin.firestore();
+
+    const memberSnap = await db.collection("members").doc(memberId).get();
+    if (!memberSnap.exists) {
+      return res.status(404).json({ error: "Member not found." });
+    }
+    const memberData = memberSnap.data() || {};
+    if (String(memberData.parishId || "") !== tenant.parishId) {
+      return res.status(403).json({ error: "Member belongs to another parish." });
+    }
+    const memberName = `${memberData.firstName || ""} ${memberData.lastName || ""}`.trim() || memberId;
+
+    // Earned from locked/live paymentShares for this parish.
+    let earned = 0;
+    const shareSnap = await db.collection("paymentShares")
+      .where("parishId", "==", tenant.parishId)
+      .limit(1000)
+      .get();
+    for (const docSnap of shareSnap.docs) {
+      const data = docSnap.data() || {};
+      if (isSoftDeletedDoc(data)) continue;
+      const parts = Array.isArray(data.participatingMembers) ? data.participatingMembers : [];
+      for (const part of parts) {
+        if (!part || typeof part !== "object") continue;
+        const pid = typeof part.memberId === "string" ? part.memberId : "";
+        if (pid !== memberId || part.isGuest || pid.startsWith("guest-")) continue;
+        const amount = Number(part.share) || 0;
+        if (amount > 0) earned += amount;
+      }
+    }
+
+    let settled = 0;
+    const settleSnap = await db.collection("shareSettlements")
+      .where("parishId", "==", tenant.parishId)
+      .where("memberId", "==", memberId)
+      .limit(500)
+      .get();
+    for (const docSnap of settleSnap.docs) {
+      const data = docSnap.data() || {};
+      if (isSoftDeletedDoc(data)) continue;
+      const amount = Number(data.amount) || 0;
+      if (amount > 0) settled += amount;
+    }
+
+    const outstandingFromShares = Math.max(0, Math.round((earned - settled) * 100) / 100);
+    const clientAmountRaw = typeof body.amount === "number" ? body.amount : Number(body.amount);
+    const clientAmount = Number.isFinite(clientAmountRaw) && clientAmountRaw > 0
+      ? Math.round(clientAmountRaw)
+      : 0;
+    // Prefer UI outstanding (includes attendance-derived shares); fall back to paymentShares ledger.
+    const outstanding = clientAmount > 0 ? clientAmount : outstandingFromShares;
+    if (outstanding <= 0) {
+      return res.json({ ok: true, memberId, amountSettled: 0, outstanding: 0, message: "Nothing to settle." });
+    }
+
+    const now = new Date().toISOString();
+    const settlementId = `settle-${memberId}-${Date.now()}`;
+    await db.collection("shareSettlements").doc(settlementId).set(
+      stripUndefinedDeep({
+        ...envelopeForWrite(tenant, adminUid, "active", undefined, now),
+        id: settlementId,
+        memberId,
+        memberName,
+        amount: outstanding,
+        settledAt: now,
+        settledBy: adminUid,
+        notes: typeof body.notes === "string" ? body.notes.trim().slice(0, 500) : undefined,
+      }),
+    );
+
+    console.log(
+      `[Admin] settle-member-share member=${memberId} amount=${outstanding} parish=${tenant.parishId} by=${adminUid}`,
+    );
+    return res.json({
+      ok: true,
+      memberId,
+      amountSettled: outstanding,
+      outstanding: 0,
+      settlementId,
+    });
+  } catch (error: any) {
+    console.error("[Admin] settle-member-share failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Settle failed." });
+  }
+});
+
 app.post("/api/admin/parish-fresh-start", requireFirebaseAuth, requireAdminRole, async (req, res) => {
   try {
     if (!admin.apps.length) {
@@ -2317,12 +2547,14 @@ app.post("/api/admin/parish-fresh-start", requireFirebaseAuth, requireAdminRole,
       rehearsals: await hardDeleteParishCollection(db, "rehearsals", tenant.parishId),
       payments: await hardDeleteParishCollection(db, "payments", tenant.parishId),
       paymentShares: await hardDeleteParishCollection(db, "paymentShares", tenant.parishId),
+      shareSettlements: await hardDeleteParishCollection(db, "shareSettlements", tenant.parishId),
     };
 
     console.log(
       `[Admin] parish-fresh-start parish=${tenant.parishId} by=${adminUid} `
       + `attendance=${counts.attendance} masses=${counts.masses} rehearsals=${counts.rehearsals} `
-      + `payments=${counts.payments} paymentShares=${counts.paymentShares}`,
+      + `payments=${counts.payments} paymentShares=${counts.paymentShares} `
+      + `shareSettlements=${counts.shareSettlements}`,
     );
 
     return res.json({
