@@ -118,38 +118,163 @@ function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[
   return [...other.values(), ...mergedSunday];
 }
 
-/** Per-member payment share totals — prefers locked paymentShares, else attendance × payments. */
+function isPresentForShare(status: AttendanceStatus | string | undefined): boolean {
+  return status === 'Present' || status === 'Late';
+}
+
+function isSoftDeletedRow(row: { status?: string; deletedAt?: string | null } | null | undefined): boolean {
+  if (!row) return true;
+  if (row.deletedAt) return true;
+  return row.status === 'deleted';
+}
+
+/** Present/Late member ids for a paid special mass (mass doc and/or attendance logs). */
+export function attendingIdsForSpecialMassShare(opts: {
+  massId?: string;
+  massDate?: string;
+  masses: Mass[];
+  attendanceRecords: AttendanceRecord[];
+}): string[] {
+  const { massId, massDate, masses, attendanceRecords } = opts;
+  const mass = massId ? masses.find((m) => m.id === massId) : undefined;
+  if (mass?.attendingMemberIds?.length) {
+    return [...new Set(mass.attendingMemberIds)];
+  }
+
+  const fromEntity = massId
+    ? attendanceRecords.filter((r) => {
+        if (isSoftDeletedRow(r as { status?: string; deletedAt?: string | null })) return false;
+        if (r.entityId !== massId) return false;
+        return isPresentForShare(r.status);
+      })
+    : [];
+  if (fromEntity.length > 0) {
+    return [...new Set(fromEntity.map((r) => r.memberId))];
+  }
+
+  if (!massDate) return [];
+  const fromDate = attendanceRecords.filter((r) => {
+    if (isSoftDeletedRow(r as { status?: string; deletedAt?: string | null })) return false;
+    if (r.date !== massDate) return false;
+    const kind = resolveActivityKind({
+      activityKind: r.activityKind,
+      entityType: r.entityType,
+      entityName: r.entityName,
+    });
+    if (kind !== 'special_mass' && kind !== 'feast_day' && kind !== 'novena') return false;
+    return isPresentForShare(r.status);
+  });
+  return [...new Set(fromDate.map((r) => r.memberId))];
+}
+
+type SharePaymentSource = {
+  id: string;
+  massId?: string;
+  massDate?: string;
+  promisedAmount: number;
+  guestTotal: number;
+};
+
+/** Build payment-like sources from payments + paid special masses with billing amount. */
+function collectSpecialMassPaymentSources(
+  masses: Mass[],
+  payments: Payment[],
+): SharePaymentSource[] {
+  const sources: SharePaymentSource[] = [];
+  const seen = new Set<string>();
+
+  for (const payment of payments) {
+    if (isSoftDeletedRow(payment as { status?: string; deletedAt?: string | null })) continue;
+    const amount = Number(payment.promisedAmount) || 0;
+    if (amount <= 0) continue;
+    const mass = payment.massId ? masses.find((m) => m.id === payment.massId) : undefined;
+    const guestTotal = (mass?.guestAttendees ?? []).reduce(
+      (sum, g) => sum + (Number(g.amount) > 0 ? Number(g.amount) : 0),
+      0,
+    );
+    sources.push({
+      id: payment.id,
+      massId: payment.massId,
+      massDate: payment.massDate || mass?.date,
+      promisedAmount: amount,
+      guestTotal,
+    });
+    if (payment.massId) seen.add(payment.massId);
+  }
+
+  for (const mass of masses) {
+    if (seen.has(mass.id)) continue;
+    const billingPaid = mass.specialMassBilling === 'paid'
+      || (mass.specialMassPayment && Number(mass.specialMassPayment.amount) > 0);
+    if (!billingPaid) continue;
+    const amount = Number(mass.specialMassPayment?.amount) || 0;
+    if (amount <= 0) continue;
+    const guestTotal = (mass.guestAttendees ?? []).reduce(
+      (sum, g) => sum + (Number(g.amount) > 0 ? Number(g.amount) : 0),
+      0,
+    );
+    sources.push({
+      id: `mass-pay-${mass.id}`,
+      massId: mass.id,
+      massDate: mass.date,
+      promisedAmount: amount,
+      guestTotal,
+    });
+  }
+
+  return sources;
+}
+
+/**
+ * Per-member payment share totals for special / paid masses.
+ * Prefers locked paymentShares; else derives from payments + Present/Late attendance.
+ */
 export function computeMemberShareTotals(
   members: Member[],
   masses: Mass[],
   payments: Payment[],
   paymentShares: ShareCalculation[] = [],
+  attendanceRecords: AttendanceRecord[] = [],
 ): Map<string, number> {
   const totals = new Map<string, number>();
   const coveredPaymentIds = new Set<string>();
 
   for (const shareDoc of paymentShares) {
+    if (isSoftDeletedRow(shareDoc as { status?: string; deletedAt?: string | null })) continue;
     if (!shareDoc?.participatingMembers?.length) continue;
-    if (shareDoc.paymentId) coveredPaymentIds.add(shareDoc.paymentId);
+    let addedMemberShare = false;
     for (const part of shareDoc.participatingMembers) {
       if (!part.memberId || part.isGuest || part.memberId.startsWith('guest-')) continue;
       const amount = Number(part.share) || 0;
       if (amount <= 0) continue;
       totals.set(part.memberId, (totals.get(part.memberId) ?? 0) + amount);
+      addedMemberShare = true;
+    }
+    if (addedMemberShare && shareDoc.paymentId) {
+      coveredPaymentIds.add(shareDoc.paymentId);
     }
   }
 
-  for (const payment of payments) {
-    if (!payment.massId || coveredPaymentIds.has(payment.id)) continue;
-    const mass = masses.find((m) => m.id === payment.massId);
-    if (!mass?.attendingMemberIds?.length) continue;
+  const sources = collectSpecialMassPaymentSources(masses, payments);
+  for (const source of sources) {
+    if (coveredPaymentIds.has(source.id)) continue;
+    // Also skip if a share doc used payment-${massId} style id coverage
+    if (source.massId && coveredPaymentIds.has(`payment-${source.massId}`)) continue;
 
-    const attendees = members.filter((m) => mass.attendingMemberIds!.includes(m.id));
-    const guestTotal = (mass.guestAttendees ?? []).reduce(
-      (sum, g) => sum + (Number(g.amount) > 0 ? Number(g.amount) : 0),
-      0,
-    );
-    const memberPool = Math.max(0, payment.promisedAmount - guestTotal);
+    const attendingIds = attendingIdsForSpecialMassShare({
+      massId: source.massId,
+      massDate: source.massDate,
+      masses,
+      attendanceRecords,
+    });
+    if (attendingIds.length === 0) continue;
+
+    const attendees = members.filter((m) => attendingIds.includes(m.id));
+    if (attendees.length === 0) continue;
+
+    const memberPool = Math.max(0, source.promisedAmount - source.guestTotal);
+    if (memberPool <= 0) continue;
+
     const singers = attendees.filter((m) => m.memberType === 'Singer' || m.memberType === 'Other').length;
     const instrumentalists = attendees.filter((m) => !['Singer', 'Other'].includes(m.memberType)).length;
     const calc = calculatePaymentShares(memberPool, singers, instrumentalists);
@@ -158,6 +283,7 @@ export function computeMemberShareTotals(
       const share = member.memberType === 'Singer' || member.memberType === 'Other'
         ? calc.singerShare
         : calc.instrumentalistShare;
+      if (share <= 0) continue;
       totals.set(member.id, (totals.get(member.id) ?? 0) + share);
     }
   }
@@ -272,7 +398,13 @@ export function computeMemberRosterStats(
 ): MemberRosterStats[] {
   const loggedStats = computeMemberStats(records, members);
   const statsById = new Map(loggedStats.map((s) => [s.memberId, s]));
-  const shareTotals = computeMemberShareTotals(members, masses, payments, paymentShares);
+  const shareTotals = computeMemberShareTotals(
+    members,
+    masses,
+    payments,
+    paymentShares,
+    records,
+  );
 
   return members
     .filter(isActiveMember)

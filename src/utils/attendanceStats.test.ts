@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { AttendanceRecord, Member } from '../types';
+import type { AttendanceRecord, Mass, Member, Payment } from '../types';
 import {
   countsAsPresentFinal,
   countsAsPresentRaw,
+  computeMemberRosterStats,
   computeMemberStats,
   computeParishStats,
 } from './attendanceStats';
@@ -141,5 +142,68 @@ describe('computeParishStats', () => {
     expect(parish.averageFinalPercent).toBe(50);
     expect(parish.totalSessions).toBe(2);
     expect(parish.rosterStats.length).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('special mass share sync', () => {
+  it('splits remaining pool from attendance Present marks even without attendingMemberIds', () => {
+    const members = [
+      member({ id: 'm1', firstName: 'A', lastName: 'Singer', memberType: 'Singer' }),
+      member({ id: 'm2', firstName: 'B', lastName: 'Keys', memberType: 'Keyboard' }),
+      member({ id: 'm3', firstName: 'C', lastName: 'Absent', memberType: 'Singer' }),
+    ];
+    const masses: Mass[] = [{
+      id: 'mass-wedding-1',
+      name: 'Wedding Mass',
+      category: 'Wedding',
+      date: '2026-06-07',
+      time: '04:00 PM',
+      language: 'Tamil',
+      activityKind: 'special_mass',
+      specialMassBilling: 'paid',
+      specialMassPayment: { amount: 3000 },
+    }];
+    const payments: Payment[] = [{
+      id: 'payment-mass-wedding-1',
+      massId: 'mass-wedding-1',
+      partyName: 'Sponsor',
+      mobile: '',
+      massType: 'Wedding',
+      massDate: '2026-06-07',
+      massTime: '04:00 PM',
+      promisedAmount: 3000,
+      receivedAmount: 0,
+      pendingAmount: 3000,
+      status: 'Pending',
+    }];
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+      }),
+      record({
+        memberId: 'm2',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+      }),
+      record({
+        memberId: 'm3',
+        status: 'Absent',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+      }),
+    ];
+
+    const roster = computeMemberRosterStats(records, members, masses, payments, []);
+    // 3000 / (1 + 2) = 1000 unit → singer 1000, musician 2000
+    expect(roster.find((r) => r.memberId === 'm1')?.totalShareINR).toBe(1000);
+    expect(roster.find((r) => r.memberId === 'm2')?.totalShareINR).toBe(2000);
+    expect(roster.find((r) => r.memberId === 'm3')?.totalShareINR).toBe(0);
   });
 });

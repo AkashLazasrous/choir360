@@ -244,16 +244,21 @@ service cloud.firestore {
 
     // =========================================================================
     // PAYMENTS (admin only – financial data)
+    // Soft-deleted rows are filtered client-side. Do not use notDeleted() here:
+    // list queries cannot constrain status (Pending/Received/deleted), so
+    // notDeleted() rejects the entire payments listener once any deleted doc exists.
     // =========================================================================
     match /payments/{docId} {
-      allow read: if adminRole() && existingInTenant() && notDeleted();
+      allow read: if adminRole() && existingInTenant();
       allow create: if adminTenantCreate();
       allow update: if adminTenantUpdate();
       allow delete: if false;
     }
 
+    // Member-readable locked share splits (used by Attendance Share column + mobile).
+    // Same list-query note as payments — filter deleted client-side.
     match /paymentShares/{docId} {
-      allow read: if memberRole() && existingInTenant() && notDeleted();
+      allow read: if memberRole() && existingInTenant();
       allow create: if adminTenantCreate();
       allow update: if adminTenantUpdate();
       allow delete: if false;
