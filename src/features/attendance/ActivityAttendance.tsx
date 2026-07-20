@@ -89,6 +89,8 @@ export interface ActivityAttendanceSavePayload {
   sundayMassSlot?: SundayMassSlot;
   specialMassBilling?: SpecialMassBilling;
   specialMassPayment?: SpecialMassPaymentDetails;
+  /** Pin marks to an existing mass/rehearsal id (Masses desk). */
+  entityId?: string;
 }
 
 export interface ActivityAttendanceImportPayload {

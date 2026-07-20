@@ -1,7 +1,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MotionConfig } from 'motion/react';
 import { UserPlus, UsersRound } from 'lucide-react';
-import { Announcement, ChoirChatMessage, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, Song, Tab, TenantScopedRecord } from './types';
+import { Announcement, ChoirChatMessage, ChoirEvent, Language, Mass, Member, MemberStatus, Payment, Rehearsal, AttendanceRecord, Role, ShareCalculation, Song, Tab, TenantScopedRecord } from './types';
 import { RoleSelector } from './components/RoleSelector';
 import { AccessDenied } from './components/AccessDenied';
 import { MOCK_ANNOUNCEMENTS, MOCK_EVENTS, MOCK_MASSES, MOCK_MEMBERS, MOCK_PAYMENTS, MOCK_REHEARSALS } from './data/mockData';
@@ -19,6 +19,8 @@ import {
 } from './i18n/ui';
 import { dedupeImportSessions } from './utils/attendanceActivity';
 import type { ActivityAttendanceImportPayload, ActivityAttendanceSavePayload } from './features/attendance/ActivityAttendance';
+import type { MassAttendanceSavePayload } from './features/masses/MassList';
+import { massCategoryToActivityKind } from './utils/attendanceTaxonomy';
 import { ARCHDIOCESE_ID, activeParishes, findParishById } from './data/madrasMylaporeParishes';
 import { pushTabPath, replaceTabPath, tabFromPath } from './routes/AppRoutes';
 import { ToastProvider, useToast } from './components/feedback/ToastProvider';
@@ -206,6 +208,8 @@ function AppInner() {
     useSyncedCollection<Mass>('masses', MOCK_MASSES, syncEnabled, tenantContext, 1000);
   const { records: payments, actions: paymentSync } =
     useSyncedCollection<Payment>('payments', MOCK_PAYMENTS, syncEnabled, tenantContext);
+  const { records: paymentShares } =
+    useSyncedCollection<ShareCalculation>('paymentShares', [], syncEnabled, tenantContext);
   const { records: events, actions: eventSync } =
     useSyncedCollection<ChoirEvent>('events', MOCK_EVENTS, syncEnabled, tenantContext);
   const { records: announcements } =
@@ -285,6 +289,51 @@ function AppInner() {
       };
     } catch {
       return { ok: false, error: 'Save failed.' };
+    }
+  };
+
+  /** Masses desk: pin attendance to the logged mass id; paid rites sync share splits. */
+  const saveMassAttendance = async (
+    payload: MassAttendanceSavePayload,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const { mass, marks } = payload;
+    const kind = mass.activityKind ?? massCategoryToActivityKind(mass.category);
+    return persistActivitySession({
+      kind,
+      date: mass.date,
+      title: mass.name,
+      notes: mass.notes,
+      marks,
+      entityId: mass.id,
+      sundayMassSlot: mass.sundayMassSlot,
+      specialMassBilling: mass.specialMassBilling,
+      specialMassPayment: mass.specialMassPayment,
+    });
+  };
+
+  /** Hard-wipe parish liturgy / attendance / payments / shares (Admin SDK). */
+  const parishFreshStart = async (
+    confirm: string,
+  ): Promise<{ ok: boolean; error?: string; totalDeleted?: number }> => {
+    if (!guard.isAdmin) return { ok: false, error: 'Admin access required.' };
+    try {
+      const response = await apiFetch('/api/admin/parish-fresh-start', {
+        method: 'POST',
+        body: JSON.stringify({
+          confirm,
+          parishId: tenantContext.parishId,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { ok: false, error: data?.error ?? 'Fresh start failed.' };
+      }
+      return {
+        ok: true,
+        totalDeleted: typeof data.totalDeleted === 'number' ? data.totalDeleted : undefined,
+      };
+    } catch {
+      return { ok: false, error: 'Fresh start failed.' };
     }
   };
 
@@ -996,7 +1045,9 @@ function AppInner() {
             )}
             {activeTab === 'masses' && (
               guard.canAccess('choir_member') ? (
-                <MassManagement currentLang={currentLang} masses={masses} payments={payments} members={members}
+                <MassManagement currentLang={currentLang} masses={masses} payments={payments}
+                  paymentShares={paymentShares}
+                  members={members}
                   isAdmin={guard.isAdmin}
                   onAddMass={(mass) => {
                     if (!guard.isAdmin) {
@@ -1034,7 +1085,10 @@ function AppInner() {
                     if (!guard.isAdmin) return;
                     const payment = payments.find((item) => item.id === id);
                     void paymentSync.patch(id, { receivedAmount, pendingAmount: Math.max((payment?.promisedAmount ?? 0) - receivedAmount, 0), status }, authState.user?.uid);
-                  }} />
+                  }}
+                  onSaveMassAttendance={saveMassAttendance}
+                  onFreshStart={parishFreshStart}
+                />
               ) : <AccessDenied requiredRole="choir_member" />
             )}
             {activeTab === 'registration' && (
@@ -1113,7 +1167,7 @@ function AppInner() {
                 currentMember ? (
                   <DashboardMember currentLang={currentLang} memberId={authState.user?.uid ?? currentMember.id}
                     members={members} events={events} masses={masses} rehearsals={rehearsals}
-                    payments={payments} attendanceRecords={attendanceRecords}
+                    payments={payments} paymentShares={paymentShares} attendanceRecords={attendanceRecords}
                     loading={authState.isConfigured && !authState.isReady}
                     isAdmin={guard.isAdmin}
                     onNavigate={navigate}

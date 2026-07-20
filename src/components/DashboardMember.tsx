@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Rehearsal, Tab } from '../types';
+import { Member, Language, ChoirEvent, Mass, AttendanceRecord, Payment, Rehearsal, ShareCalculation, Tab } from '../types';
 import { Activity, AlertCircle, IdCard } from 'lucide-react';
 import { DigitalChoirID } from './DigitalChoirID';
 import { ProfileCard } from '../features/memberDashboard/ProfileCard';
@@ -27,6 +27,7 @@ interface DashboardMemberProps {
   masses: Mass[];
   rehearsals?: Rehearsal[];
   payments?: Payment[];
+  paymentShares?: ShareCalculation[];
   attendanceRecords?: AttendanceRecord[];
   isAdmin?: boolean;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
@@ -50,6 +51,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   masses,
   rehearsals = [],
   payments = [],
+  paymentShares = [],
   attendanceRecords = [],
   isAdmin = false,
   onSaveLiturgySongNotes,
@@ -214,8 +216,10 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
           />
           <EarningsAndEvents
             currentLang={currentLang}
-            memberId={memberId}
+            memberId={member?.id ?? memberId}
             events={events}
+            paymentShares={paymentShares}
+            payments={payments}
             onUpdateEventRsvp={onUpdateEventRsvp}
           />
           <PracticeConsole />

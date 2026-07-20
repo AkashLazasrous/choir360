@@ -67,6 +67,31 @@ export function kindsForCategory(category: AttendanceCategory): ActivityKind[] {
   return [...MASS_BUCKET_KINDS];
 }
 
+/** Inverse of kindToMassCategory for liturgy desk → attendance session. */
+export function massCategoryToActivityKind(category: MassCategory | string): ActivityKind {
+  switch (category) {
+    case 'Saturday Mass':
+      return 'saturday_mass';
+    case 'Weekday Mass':
+      return 'weekday_mass';
+    case 'Feast Day':
+      return 'feast_day';
+    case 'Novena':
+      return 'novena';
+    case 'Special Mass':
+    case 'Wedding':
+    case 'Death Mass':
+    case 'Death Anniversary Mass':
+    case 'Ordination':
+    case 'First Holy Communion':
+    case 'Confirmation':
+      return 'special_mass';
+    case 'Sunday Mass':
+    default:
+      return 'sunday_mass';
+  }
+}
+
 export function kindToMassCategory(kind: ActivityKind): MassCategory {
   switch (kind) {
     case 'special_mass':

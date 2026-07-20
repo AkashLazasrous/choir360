@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, IndianRupee, MoreHorizontal, Pencil, Trash2, Users, X } from 'lucide-react';
-import { Mass, Member, Payment } from '../../types';
+import { BookOpen, Check, ChevronDown, ChevronUp, IndianRupee, Loader2, MoreHorizontal, Pencil, Trash2, Users, X } from 'lucide-react';
+import { AttendanceStatus, Mass, Member, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { calculatePaymentShares } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, isPaymentMass } from './shared';
+
+export type MassAttendanceSavePayload = {
+  mass: Mass;
+  marks: Record<string, AttendanceStatus | null>;
+};
 
 interface MassListProps {
   masses: Mass[];
@@ -12,6 +17,8 @@ interface MassListProps {
   isAdmin: boolean;
   onUpdateMass?: (mass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
   onDeleteMass?: (massId: string) => void;
+  /** Admin: save Present/Absent for a mass (paid rites auto-split shares). */
+  onSaveMassAttendance?: (payload: MassAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
 }
 
 /** Logged liturgies with attendance sheet and edit modal — mobile overflow actions. */
@@ -22,18 +29,79 @@ export const MassList: React.FC<MassListProps> = ({
   isAdmin,
   onUpdateMass,
   onDeleteMass,
+  onSaveMassAttendance,
 }) => {
   const [attendanceOpen, setAttendanceOpen] = useState<string | null>(null);
   const [editingMass, setEditingMass] = useState<Mass | null>(null);
   const [editError, setEditError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  /** Draft Present toggles per mass (memberId → present). */
+  const [draftPresent, setDraftPresent] = useState<Record<string, Record<string, boolean>>>({});
+  const [savingAttendanceId, setSavingAttendanceId] = useState<string | null>(null);
+  const [attendanceMsg, setAttendanceMsg] = useState<string | null>(null);
 
   const activeMembers = members.filter((m) => ['Active Member', 'Approved', 'Admin'].includes(m.status));
 
-  const getAttendees = (mass: Mass) =>
-    (mass.attendingMemberIds ?? [])
+  const presentMapFor = (mass: Mass): Record<string, boolean> => {
+    if (draftPresent[mass.id]) return draftPresent[mass.id];
+    const map: Record<string, boolean> = {};
+    for (const id of mass.attendingMemberIds ?? []) map[id] = true;
+    return map;
+  };
+
+  const openAttendance = (mass: Mass) => {
+    const nextOpen = attendanceOpen === mass.id ? null : mass.id;
+    setAttendanceOpen(nextOpen);
+    setMenuOpenId(null);
+    if (nextOpen && !draftPresent[mass.id]) {
+      const map: Record<string, boolean> = {};
+      for (const id of mass.attendingMemberIds ?? []) map[id] = true;
+      setDraftPresent((prev) => ({ ...prev, [mass.id]: map }));
+    }
+  };
+
+  const togglePresent = (massId: string, memberId: string) => {
+    setDraftPresent((prev) => {
+      const current = { ...(prev[massId] ?? {}) };
+      current[memberId] = !current[memberId];
+      return { ...prev, [massId]: current };
+    });
+  };
+
+  const handleSaveAttendance = async (mass: Mass) => {
+    if (!onSaveMassAttendance) return;
+    const present = presentMapFor(mass);
+    const marks: Record<string, AttendanceStatus | null> = {};
+    for (const m of activeMembers) {
+      marks[m.id] = present[m.id] ? 'Present' : 'Absent';
+    }
+    setSavingAttendanceId(mass.id);
+    setAttendanceMsg(null);
+    const result = await onSaveMassAttendance({ mass, marks });
+    setSavingAttendanceId(null);
+    if (result.ok) {
+      setAttendanceMsg(
+        isPaymentMass(mass.category) || mass.specialMassBilling === 'paid'
+          ? 'Attendance saved · shares split Singer ×1 / Musician ×2 and synced.'
+          : 'Attendance saved.',
+      );
+      setTimeout(() => setAttendanceMsg(null), 4000);
+    } else {
+      setAttendanceMsg(result.error ?? 'Could not save attendance.');
+    }
+  };
+
+  const getAttendees = (mass: Mass) => {
+    const ids = Object.entries(presentMapFor(mass))
+      .filter(([, present]) => present)
+      .map(([id]) => id);
+    const source = ids.length > 0 || draftPresent[mass.id]
+      ? ids
+      : (mass.attendingMemberIds ?? []);
+    return source
       .map((id) => activeMembers.find((m) => m.id === id))
       .filter(Boolean) as Member[];
+  };
 
   const getPaymentBreakdown = (mass: Mass) => {
     const attendees = getAttendees(mass);
@@ -101,11 +169,11 @@ export const MassList: React.FC<MassListProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => { setAttendanceOpen(isOpen ? null : m.id); setMenuOpenId(null); }}
+                    onClick={() => openAttendance(m)}
                     className="btn-pill btn-pill-secondary btn-pill-sm !min-h-[44px] flex-1 !text-[13px] sm:flex-none"
                   >
                     <Users className="h-4 w-4" />
-                    {attendeeIds.length > 0 ? `${attendeeIds.length} present` : 'Attendance'}
+                    {attendeeIds.length > 0 ? `${attendeeIds.length} present` : (isAdmin ? 'Put attendance' : 'Attendance')}
                     {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
 
@@ -159,10 +227,55 @@ export const MassList: React.FC<MassListProps> = ({
                   <div>
                     <p className="apple-label mb-2 flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" /> Attendance
+                      {(isPaymentMass(m.category) || m.specialMassBilling === 'paid') && (
+                        <span className="ml-1 font-normal normal-case tracking-normal text-[#8a6a10]">
+                          · paid rite — shares use Singer ×1 · Musician ×2
+                        </span>
+                      )}
                     </p>
-                    {attendeeIds.length === 0 ? (
+                    {isAdmin && onSaveMassAttendance ? (
+                      <>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
+                          {activeMembers.map((mem) => {
+                            const present = !!presentMapFor(m)[mem.id];
+                            const isInstrumentalist = !['Singer', 'Other'].includes(mem.memberType);
+                            return (
+                              <button
+                                key={mem.id}
+                                type="button"
+                                onClick={() => togglePresent(m.id, mem.id)}
+                                className={`flex min-h-[52px] items-center gap-3 rounded-2xl border px-3 py-2.5 text-left text-[14px] transition ${
+                                  present
+                                    ? isInstrumentalist
+                                      ? 'border-[rgba(245,194,76,0.55)] bg-[rgba(245,194,76,0.2)] text-[#8a6a10]'
+                                      : 'border-[rgba(24,57,47,0.35)] bg-[rgba(24,57,47,0.12)] text-[#18392f]'
+                                    : 'border-black/[0.08] bg-white text-[#86868b]'
+                                }`}
+                              >
+                                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${present ? 'bg-[#18392f] text-white' : 'bg-black/[0.06]'}`}>
+                                  {present ? <Check className="h-3.5 w-3.5" /> : null}
+                                </span>
+                                <span>
+                                  <span className="font-semibold text-[#1d1d1f]">{mem.firstName} {mem.lastName}</span>
+                                  <span className="block text-[12px] opacity-70">{mem.memberType} · {present ? 'Present' : 'Absent'}</span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={savingAttendanceId === m.id || activeMembers.length === 0}
+                          onClick={() => void handleSaveAttendance(m)}
+                          className="btn-pill btn-pill-primary mt-3 inline-flex items-center gap-2"
+                        >
+                          {savingAttendanceId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          Save attendance{isPaymentMass(m.category) || m.specialMassBilling === 'paid' ? ' & split shares' : ''}
+                        </button>
+                      </>
+                    ) : attendeeIds.length === 0 ? (
                       <p className="text-[14px] text-[#86868b]">
-                        No attendance logged yet. Use the Attendance tab to mark members.
+                        No attendance logged yet.
                       </p>
                     ) : (
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
@@ -188,10 +301,10 @@ export const MassList: React.FC<MassListProps> = ({
                     )}
                   </div>
 
-                  {bdown && attendees.length > 0 && (
+                  {bdown && (attendees.length > 0 || Object.values(presentMapFor(m)).some(Boolean)) && (
                     <div className="rounded-2xl border border-[rgba(245,194,76,0.35)] bg-[rgba(245,194,76,0.12)] p-4">
                       <p className="apple-label mb-3 flex items-center gap-1 text-[#8a6a10]">
-                        <IndianRupee className="h-3.5 w-3.5" /> Payment distribution
+                        <IndianRupee className="h-3.5 w-3.5" /> Payment distribution (Singer ×1 · Musician ×2)
                       </p>
                       <div className="mb-3 flex flex-wrap gap-3 text-[13px] text-[#3a3a3c]">
                         <span>Total: <strong className="text-[#18392f]">{formatINR(bdown.payment.promisedAmount)}</strong></span>
@@ -217,8 +330,12 @@ export const MassList: React.FC<MassListProps> = ({
 
                   {isPaymentMass(m.category) && !bdown && (
                     <p className="rounded-2xl bg-[rgba(245,194,76,0.14)] px-3 py-2.5 text-[13px] text-[#8a6a10]">
-                      No payment record linked to this mass yet.
+                      No payment record linked yet — log billing on the mass or save paid attendance to create one.
                     </p>
+                  )}
+
+                  {attendanceMsg && attendanceOpen === m.id && (
+                    <p className="text-[13px] font-medium text-[#18392f]">{attendanceMsg}</p>
                   )}
                 </div>
               )}

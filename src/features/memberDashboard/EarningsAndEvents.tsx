@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DollarSign, CalendarDays } from 'lucide-react';
-import { Language, ChoirEvent } from '../../types';
+import { Language, ChoirEvent, ShareCalculation, Payment } from '../../types';
 import { MULTILINGUAL_DICTIONARY } from '../../data/mockData';
 import { formatRegionalCurrency } from '../../utils/currency';
 
@@ -8,6 +8,8 @@ interface EarningsAndEventsProps {
   currentLang: Language;
   memberId: string;
   events: ChoirEvent[];
+  paymentShares?: ShareCalculation[];
+  payments?: Payment[];
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
 }
 
@@ -16,10 +18,30 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
   currentLang,
   memberId,
   events,
+  paymentShares = [],
+  payments = [],
   onUpdateEventRsvp,
 }) => {
   const dict = MULTILINGUAL_DICTIONARY[currentLang] || MULTILINGUAL_DICTIONARY.en;
-  const earnings: Array<{ id: string; name: string; date: string; amount: number; share: number; status: string }> = [];
+
+  const earnings = useMemo(() => {
+    const rows: Array<{ id: string; name: string; date: string; amount: number; share: number; status: string }> = [];
+    for (const shareDoc of paymentShares) {
+      const part = shareDoc.participatingMembers?.find((m) => m.memberId === memberId);
+      if (!part) continue;
+      const payment = payments.find((p) => p.id === shareDoc.paymentId);
+      const status = payment?.status === 'Received' ? 'Disbursed' : (payment?.status ?? 'Pending');
+      rows.push({
+        id: shareDoc.id,
+        name: shareDoc.massName,
+        date: shareDoc.date,
+        amount: shareDoc.totalAmount,
+        share: part.share,
+        status,
+      });
+    }
+    return rows.sort((a, b) => b.date.localeCompare(a.date));
+  }, [paymentShares, payments, memberId]);
 
   return (
     <>
@@ -30,7 +52,7 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
             <DollarSign className="w-4 h-4 text-emerald-600" />
             {dict.earnings}
           </h4>
-          <span className="text-xs text-slate-400 font-mono">Disbursed via Church Bank Portal</span>
+          <span className="text-xs text-slate-400 font-mono">Singer ×1 · Musician ×2</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -40,7 +62,7 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
                 <th className="py-2.5">Mass Name</th>
                 <th className="py-2.5">Date</th>
                 <th className="py-2.5 text-right">Total Offer</th>
-                <th className="py-2.5 text-right text-emerald-700">My Share Share</th>
+                <th className="py-2.5 text-right text-emerald-700">My Share</th>
                 <th className="py-2.5 text-right">Status</th>
               </tr>
             </thead>
@@ -70,7 +92,8 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
         </div>
 
         <div className="mt-4 p-3 rounded-lg bg-slate-50/50 border border-slate-200/60 text-[10px] text-slate-500 leading-relaxed font-sans">
-          <strong>Calculation Rules:</strong> Instrumentalist roles receive double share weighting (Weight = 2) for church services, and vocal singers receive single share weighting (Weight = 1) automatically based on the locked payment registries.
+          <strong>Calculation Rules:</strong> Musicians receive double share weighting (×2); singers receive ×1.
+          Shares update when an admin saves attendance on a paid mass.
         </div>
       </div>
 
@@ -118,7 +141,7 @@ export const EarningsAndEvents: React.FC<EarningsAndEventsProps> = ({
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
-                        {status === 'Going' ? dict.rs_going : status === 'Not Going' ? dict.rs_notgoing : dict.rs_maybe}
+                        {status}
                       </button>
                     );
                   })}

@@ -5,6 +5,7 @@ import { formatINR } from '../../utils/currency';
 import { derivePaymentStatus } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { omitUndefinedDeep, optionalNumber, optionalString } from '../../utils/omitUndefined';
+import { massCategoryToActivityKind } from '../../utils/attendanceTaxonomy';
 
 interface MassFormProps {
   isAdmin: boolean;
@@ -58,6 +59,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       date: massDate,
       time: massTime,
       language: massLang,
+      activityKind: massCategoryToActivityKind(massCategory),
       ...(isSpecialLike
         ? {
             specialMassBilling: billingType,
@@ -83,7 +85,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       const recvAmt  = amountReceived ? receivedAmount : 0;
       const pending  = Math.max(amountProposed - recvAmt, 0);
       const status   = derivePaymentStatus(amountProposed, amountReceived, receivedAmount);
-      const pid      = createUniqueId('payment');
+      const pid = `payment-${massId}`;
 
       const newPayment = omitUndefinedDeep({
         id: pid,

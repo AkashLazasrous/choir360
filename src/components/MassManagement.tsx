@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Bell } from 'lucide-react';
-import { Mass, Payment, Member, Language } from '../types';
+import { Mass, Payment, Member, Language, ShareCalculation } from '../types';
 import { formatINR } from '../utils/currency';
 import { calculatePaymentShares } from '../utils/choirStats';
 import { countAttendeesByRole } from '../utils/attendanceStats';
 import { MassForm } from '../features/masses/MassForm';
 import { PaymentsTable } from '../features/masses/PaymentsTable';
 import { ShareCalculator } from '../features/masses/ShareCalculator';
-import { MassList } from '../features/masses/MassList';
+import { MassList, type MassAttendanceSavePayload } from '../features/masses/MassList';
+import { FreshStartPanel } from '../features/masses/FreshStartPanel';
 import { LockedCalc } from '../features/masses/shared';
 
 interface MassManagementProps {
   currentLang: Language;
   masses: Mass[];
   payments: Payment[];
+  paymentShares?: ShareCalculation[];
   members: Member[];
   isAdmin: boolean;
   onAddMass: (newMass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
@@ -21,6 +23,8 @@ interface MassManagementProps {
   onDeleteMass?: (massId: string) => void;
   onAddPayment: (newPayment: Payment) => Promise<{ ok: boolean; error?: string }> | void;
   onUpdatePayment: (paymentId: string, receivedAmount: number, status: 'Pending' | 'Received') => void;
+  onSaveMassAttendance?: (payload: MassAttendanceSavePayload) => Promise<{ ok: boolean; error?: string }>;
+  onFreshStart?: (confirm: string) => Promise<{ ok: boolean; error?: string; totalDeleted?: number }>;
 }
 
 /**
@@ -31,6 +35,7 @@ interface MassManagementProps {
 export const MassManagement: React.FC<MassManagementProps> = ({
   masses,
   payments,
+  paymentShares = [],
   members,
   isAdmin,
   onAddMass,
@@ -38,6 +43,8 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   onDeleteMass,
   onAddPayment,
   onUpdatePayment,
+  onSaveMassAttendance,
+  onFreshStart,
 }) => {
   // ── Share calculator state ──────────────────────────────────────────────────
   const [selectedPaymentId,    setSelectedPaymentId]    = useState<string>(payments[0]?.id || '');
@@ -47,8 +54,20 @@ export const MassManagement: React.FC<MassManagementProps> = ({
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
 
   const activePayment = payments.find((p) => p.id === selectedPaymentId) || payments[0];
-  const isLocked      = activePayment ? !!lockedCalcs[activePayment.id] : false;
-  const calc = calculatePaymentShares(activePayment?.promisedAmount || 0, singerCount, instrumentalistCount);
+  const lockedShare = activePayment
+    ? paymentShares.find((s) => s.paymentId === activePayment.id && s.isLocked)
+    : undefined;
+  const isLocked = activePayment
+    ? !!lockedCalcs[activePayment.id] || Boolean(lockedShare)
+    : false;
+  const calc = lockedShare
+    ? {
+        totalUnits: lockedShare.totalUnits,
+        unitValue: lockedShare.unitValue,
+        singerShare: lockedShare.singerShare,
+        instrumentalistShare: lockedShare.instrumentalistShare,
+      }
+    : calculatePaymentShares(activePayment?.promisedAmount || 0, singerCount, instrumentalistCount);
 
   useEffect(() => {
     if (!activePayment?.massId || isLocked) return;
@@ -58,6 +77,26 @@ export const MassManagement: React.FC<MassManagementProps> = ({
     if (singers > 0) setSingerCount(singers);
     if (instrumentalists > 0) setInstrumentalistCount(instrumentalists);
   }, [activePayment?.massId, activePayment?.id, masses, members, isLocked]);
+
+  useEffect(() => {
+    if (!lockedShare || !activePayment) return;
+    setLockedCalcs((prev) => {
+      if (prev[activePayment.id]) return prev;
+      return {
+        ...prev,
+        [activePayment.id]: {
+          singers: lockedShare.singersCount,
+          instruments: lockedShare.instrumentalistsCount,
+          totalUnits: lockedShare.totalUnits,
+          unitValue: lockedShare.unitValue,
+          singerShare: lockedShare.singerShare,
+          instrumentShare: lockedShare.instrumentalistShare,
+        },
+      };
+    });
+    setSingerCount(lockedShare.singersCount);
+    setInstrumentalistCount(lockedShare.instrumentalistsCount);
+  }, [lockedShare, activePayment]);
 
   const handleLock = () => {
     if (!activePayment) return;
@@ -94,7 +133,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
               <span className="text-[13px] font-medium text-amber-200">Liturgy & Accounts</span>
             </div>
             <h2 className="text-[32px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">Masses & Accounts Desk</h2>
-            <p className="mt-1 text-[15px] text-[#a1a1a6]">Log rites · manage payments · calculate choral shares</p>
+            <p className="mt-1 text-[15px] text-[#a1a1a6]">Log rites · put attendance · split shares Singer ×1 · Musician ×2</p>
           </div>
           <div className="shrink-0 rounded-2xl bg-white/10 px-5 py-3 text-center">
             <p className="text-[12px] font-medium text-[#86868b]">Share weights</p>
@@ -108,6 +147,15 @@ export const MassManagement: React.FC<MassManagementProps> = ({
           <Bell className="w-4 h-4 text-amber-600 shrink-0" />
           {notifMsg}
         </div>
+      )}
+
+      {isAdmin && onFreshStart && (
+        <FreshStartPanel
+          isAdmin={isAdmin}
+          massCount={masses.length}
+          paymentCount={payments.length}
+          onFreshStart={onFreshStart}
+        />
       )}
 
       {/* Form + Payments table */}
@@ -147,6 +195,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
         isAdmin={isAdmin}
         onUpdateMass={onUpdateMass}
         onDeleteMass={onDeleteMass}
+        onSaveMassAttendance={onSaveMassAttendance}
       />
     </div>
   );

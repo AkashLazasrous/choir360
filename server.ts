@@ -1386,6 +1386,12 @@ type AttendanceSessionBody = {
   sundayMassSlot?: SundayMassSlot;
   specialMassBilling?: SpecialMassBilling;
   specialMassPayment?: SpecialMassPaymentDetails;
+  /**
+   * When set (e.g. Masses desk attendance on a logged rite), write marks against
+   * this mass/rehearsal id instead of the kind+date canonical id. Prevents
+   * colliding unique special masses on the same day.
+   */
+  entityId?: string;
 };
 
 type TenantEnvelope = {
@@ -1483,6 +1489,9 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
     }
   }
 
+  const entityIdRaw = typeof body.entityId === "string" ? body.entityId.trim() : "";
+  const entityId = entityIdRaw && entityIdRaw.length <= 160 ? entityIdRaw : undefined;
+
   return {
     kind,
     date,
@@ -1492,6 +1501,7 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
     sundayMassSlot,
     specialMassBilling,
     specialMassPayment,
+    entityId,
   };
 }
 
@@ -1695,7 +1705,8 @@ async function upsertAttendanceSessions(opts: {
   const rehearsalIds: string[] = [];
   const attendanceIds: string[] = [];
   const prepared = sessions.map((session) => {
-    const entityId = activityEntityId(session.kind, session.date, session.sundayMassSlot);
+    const entityId = session.entityId
+      || activityEntityId(session.kind, session.date, session.sundayMassSlot);
     const recordIds = Object.entries(session.marks)
       .filter(([, status]) => status)
       .map(([memberId]) => {
@@ -1705,7 +1716,7 @@ async function upsertAttendanceSessions(opts: {
     if (session.kind === "practice") rehearsalIds.push(entityId);
     else massIds.push(entityId);
     attendanceIds.push(...recordIds);
-    return { session, entityId, recordIds };
+    return { session, entityId, recordIds, pinnedEntity: Boolean(session.entityId) };
   });
 
   const sessionDates = prepared.map((p) => p.session.date);
@@ -1746,7 +1757,7 @@ async function upsertAttendanceSessions(opts: {
     ops = 0;
   };
 
-  for (const { session, entityId } of prepared) {
+  for (const { session, entityId, pinnedEntity } of prepared) {
     const incomingMarks = Object.entries(session.marks)
       .filter(([, status]) => status) as [string, AttendanceStatus][];
     const resolvableMarks = incomingMarks.filter(([memberId]) => memberById.has(memberId));
@@ -1864,8 +1875,12 @@ async function upsertAttendanceSessions(opts: {
     ops += 1;
 
     // Soft-delete duplicate parent docs for the same logical session (same Sunday slot).
+    // Skip when entityId was pinned (Masses desk / unique special rites) or special_mass
+    // — multiple paid rites can share a date without being duplicates.
     const parentPool = session.kind === "practice" ? rehearsalsByDate : massesByDate;
+    const skipSiblingCleanup = pinnedEntity || session.kind === "special_mass";
     for (const row of parentPool) {
+      if (skipSiblingCleanup) break;
       if (row.id === entityId || row.data.date !== session.date || isSoftDeletedDoc(row.data)) continue;
       const rowKind = resolveActivityKind({
         activityKind: row.data.activityKind,
@@ -1972,6 +1987,30 @@ async function upsertAttendanceSessions(opts: {
   }
 
   await commitBatch();
+
+  // After attendance writes: sync payments + paymentShares for paid rites.
+  for (const { session, entityId } of prepared) {
+    if (session.kind === "practice") continue;
+    const marks = Object.entries(session.marks).filter(([, s]) => s) as [string, AttendanceStatus][];
+    if (marks.length === 0) continue;
+    const attendingIds = attendingMemberIdsFromMarks(
+      Object.fromEntries(marks) as Record<string, AttendanceStatus | null>,
+    );
+    try {
+      await syncPaidMassPaymentAndShares({
+        db,
+        adminUid,
+        tenant,
+        members,
+        massId: entityId,
+        session,
+        attendingIds,
+      });
+    } catch (err: any) {
+      console.warn(`[Attendance] share sync skipped for ${entityId}:`, err?.message || err);
+    }
+  }
+
   return {
     imported,
     skipped,
@@ -1987,6 +2026,214 @@ async function upsertAttendanceSessions(opts: {
     parishId: tenant.parishId,
   };
 }
+
+function isSingerMemberType(memberType: unknown): boolean {
+  return memberType === "Singer" || memberType === "Other";
+}
+
+function calculatePaymentSharesServer(amount: number, singers: number, instrumentalists: number) {
+  const totalUnits = singers * 1 + instrumentalists * 2;
+  const unitValue = totalUnits > 0 ? amount / totalUnits : 0;
+  return {
+    totalUnits,
+    unitValue: Math.round(unitValue),
+    singerShare: Math.round(unitValue),
+    instrumentalistShare: Math.round(unitValue * 2),
+  };
+}
+
+/**
+ * Upsert payment ledger + paymentShares for a paid mass using Present/Late
+ * attendees and Singer×1 / Musician×2 weights.
+ */
+async function syncPaidMassPaymentAndShares(opts: {
+  db: Firestore;
+  adminUid: string;
+  tenant: TenantEnvelope;
+  members: Member[];
+  massId: string;
+  session: AttendanceSessionBody;
+  attendingIds: string[];
+}) {
+  const { db, adminUid, tenant, members, massId, session, attendingIds } = opts;
+  const massSnap = await db.collection("masses").doc(massId).get();
+  const massData = massSnap.exists ? massSnap.data() || {} : {};
+  const billing = session.specialMassBilling
+    || (typeof massData.specialMassBilling === "string" ? massData.specialMassBilling : undefined);
+  const payHint = session.specialMassPayment || (massData.specialMassPayment as Record<string, unknown> | undefined);
+
+  const paymentByCanonical = await db.collection("payments").doc(`payment-${massId}`).get();
+  const paymentQuery = await db.collection("payments")
+    .where("massId", "==", massId)
+    .limit(10)
+    .get();
+  const existingPayment = (
+    paymentByCanonical.exists && !isSoftDeletedDoc(paymentByCanonical.data())
+      ? paymentByCanonical
+      : paymentQuery.docs.find((d) => {
+          const data = d.data();
+          return !isSoftDeletedDoc(data) && data.parishId === tenant.parishId;
+        })
+  ) || null;
+
+  const amountFromHint = typeof payHint?.amount === "number"
+    ? payHint.amount
+    : Number(payHint?.amount);
+  const existingPaymentData = existingPayment?.data() || null;
+  const amountFromPayment = existingPaymentData
+    ? Number(existingPaymentData.promisedAmount)
+    : NaN;
+  const amount = Number.isFinite(amountFromHint) && amountFromHint > 0
+    ? amountFromHint
+    : (Number.isFinite(amountFromPayment) && amountFromPayment > 0 ? amountFromPayment : 0);
+
+  const isPaid = billing === "paid"
+    || amount > 0
+    || Boolean(existingPaymentData);
+
+  if (!isPaid || amount <= 0) return { paymentId: null as string | null, sharesWritten: 0 };
+
+  const now = new Date().toISOString();
+  const paymentId = existingPayment?.id || `payment-${massId}`;
+  const massName = session.title?.trim()
+    || (typeof massData.name === "string" ? massData.name : defaultEntityName(session.kind, session.date, session.sundayMassSlot));
+  const receivedHint = typeof payHint?.dateReceived === "string" && payHint.dateReceived
+    ? amount
+    : (existingPaymentData ? Number(existingPaymentData.receivedAmount || 0) : 0);
+  const promised = amount;
+  const received = Number.isFinite(receivedHint) ? Math.max(0, receivedHint) : 0;
+  const pending = Math.max(promised - received, 0);
+  const status = received >= promised && promised > 0 ? "Received" : "Pending";
+
+  const paymentPrev = existingPaymentData || undefined;
+  await db.collection("payments").doc(paymentId).set(
+    stripUndefinedDeep({
+      ...envelopeForWrite(tenant, adminUid, status, paymentPrev, now),
+      id: paymentId,
+      massId,
+      partyName: (typeof payHint?.whoPaid === "string" && payHint.whoPaid.trim())
+        || (typeof paymentPrev?.partyName === "string" ? paymentPrev.partyName : "Sponsor"),
+      mobile: typeof paymentPrev?.mobile === "string" ? paymentPrev.mobile : "",
+      massType: typeof massData.category === "string" ? massData.category : "Special Mass",
+      massDate: session.date,
+      massTime: typeof massData.time === "string" ? massData.time : "10:00 AM",
+      promisedAmount: promised,
+      receivedAmount: received,
+      pendingAmount: pending,
+      dateReceived: typeof payHint?.dateReceived === "string" ? payHint.dateReceived : paymentPrev?.dateReceived,
+      whoPaid: typeof payHint?.whoPaid === "string" ? payHint.whoPaid : paymentPrev?.whoPaid,
+      paymentMode: typeof payHint?.paymentMode === "string" ? payHint.paymentMode : paymentPrev?.paymentMode,
+      remarks: typeof payHint?.notes === "string" ? payHint.notes : paymentPrev?.remarks,
+      status,
+    }),
+    { merge: true },
+  );
+
+  const memberById = new Map(members.map((m) => [m.id, m]));
+  const attendees = attendingIds
+    .map((id) => memberById.get(id))
+    .filter(Boolean) as Member[];
+  const singers = attendees.filter((m) => isSingerMemberType(m.memberType));
+  const instrumentalists = attendees.filter((m) => !isSingerMemberType(m.memberType));
+  const calc = calculatePaymentSharesServer(promised, singers.length, instrumentalists.length);
+
+  const participatingMembers = attendees.map((m) => {
+    const singer = isSingerMemberType(m.memberType);
+    return {
+      memberId: m.id,
+      name: `${m.firstName} ${m.lastName}`.trim(),
+      type: m.memberType,
+      weight: (singer ? 1 : 2) as 1 | 2,
+      share: singer ? calc.singerShare : calc.instrumentalistShare,
+    };
+  });
+
+  const shareId = `share-${paymentId}`;
+  const sharePrev = (await db.collection("paymentShares").doc(shareId).get()).data();
+  await db.collection("paymentShares").doc(shareId).set(
+    stripUndefinedDeep({
+      ...envelopeForWrite(tenant, adminUid, "active", sharePrev, now),
+      id: shareId,
+      paymentId,
+      massName,
+      date: session.date,
+      totalAmount: promised,
+      singersCount: singers.length,
+      instrumentalistsCount: instrumentalists.length,
+      totalUnits: calc.totalUnits,
+      unitValue: calc.unitValue,
+      singerShare: calc.singerShare,
+      instrumentalistShare: calc.instrumentalistShare,
+      isLocked: true,
+      participatingMembers,
+    }),
+    { merge: true },
+  );
+
+  return { paymentId, sharesWritten: participatingMembers.length };
+}
+
+async function hardDeleteParishCollection(
+  db: Firestore,
+  collectionName: string,
+  parishId: string,
+): Promise<number> {
+  let deleted = 0;
+  for (;;) {
+    const snap = await db.collection(collectionName)
+      .where("parishId", "==", parishId)
+      .limit(400)
+      .get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+    await batch.commit();
+    deleted += snap.size;
+  }
+  return deleted;
+}
+
+app.post("/api/admin/parish-fresh-start", requireFirebaseAuth, requireAdminRole, async (req, res) => {
+  try {
+    if (!admin.apps.length) {
+      return res.status(503).json({ error: "Firebase Admin is not configured on this server." });
+    }
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const confirm = typeof body.confirm === "string" ? body.confirm.trim().toUpperCase() : "";
+    if (confirm !== "FRESH START") {
+      return res.status(400).json({
+        error: 'Type FRESH START to confirm. This permanently deletes liturgy, attendance, and payment records for this parish.',
+      });
+    }
+    const tenant = resolveAdminTenant((req as any).user, typeof body.parishId === "string" ? body.parishId : undefined);
+    const adminUid = (req as any).user.uid as string;
+    const db = admin.firestore();
+
+    const counts = {
+      attendance: await hardDeleteParishCollection(db, "attendance", tenant.parishId),
+      masses: await hardDeleteParishCollection(db, "masses", tenant.parishId),
+      rehearsals: await hardDeleteParishCollection(db, "rehearsals", tenant.parishId),
+      payments: await hardDeleteParishCollection(db, "payments", tenant.parishId),
+      paymentShares: await hardDeleteParishCollection(db, "paymentShares", tenant.parishId),
+    };
+
+    console.log(
+      `[Admin] parish-fresh-start parish=${tenant.parishId} by=${adminUid} `
+      + `attendance=${counts.attendance} masses=${counts.masses} rehearsals=${counts.rehearsals} `
+      + `payments=${counts.payments} paymentShares=${counts.paymentShares}`,
+    );
+
+    return res.json({
+      ok: true,
+      parishId: tenant.parishId,
+      deleted: counts,
+      totalDeleted: Object.values(counts).reduce((s, n) => s + n, 0),
+    });
+  } catch (error: any) {
+    console.error("[Admin] parish-fresh-start failed:", error?.message || error);
+    return res.status(400).json({ error: error?.message || "Fresh start failed." });
+  }
+});
 
 app.post("/api/attendance/session", requireFirebaseAuth, requireAdminRole, async (req, res) => {
   try {
