@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   BookOpen,
   ChevronRight,
+  EyeOff,
   Loader2,
   Music2,
   Save,
@@ -36,6 +37,9 @@ export type LiturgyLogRemove = {
   activityKind: ActivityKind;
   date: string;
 };
+
+/** Hide from Overview log only — does not soft-delete storage / attendance. */
+export type LiturgyLogClear = LiturgyLogRemove;
 
 export type LiturgyLogEntry = {
   id: string;
@@ -76,12 +80,18 @@ export function buildLiturgyLogEntries(
   attendanceRecords: AttendanceRecord[] = [],
 ): LiturgyLogEntry[] {
   const map = new Map<string, LiturgyLogEntry>();
+  /** Cleared from Overview log — attendance/storage kept. */
+  const hiddenKeys = new Set<string>();
 
   for (const m of masses) {
     if (!isLiveDoc(m as SoftDeletable)) continue;
     const activityKind = (m.activityKind ?? 'sunday_mass') as ActivityKind;
     const slot = activityKind === 'sunday_mass' ? resolveSundayMassSlot(m) : undefined;
     const key = `${activityKind}::${slot ?? 'legacy'}::${m.date}`;
+    if (m.hiddenFromLiturgyLog) {
+      hiddenKeys.add(key);
+      continue;
+    }
     const slotLabel = slot ? SUNDAY_MASS_SLOT_LABELS[slot] : '';
     map.set(key, {
       id: m.id || activityEntityId(activityKind, m.date, slot),
@@ -100,6 +110,10 @@ export function buildLiturgyLogEntries(
     if (!isLiveDoc(r as SoftDeletable)) continue;
     const activityKind: ActivityKind = 'practice';
     const key = `${activityKind}::legacy::${r.date}`;
+    if (r.hiddenFromLiturgyLog) {
+      hiddenKeys.add(key);
+      continue;
+    }
     map.set(key, {
       id: r.id || activityEntityId(activityKind, r.date),
       kind: 'practice',
@@ -118,6 +132,7 @@ export function buildLiturgyLogEntries(
   for (const session of listActivitySessions(attendanceRecords)) {
     const slot = session.sundayMassSlot;
     const key = `${session.kind}::${slot ?? 'legacy'}::${session.date}`;
+    if (hiddenKeys.has(key)) continue;
     const existing = map.get(key);
     if (existing) {
       existing.loggedCount = Math.max(existing.loggedCount, session.loggedCount);
@@ -156,11 +171,13 @@ type LoggedLiturgySectionProps = {
   onNavigate: (tab: Tab) => void;
   onSaveSongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onRemoveLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
+  /** Hide from this list only — keeps masses/practices/attendance in storage. */
+  onClearLog?: (payload: LiturgyLogClear) => Promise<{ ok: boolean; error?: string }>;
 };
 
 /**
  * Overview “Logged masses & practices” — shows liturgy + practice logs with
- * admin-only song-list notes and admin-only removal. Shared by desktop + mobile.
+ * admin-only song-list notes, clear-from-log, and soft-delete remove.
  */
 export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
   masses,
@@ -172,16 +189,20 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
   onNavigate,
   onSaveSongNotes,
   onRemoveLog,
+  onClearLog,
 }) => {
-  const entries = useMemo(
-    () => buildLiturgyLogEntries(masses, rehearsals, attendanceRecords).slice(0, limit),
-    [masses, rehearsals, attendanceRecords, limit],
+  const allEntries = useMemo(
+    () => buildLiturgyLogEntries(masses, rehearsals, attendanceRecords),
+    [masses, rehearsals, attendanceRecords],
   );
+  const entries = useMemo(() => allEntries.slice(0, limit), [allEntries, limit]);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [clearingId, setClearingId] = useState<string | null>(null);
+  const [clearingAll, setClearingAll] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const isMobile = variant === 'mobile';
@@ -217,10 +238,62 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
     }
   };
 
+  const handleClear = async (entry: LiturgyLogEntry) => {
+    if (!isAdmin || !onClearLog) return;
+    const ok = window.confirm(
+      `Clear “${entry.name}” (${entry.date}) from this liturgy log?\n\nIt will disappear from Overview only. Attendance and records stay in storage.`,
+    );
+    if (!ok) return;
+    setClearingId(entry.id);
+    setMessage(null);
+    const result = await onClearLog({
+      id: entry.id,
+      kind: entry.kind,
+      activityKind: entry.activityKind,
+      date: entry.date,
+    });
+    setClearingId(null);
+    if (result.ok) {
+      setExpandedId(null);
+      setMessage('Log cleared from Overview (data kept).');
+      setTimeout(() => setMessage(null), 2500);
+    } else {
+      setMessage(result.error ?? 'Could not clear log.');
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!isAdmin || !onClearLog || entries.length === 0) return;
+    const ok = window.confirm(
+      `Clear all ${entries.length} visible log${entries.length === 1 ? '' : 's'} from Overview?\n\nAttendance and storage records are kept. Use Remove on an item only if you need to delete it.`,
+    );
+    if (!ok) return;
+    setClearingAll(true);
+    setMessage(null);
+    let failed = 0;
+    for (const entry of entries) {
+      const result = await onClearLog({
+        id: entry.id,
+        kind: entry.kind,
+        activityKind: entry.activityKind,
+        date: entry.date,
+      });
+      if (!result.ok) failed += 1;
+    }
+    setClearingAll(false);
+    setExpandedId(null);
+    setMessage(
+      failed === 0
+        ? 'Logs cleared from Overview (data kept).'
+        : `Cleared with ${failed} error${failed === 1 ? '' : 's'}.`,
+    );
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   const handleRemove = async (entry: LiturgyLogEntry) => {
     if (!isAdmin || !onRemoveLog) return;
     const ok = window.confirm(
-      `Remove “${entry.name}” (${entry.date}) from the liturgy log?\n\nOnly an admin can do this. Attendance marks for this session will be hidden too.`,
+      `Permanently remove “${entry.name}” (${entry.date}) from storage?\n\nThis soft-deletes the liturgy entry and hides its attendance marks. Prefer Clear if you only want it off Overview.`,
     );
     if (!ok) return;
     setRemovingId(entry.id);
@@ -234,7 +307,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
     setRemovingId(null);
     if (result.ok) {
       setExpandedId(null);
-      setMessage('Log removed.');
+      setMessage('Log removed from storage.');
       setTimeout(() => setMessage(null), 2500);
     } else {
       setMessage(result.error ?? 'Could not remove log.');
@@ -262,21 +335,38 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
           </h3>
           {entries.length > 0 && (
             <p className={isMobile ? 'mt-0.5 text-[11px] text-[#86868b]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
-              Latest {entries.length} by date · stays until an admin removes it
+              Latest {entries.length} by date · Clear hides from Overview; Remove deletes storage
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => onNavigate('masses')}
-          className={
-            isMobile
-              ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full border border-white/12 px-3 text-[12px] font-semibold text-[#f5f5f7]'
-              : 'btn-pill btn-pill-secondary !min-h-[44px] !text-[13px]'
-          }
-        >
-          Manage <ChevronRight className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {isAdmin && onClearLog && entries.length > 0 ? (
+            <button
+              type="button"
+              disabled={clearingAll}
+              onClick={() => void handleClearAll()}
+              className={
+                isMobile
+                  ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 text-[12px] font-semibold text-amber-200 disabled:opacity-50'
+                  : 'btn-pill btn-pill-secondary !min-h-[44px] !text-[13px] inline-flex items-center gap-1.5'
+              }
+            >
+              {clearingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <EyeOff className="h-3.5 w-3.5" />}
+              Clear logs
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onNavigate('masses')}
+            className={
+              isMobile
+                ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full border border-white/12 px-3 text-[12px] font-semibold text-[#f5f5f7]'
+                : 'btn-pill btn-pill-secondary !min-h-[44px] !text-[13px]'
+            }
+          >
+            Manage <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {entries.length === 0 ? (
@@ -374,6 +464,25 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                       >
                         Open
                       </button>
+                      {isAdmin && onClearLog ? (
+                        <button
+                          type="button"
+                          disabled={clearingId === entry.id || clearingAll}
+                          onClick={() => void handleClear(entry)}
+                          className={
+                            isMobile
+                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-amber-200 disabled:opacity-50'
+                              : 'btn-pill btn-pill-ghost btn-pill-xs inline-flex items-center gap-1 !text-[#8a6a10]'
+                          }
+                        >
+                          {clearingId === entry.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          )}
+                          Clear
+                        </button>
+                      ) : null}
                       {isAdmin && onRemoveLog ? (
                         <button
                           type="button"

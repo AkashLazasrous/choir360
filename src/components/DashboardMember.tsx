@@ -14,6 +14,7 @@ import { AttendanceLeaderboard } from '../features/attendance/AttendanceLeaderbo
 import { MobileHomeDashboard } from './mobileDashboard';
 import {
   LoggedLiturgySection,
+  type LiturgyLogClear,
   type LiturgyLogRemove,
   type LiturgySongNotesSave,
 } from './LoggedLiturgySection';
@@ -30,6 +31,7 @@ interface DashboardMemberProps {
   isAdmin?: boolean;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onRemoveLiturgyLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
+  onClearLiturgyLog?: (payload: LiturgyLogClear) => Promise<{ ok: boolean; error?: string }>;
   onUpdateMemberDetails: (updated: Member) => void;
   onUpdateEventRsvp: (eventId: string, memberId: string, status: 'Going' | 'Not Going' | 'Maybe') => void;
   onNavigate?: (tab: Tab) => void;
@@ -52,6 +54,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
   isAdmin = false,
   onSaveLiturgySongNotes,
   onRemoveLiturgyLog,
+  onClearLiturgyLog,
   onUpdateMemberDetails,
   onUpdateEventRsvp,
   onNavigate,
@@ -126,6 +129,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         isAdmin={isAdmin}
         onSaveLiturgySongNotes={onSaveLiturgySongNotes}
         onRemoveLiturgyLog={onRemoveLiturgyLog}
+        onClearLiturgyLog={onClearLiturgyLog}
         onNavigate={go}
       />
 
@@ -175,6 +179,7 @@ export const DashboardMember: React.FC<DashboardMemberProps> = ({
         onNavigate={go}
         onSaveSongNotes={onSaveLiturgySongNotes}
         onRemoveLog={onRemoveLiturgyLog}
+        onClearLog={onClearLiturgyLog}
       />
 
       {hasRequestedChange && (

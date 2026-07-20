@@ -226,6 +226,11 @@ export interface Mass {
   specialMassBilling?: SpecialMassBilling;
   /** Populated when specialMassBilling === 'paid' */
   specialMassPayment?: SpecialMassPaymentDetails;
+  /**
+   * When true, hide from Overview “Logged masses & practices”.
+   * Attendance / storage records stay intact (unlike soft-delete Remove).
+   */
+  hiddenFromLiturgyLog?: boolean;
 }
 
 export interface Payment {
@@ -350,6 +355,11 @@ export interface Rehearsal {
   /** Practice sessions from the attendance spreadsheet */
   activityKind?: ActivityKind;
   status: 'Scheduled' | 'Completed' | 'Cancelled';
+  /**
+   * When true, hide from Overview liturgy log without deleting the practice
+   * or its attendance marks.
+   */
+  hiddenFromLiturgyLog?: boolean;
 }
 
 // =============================================================================

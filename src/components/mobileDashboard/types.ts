@@ -8,7 +8,7 @@ import type {
   Rehearsal,
   Tab,
 } from '../../types';
-import type { LiturgyLogRemove, LiturgySongNotesSave } from '../LoggedLiturgySection';
+import type { LiturgyLogClear, LiturgyLogRemove, LiturgySongNotesSave } from '../LoggedLiturgySection';
 
 export type TimeRange = 'D' | 'W' | 'M' | 'Y';
 
@@ -68,6 +68,7 @@ export interface MobileDashboardData {
   isAdmin?: boolean;
   onSaveLiturgySongNotes?: (payload: LiturgySongNotesSave) => Promise<{ ok: boolean; error?: string }>;
   onRemoveLiturgyLog?: (payload: LiturgyLogRemove) => Promise<{ ok: boolean; error?: string }>;
+  onClearLiturgyLog?: (payload: LiturgyLogClear) => Promise<{ ok: boolean; error?: string }>;
   onNavigate: (tab: Tab) => void;
 }
 

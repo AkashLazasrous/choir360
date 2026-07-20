@@ -393,6 +393,62 @@ function AppInner() {
     return { ok: true };
   };
 
+  /** Hide from Overview liturgy log only — keeps mass/practice/attendance in storage. */
+  const clearLiturgyLog = async (payload: {
+    id: string;
+    kind: 'mass' | 'practice';
+    activityKind: string;
+    date: string;
+  }): Promise<{ ok: boolean; error?: string }> => {
+    if (!guard.isAdmin) {
+      return { ok: false, error: 'Only choir admins can clear liturgy logs.' };
+    }
+    const uid = authState.user?.uid ?? 'admin';
+    const hide = { hiddenFromLiturgyLog: true };
+
+    if (payload.kind === 'mass') {
+      const existing = masses.find((m) => m.id === payload.id);
+      if (existing) {
+        return massSync.patch(payload.id, hide as Partial<Mass>, uid);
+      }
+      return massSync.upsert(
+        {
+          id: payload.id,
+          name: payload.activityKind.replace(/_/g, ' '),
+          category: 'Sunday Mass',
+          date: payload.date,
+          time: '07:00',
+          language: 'Tamil',
+          activityKind: payload.activityKind as Mass['activityKind'],
+          hiddenFromLiturgyLog: true,
+          ...createRecordMetadata(uid, 'active', tenantContext),
+        } as Mass & TenantScopedRecord,
+        uid,
+      );
+    }
+
+    const existing = rehearsals.find((r) => r.id === payload.id);
+    if (existing) {
+      return rehearsalSync.patch(payload.id, hide as Partial<Rehearsal>, uid);
+    }
+    return rehearsalSync.upsert(
+      {
+        ...createRecordMetadata(uid, 'active', tenantContext),
+        id: payload.id,
+        name: 'Choir Practice',
+        type: 'Regular Practice',
+        date: payload.date,
+        startTime: '18:00',
+        endTime: '19:30',
+        venue: 'Church Hall',
+        activityKind: 'practice',
+        status: 'Completed',
+        hiddenFromLiturgyLog: true,
+      } as unknown as Rehearsal & TenantScopedRecord,
+      uid,
+    );
+  };
+
   const importActivitySessions = async (
     payload: ActivityAttendanceImportPayload,
   ): Promise<{
@@ -928,6 +984,7 @@ function AppInner() {
                 onNavigate={navigate}
                 onSaveLiturgySongNotes={saveLiturgySongNotes}
                 onRemoveLiturgyLog={removeLiturgyLog}
+                onClearLiturgyLog={clearLiturgyLog}
               />
             )}
             {activeTab === 'calendar' && (
@@ -1062,6 +1119,7 @@ function AppInner() {
                     onNavigate={navigate}
                     onSaveLiturgySongNotes={saveLiturgySongNotes}
                     onRemoveLiturgyLog={removeLiturgyLog}
+                    onClearLiturgyLog={clearLiturgyLog}
                     onUpdateMemberDetails={(updated) => void memberSync.upsert(updateRecordMetadata(updated, authState.user?.uid ?? updated.id), authState.user?.uid)}
                     onUpdateEventRsvp={(eventId, memberId, status) => {
                       const event = events.find((item) => item.id === eventId);

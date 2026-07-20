@@ -1,8 +1,9 @@
 import React, { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
-import { Loader2, SendHorizontal } from 'lucide-react';
+import { Loader2, SendHorizontal, SmilePlus } from 'lucide-react';
 import type { ChoirChatMessage, Member } from '../../types';
 import { deleteTenantRecords, isFirebaseConfigured } from '../../services/firebase';
 import { expiredChatMessageIds, visibleChatMessages } from '../../utils/choirChat';
+import { CHAT_EMOJI_GROUPS } from './emojiPalette';
 
 type ChoirGroupChatProps = {
   messages: ChoirChatMessage[];
@@ -79,7 +80,11 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [emojiGroup, setEmojiGroup] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const emojiPanelRef = useRef<HTMLDivElement>(null);
 
   const visible = useMemo(() => visibleChatMessages(messages), [messages]);
   const memberById = useMemo(() => {
@@ -108,6 +113,35 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [visible.length]);
+
+  useEffect(() => {
+    if (!emojiOpen) return;
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (emojiPanelRef.current?.contains(target)) return;
+      if ((event.target as HTMLElement | null)?.closest?.('[data-choir-emoji-toggle]')) return;
+      setEmojiOpen(false);
+    };
+    document.addEventListener('mousedown', onPointer);
+    return () => document.removeEventListener('mousedown', onPointer);
+  }, [emojiOpen]);
+
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    if (!el) {
+      setDraft((prev) => (prev + emoji).slice(0, 2000));
+      return;
+    }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = `${draft.slice(0, start)}${emoji}${draft.slice(end)}`.slice(0, 2000);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const cursor = Math.min(start + emoji.length, next.length);
+      el.setSelectionRange(cursor, cursor);
+    });
+  };
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -197,42 +231,103 @@ export const ChoirGroupChat: React.FC<ChoirGroupChatProps> = ({
         </p>
       )}
 
-      <footer className="flex items-end gap-2 border-t border-black/10 bg-[#f0f2f5] px-3 py-2.5">
-        <Avatar
-          name={
-            currentMember
-              ? `${currentMember.firstName} ${currentMember.lastName}`.trim()
-              : 'You'
-          }
-          photoUrl={mePhoto}
-        />
-        <label className="sr-only" htmlFor="choir-chat-input">
-          Message
-        </label>
-        <textarea
-          id="choir-chat-input"
-          rows={1}
-          value={draft}
-          maxLength={2000}
-          placeholder="Type a message"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void handleSend();
+      <footer className="relative border-t border-black/10 bg-[#f0f2f5] px-3 py-2.5">
+        {emojiOpen && (
+          <div
+            ref={emojiPanelRef}
+            className="absolute bottom-full left-2 right-2 z-20 mb-2 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] sm:left-auto sm:right-14 sm:w-[min(22rem,calc(100vw-2rem))]"
+            role="dialog"
+            aria-label="Emoji picker"
+          >
+            <div className="flex gap-1 overflow-x-auto border-b border-black/6 px-2 py-2">
+              {CHAT_EMOJI_GROUPS.map((group, index) => (
+                <button
+                  key={group.label}
+                  type="button"
+                  onClick={() => setEmojiGroup(index)}
+                  className={
+                    'shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition ' +
+                    (emojiGroup === index
+                      ? 'bg-[#128c7e] text-white'
+                      : 'bg-[#f0f2f5] text-[#3a3a3c] hover:bg-[#e5e7eb]')
+                  }
+                >
+                  {group.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid max-h-48 grid-cols-8 gap-0.5 overflow-y-auto p-2 sm:grid-cols-10">
+              {(CHAT_EMOJI_GROUPS[emojiGroup]?.emojis ?? []).map((emoji) => (
+                <button
+                  key={`${emojiGroup}-${emoji}`}
+                  type="button"
+                  onClick={() => insertEmoji(emoji)}
+                  className="flex h-9 w-full items-center justify-center rounded-lg text-[20px] transition hover:bg-[#f0f2f5] active:scale-95"
+                  aria-label={`Insert ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="flex items-end gap-2">
+          <Avatar
+            name={
+              currentMember
+                ? `${currentMember.firstName} ${currentMember.lastName}`.trim()
+                : 'You'
             }
-          }}
-          className="choir-chat-input max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-white px-4 py-2.5 text-[15px] text-[#111b21] outline-none ring-1 ring-black/5 placeholder:text-[#667781]"
-        />
-        <button
-          type="button"
-          onClick={() => void handleSend()}
-          disabled={!draft.trim() || sending}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#128c7e] text-white transition enabled:hover:bg-[#0e7a6e] enabled:active:scale-95 disabled:opacity-40"
-          aria-label="Send message"
-        >
-          {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
-        </button>
+            photoUrl={mePhoto}
+          />
+          <label className="sr-only" htmlFor="choir-chat-input">
+            Message
+          </label>
+          <div className="relative flex min-h-[44px] flex-1 items-end rounded-2xl bg-white ring-1 ring-black/5">
+            <button
+              type="button"
+              data-choir-emoji-toggle
+              onClick={() => setEmojiOpen((open) => !open)}
+              className={
+                'mb-1 ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ' +
+                (emojiOpen ? 'bg-[#d1f4ee] text-[#075e54]' : 'text-[#667781] hover:bg-[#f0f2f5]')
+              }
+              aria-label="Add emoji"
+              aria-expanded={emojiOpen}
+            >
+              <SmilePlus className="h-5 w-5" />
+            </button>
+            <textarea
+              id="choir-chat-input"
+              ref={inputRef}
+              rows={1}
+              value={draft}
+              maxLength={2000}
+              placeholder="Type a message"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  setEmojiOpen(false);
+                  void handleSend();
+                }
+              }}
+              className="choir-chat-input max-h-28 min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-transparent py-2.5 pr-3 pl-1 text-[15px] text-[#111b21] outline-none placeholder:text-[#667781]"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEmojiOpen(false);
+              void handleSend();
+            }}
+            disabled={!draft.trim() || sending}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#128c7e] text-white transition enabled:hover:bg-[#0e7a6e] enabled:active:scale-95 disabled:opacity-40"
+            aria-label="Send message"
+          >
+            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
+          </button>
+        </div>
       </footer>
     </div>
   );
