@@ -57,7 +57,7 @@ export const SUNDAY_MASS_SLOT_LABELS: Record<SundayMassSlot, string> = {
 
 /** Parse slot from entityId / stored field (legacy sunday sessions have no slot). */
 export function resolveSundayMassSlot(
-  source: { sundayMassSlot?: SundayMassSlot | null; entityId?: string; id?: string } | null | undefined,
+  source: { sundayMassSlot?: SundayMassSlot | null; entityId?: string | null; id?: string } | null | undefined,
 ): SundayMassSlot | undefined {
   const direct = source?.sundayMassSlot;
   if (direct === '1st' || direct === '2nd') return direct;
@@ -81,6 +81,45 @@ export function activityEntityId(
 
 export function attendanceRecordId(entityId: string, memberId: string): string {
   return `att-${entityId}-${memberId}`;
+}
+
+/**
+ * Logical session identity for stats / history / leaderboard.
+ * Special Mass rites stay distinct even on the same calendar day
+ * (e.g. Wedding + Death Anniversary on 2026-06-07 → two sessions).
+ * Sunday Mass slot identity is handled separately by callers that OR-merge 1st/2nd.
+ */
+export function activitySessionDedupeKey(record: {
+  activityKind?: ActivityKind | null;
+  entityType?: string | null;
+  entityName?: string | null;
+  entityId?: string | null;
+  date: string;
+  sundayMassSlot?: SundayMassSlot | null;
+  id?: string;
+}): string {
+  const kind = resolveActivityKind(record);
+  if (kind === 'sunday_mass') {
+    const slot = resolveSundayMassSlot(record) ?? 'legacy';
+    return `${kind}::${record.date}::${slot}`;
+  }
+  if (kind === 'special_mass') {
+    const entity = (record.entityId || '').trim()
+      || `${record.date}::${(record.entityName || 'special').trim()}`;
+    return `${kind}::${entity}`;
+  }
+  const entity = (record.entityId || '').trim();
+  return entity ? `${kind}::${entity}` : `${kind}::${record.date}`;
+}
+
+/** Per-member mark identity used when collapsing duplicate attendance docs. */
+export function memberSessionDedupeKey(record: AttendanceRecord): string {
+  const kind = resolveActivityKind(record);
+  if (kind === 'sunday_mass') {
+    // Sunday OR-merge is done at the day level; callers group by member+date first.
+    return `${record.memberId}::sunday_mass::${record.date}`;
+  }
+  return `${record.memberId}::${activitySessionDedupeKey(record)}`;
 }
 
 export function kindToEntityType(kind: ActivityKind): AttendanceRecord['entityType'] {
@@ -125,7 +164,15 @@ export function findActivityParent(
   masses: Mass[],
   rehearsals: Rehearsal[],
   sundayMassSlot?: SundayMassSlot | null,
+  pinnedEntityId?: string | null,
 ): Mass | Rehearsal | undefined {
+  const pinned = (pinnedEntityId || '').trim();
+  if (pinned) {
+    if (kind === 'practice') {
+      return rehearsals.find((r) => r.id === pinned);
+    }
+    return masses.find((m) => m.id === pinned);
+  }
   const entityId = activityEntityId(kind, date, sundayMassSlot);
   if (kind === 'practice') {
     return rehearsals.find((r) => r.id === entityId || (r.date === date && r.activityKind === 'practice'));
@@ -141,10 +188,12 @@ export function findActivityParent(
     );
   }
   // Legacy unslotted Sunday (or other kinds): match kind+date without a slot.
+  // Special masses with unique ids on the same day must be opened with pinnedEntityId.
   return masses.find((m) => {
     if (m.id === entityId) return true;
     if (m.date !== date || m.activityKind !== kind) return false;
     if (kind === 'sunday_mass') return !resolveSundayMassSlot(m);
+    if (kind === 'special_mass') return false;
     return true;
   });
 }
@@ -276,7 +325,8 @@ export function marksFromRecords(
 }
 
 /**
- * One mark per member for a logical session (kind + date [+ Sunday slot]).
+ * One mark per member for a logical session (kind + date [+ Sunday slot]
+ * or pinned entityId for unique special rites on the same day).
  * Prefers the canonical entityId so Log/History stay aligned after CSV re-imports
  * even when legacy docs used a different mass/rehearsal id.
  */
@@ -285,9 +335,24 @@ export function marksForActivitySession(
   kind: ActivityKind,
   date: string,
   sundayMassSlot?: SundayMassSlot | null,
+  pinnedEntityId?: string | null,
 ): Record<string, AttendanceStatus> {
+  const pinned = (pinnedEntityId || '').trim();
+  if (pinned) {
+    return marksFromRecords(records, pinned);
+  }
+
   const canonicalEntityId = activityEntityId(kind, date, sundayMassSlot);
   const marks: Record<string, AttendanceStatus> = {};
+
+  // Special rites are entity-scoped — never merge multiple same-day Weddings / Death Masses.
+  if (kind === 'special_mass') {
+    for (const record of records) {
+      if (record.entityId !== canonicalEntityId || isSoftDeletedRecord(record)) continue;
+      marks[record.memberId] = record.status;
+    }
+    return marks;
+  }
 
   for (const record of records) {
     if (record.date !== date || isSoftDeletedRecord(record)) continue;
@@ -418,20 +483,24 @@ export function listActivitySessions(
     const recordKind = resolveActivityKind(record);
     if (kind && recordKind !== kind) continue;
     const slot = recordKind === 'sunday_mass' ? resolveSundayMassSlot(record) : undefined;
-    const key = `${recordKind}::${slot ?? 'legacy'}::${record.date}`;
+    // Special rites (and other entity-scoped kinds) must not collapse by date alone.
+    const key = activitySessionDedupeKey(record);
     const members = membersBySession.get(key) ?? new Set<string>();
     members.add(record.memberId);
     membersBySession.set(key, members);
 
+    const resolvedEntityId = (record.entityId || '').trim()
+      || activityEntityId(recordKind, record.date, slot);
     const existing = map.get(key);
     if (existing) {
       existing.loggedCount = members.size;
-      existing.entityId = activityEntityId(recordKind, record.date, slot);
+      if (record.entityId) existing.entityId = record.entityId;
+      if (record.entityName) existing.entityName = record.entityName;
     } else {
       map.set(key, {
         kind: recordKind,
         date: record.date,
-        entityId: activityEntityId(recordKind, record.date, slot),
+        entityId: resolvedEntityId,
         entityName: record.entityName,
         loggedCount: members.size,
         ...(slot ? { sundayMassSlot: slot } : {}),

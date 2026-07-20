@@ -112,6 +112,41 @@ describe('computeAttendanceLeaderboard', () => {
     expect(board[1].absent).toBe(1);
   });
 
+  it('counts same-day Special Mass rites separately (Wedding + Death Anniversary)', () => {
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-death-1',
+        entityName: 'Death Anniversary Mass',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+        entityName: 'Wedding Mass',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-25',
+        entityId: 'mass-wedding-2',
+        entityName: 'Wedding Mass',
+      }),
+    ];
+    const board = computeAttendanceLeaderboard(records, members);
+    const m1 = board.find((e) => e.memberId === 'm1')!;
+    expect(m1.specialMass.logged).toBe(3);
+    expect(m1.specialMass.attended).toBe(3);
+    expect(m1.sessionLogged).toBe(3);
+    expect(m1.scorePercent).toBe(100);
+  });
+
   it('tracks Sunday 1st and 2nd Mass counts separately while merging for overall mass', () => {
     const records: AttendanceRecord[] = [
       record({

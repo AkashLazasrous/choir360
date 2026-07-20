@@ -167,6 +167,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
+  /** Pins Masses-desk special rites so same-day Wedding / Death Mass stay separate. */
+  const [pinnedEntityId, setPinnedEntityId] = useState<string | undefined>();
   const [marks, setMarks] = useState<Record<string, AttendanceStatus | null>>({});
   const [specialBilling, setSpecialBilling] = useState<SpecialMassBilling>('free');
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -188,10 +190,23 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   );
 
   const activeSundaySlot = kind === 'sunday_mass' ? sundayMassSlot : undefined;
-  const existingParent = findActivityParent(kind, date, masses, rehearsals, activeSundaySlot);
+  const existingParent = findActivityParent(
+    kind,
+    date,
+    masses,
+    rehearsals,
+    activeSundaySlot,
+    pinnedEntityId,
+  );
   const existingMarks = useMemo(
-    () => marksForActivitySession(attendanceRecords, kind, date, activeSundaySlot),
-    [attendanceRecords, kind, date, activeSundaySlot],
+    () => marksForActivitySession(
+      attendanceRecords,
+      kind,
+      date,
+      activeSundaySlot,
+      pinnedEntityId,
+    ),
+    [attendanceRecords, kind, date, activeSundaySlot, pinnedEntityId],
   );
 
   const loadedMarks = useMemo(() => {
@@ -281,6 +296,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     const kinds = kindsForCategory(next);
     setKind(kinds[0]!);
     setSundayMassSlot('1st');
+    setPinnedEntityId(undefined);
     setMarks({});
     setSaveMessage(null);
   };
@@ -297,11 +313,13 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     sessionDate: string,
     sessionKind: ActivityKind,
     sessionSlot?: SundayMassSlot,
+    sessionEntityId?: string,
   ) => {
     setKind(sessionKind);
     setCategory(categoryForActivityKind(sessionKind));
     setSundayMassSlot(sessionKind === 'sunday_mass' ? (sessionSlot ?? '1st') : '1st');
     setDate(sessionDate);
+    setPinnedEntityId(sessionEntityId || undefined);
     setMarks({});
     const parent = findActivityParent(
       sessionKind,
@@ -309,8 +327,13 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
       masses,
       rehearsals,
       sessionKind === 'sunday_mass' ? (sessionSlot ?? '1st') : undefined,
+      sessionEntityId,
     );
-    setTitle(parent && 'name' in parent ? String(parent.name || '') : '');
+    setTitle(
+      parent && 'name' in parent
+        ? String(parent.name || '')
+        : '',
+    );
     setNotes(parent && 'notes' in parent ? String(parent.notes || '') : '');
     setUpdateMode(true);
     setSection('log');
@@ -350,6 +373,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
       title: title || undefined,
       notes: notes || undefined,
       marks: marksToSave,
+      ...(pinnedEntityId ? { entityId: pinnedEntityId } : {}),
       ...(kind === 'sunday_mass' ? { sundayMassSlot } : {}),
       ...(kind === 'special_mass'
         ? {
@@ -569,9 +593,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
               <div className="max-h-[min(70vh,640px)] space-y-1 overflow-y-auto">
                 {fullHistory.map((session) => (
                   <button
-                    key={`${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
+                    key={`${session.kind}-${session.entityId}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
                     type="button"
-                    onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
+                    onClick={() => openSession(
+                      session.date,
+                      session.kind,
+                      session.sundayMassSlot,
+                      session.entityId,
+                    )}
                     className="flex w-full min-h-[48px] items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-black/[0.04]"
                   >
                     <div className="min-w-0">
@@ -586,7 +615,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                       <p className="truncate text-[12px] text-[#86868b]">
                         {ATTENDANCE_CATEGORY_LABELS[categoryForActivityKind(session.kind)]}
                         {' · '}
-                        {ACTIVITY_KIND_LABELS[session.kind]}
+                        {session.entityName || ACTIVITY_KIND_LABELS[session.kind]}
                         {session.sundayMassSlot
                           ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}`
                           : ''}
@@ -769,6 +798,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   onClick={() => {
                     setUpdateMode(false);
                     setDate(today);
+                    setPinnedEntityId(undefined);
                     setMarks({});
                     setTitle('');
                     setNotes('');
@@ -803,9 +833,14 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {recentHistory.slice(0, 6).map((session) => (
                         <button
-                          key={`upd-${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
+                          key={`upd-${session.kind}-${session.entityId}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
                           type="button"
-                          onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
+                          onClick={() => openSession(
+                            session.date,
+                            session.kind,
+                            session.sundayMassSlot,
+                            session.entityId,
+                          )}
                           className="btn-pill btn-pill-sm btn-pill-secondary !text-[11px]"
                         >
                           {session.date}
@@ -851,6 +886,7 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                       onClick={() => {
                         setKind(k);
                         if (k === 'sunday_mass') setSundayMassSlot('1st');
+                        setPinnedEntityId(undefined);
                         setMarks({});
                       }}
                       className={`btn-pill btn-pill-sm ${kind === k ? 'btn-pill-gold' : 'btn-pill-secondary'}`}
@@ -899,7 +935,11 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => { setDate(e.target.value); setMarks({}); }}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    setPinnedEntityId(undefined);
+                    setMarks({});
+                  }}
                   className="apple-input"
                   disabled={!canEdit && isAdmin === false}
                 />
@@ -1106,16 +1146,23 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                   <div className="space-y-1">
                     {recentHistory.map((session) => (
                       <button
-                        key={`${session.kind}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
+                        key={`${session.kind}-${session.entityId}-${session.sundayMassSlot ?? 'legacy'}-${session.date}`}
                         type="button"
-                        onClick={() => openSession(session.date, session.kind, session.sundayMassSlot)}
+                        onClick={() => openSession(
+                          session.date,
+                          session.kind,
+                          session.sundayMassSlot,
+                          session.entityId,
+                        )}
                         className="flex w-full min-h-[44px] items-center justify-between rounded-xl px-2 text-left text-[13px] text-[#f5f5f7] hover:bg-white/10 max-lg:text-[#1d1d1f] max-lg:hover:bg-black/[0.04]"
                       >
                         <span className="font-medium text-[#f5f5f7] max-lg:text-[#1d1d1f]">
                           {session.date}
                           {session.sundayMassSlot
                             ? ` · ${SUNDAY_MASS_SLOT_LABELS[session.sundayMassSlot]}`
-                            : ''}
+                            : session.entityName
+                              ? ` · ${session.entityName}`
+                              : ''}
                         </span>
                         <span className="flex items-center gap-1 text-amber-200 max-lg:text-[#8a6a10]">
                           <Pencil className="h-3 w-3" />

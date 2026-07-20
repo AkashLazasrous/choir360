@@ -1,6 +1,10 @@
 import type { AttendanceCategory, AttendanceRecord, AttendanceStatus, Member } from '../types';
 import { isActiveMember } from './choirStats';
-import { mergeSundaySlotStatuses, resolveSundayMassSlot } from './attendanceActivity';
+import {
+  memberSessionDedupeKey,
+  mergeSundaySlotStatuses,
+  resolveSundayMassSlot,
+} from './attendanceActivity';
 import { categoryForActivityKind, resolveActivityKind } from './attendanceTaxonomy';
 
 /**
@@ -88,8 +92,9 @@ function categoryBucket(
 }
 
 /**
- * One mark per member + kind + date (latest wins).
+ * One mark per member + session (latest wins).
  * Sunday 1st/2nd Mass merge: attend either → not absent; late on either noted.
+ * Special Mass rites stay distinct by entityId / tag even on the same day.
  */
 function dedupeSessionRecords(records: AttendanceRecord[]): AttendanceRecord[] {
   const sundayByMemberDate = new Map<string, Map<string, AttendanceRecord>>();
@@ -105,7 +110,7 @@ function dedupeSessionRecords(records: AttendanceRecord[]): AttendanceRecord[] {
       sundayByMemberDate.set(dayKey, slots);
       continue;
     }
-    other.set(`${record.memberId}::${kind}::${record.date}`, record);
+    other.set(memberSessionDedupeKey(record), record);
   }
 
   const mergedSunday: AttendanceRecord[] = [];

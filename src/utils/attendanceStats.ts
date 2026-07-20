@@ -8,7 +8,13 @@ import {
   ShareCalculation,
 } from '../types';
 import { isActiveMember, calculatePaymentShares } from './choirStats';
-import { isMassActivityKind, mergeSundaySlotStatuses, resolveSundayMassSlot } from './attendanceActivity';
+import {
+  activitySessionDedupeKey,
+  isMassActivityKind,
+  memberSessionDedupeKey,
+  mergeSundaySlotStatuses,
+  resolveSundayMassSlot,
+} from './attendanceActivity';
 import { ALL_ACTIVITY_KINDS, resolveActivityKind } from './attendanceTaxonomy';
 
 /** Present-only for raw spreadsheet %. */
@@ -82,9 +88,10 @@ function memberDisplayName(member: Member): string {
 }
 
 /**
- * One logical mark per member + kind + date.
+ * One logical mark per member + session.
  * Sunday 1st/2nd Mass collapse to a single day: Present/Late on either
  * counts as attended; only missing both → Absent.
+ * Special Mass keeps each rite (entityId / tag) distinct even on the same day.
  */
 function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[] {
   const sundayByMemberDate = new Map<string, Map<string, AttendanceRecord>>();
@@ -100,7 +107,7 @@ function dedupeAttendanceRecords(records: AttendanceRecord[]): AttendanceRecord[
       sundayByMemberDate.set(dayKey, slots);
       continue;
     }
-    other.set(`${record.memberId}::${kind}::${record.date}`, record);
+    other.set(memberSessionDedupeKey(record), record);
   }
 
   const mergedSunday: AttendanceRecord[] = [];
@@ -456,7 +463,14 @@ export function computeParishStats(
   );
 
   const sorted = [...activeStats].sort((a, b) => b.finalPercent - a.finalPercent);
-  const sessionDates = new Set(uniqueRecords.map((r) => `${resolveKind(r)}::${r.date}`));
+  const sessionDates = new Set(
+    uniqueRecords.map((r) => {
+      const kind = resolveKind(r);
+      // After Sunday OR-merge, one session per Sunday date; specials stay per entity.
+      if (kind === 'sunday_mass') return `${kind}::${r.date}`;
+      return activitySessionDedupeKey(r);
+    }),
+  );
 
   return {
     averageFinalPercent,

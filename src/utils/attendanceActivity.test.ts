@@ -4,6 +4,7 @@ import {
   activityEntityId,
   attendanceRecordId,
   dedupeImportSessions,
+  listActivitySessions,
   marksForActivitySession,
   marksFromRecords,
   mergeSundaySlotStatuses,
@@ -104,5 +105,37 @@ describe('activityEntityId sunday slots', () => {
     expect(activityEntityId('sunday_mass', '2026-07-19', '1st')).toBe('mass-sunday_mass-1st-2026-07-19');
     expect(activityEntityId('sunday_mass', '2026-07-19', '2nd')).toBe('mass-sunday_mass-2nd-2026-07-19');
     expect(activityEntityId('sunday_mass', '2026-07-19')).toBe('mass-sunday_mass-2026-07-19');
+  });
+});
+
+describe('listActivitySessions', () => {
+  it('lists same-day Special Mass rites as separate sessions', () => {
+    const rows = [
+      record({
+        memberId: 'm1',
+        date: '2026-06-07',
+        activityKind: 'special_mass',
+        entityId: 'mass-death-1',
+        entityName: 'Death Anniversary Mass',
+      }),
+      record({
+        memberId: 'm1',
+        date: '2026-06-07',
+        activityKind: 'special_mass',
+        entityId: 'mass-wedding-1',
+        entityName: 'Wedding Mass',
+      }),
+      record({
+        memberId: 'm2',
+        date: '2026-06-07',
+        activityKind: 'special_mass',
+        entityId: 'mass-wedding-1',
+        entityName: 'Wedding Mass',
+      }),
+    ];
+    const sessions = listActivitySessions(rows, 'special_mass');
+    expect(sessions).toHaveLength(2);
+    expect(sessions.map((s) => s.entityId).sort()).toEqual(['mass-death-1', 'mass-wedding-1']);
+    expect(sessions.find((s) => s.entityId === 'mass-wedding-1')?.loggedCount).toBe(2);
   });
 });

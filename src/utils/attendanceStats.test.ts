@@ -82,6 +82,43 @@ describe('computeMemberStats', () => {
     expect(stats[0].finalPercent).toBe(50);
   });
 
+  it('keeps same-day Special Mass rites distinct by entityId / tag', () => {
+    const records: AttendanceRecord[] = [
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-death-anniversary-1',
+        entityName: 'Death Anniversary Mass',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-07',
+        entityId: 'mass-wedding-1',
+        entityName: 'Wedding Mass',
+      }),
+      record({
+        memberId: 'm1',
+        status: 'Present',
+        activityKind: 'special_mass',
+        date: '2026-06-25',
+        entityId: 'mass-wedding-2',
+        entityName: 'Wedding Mass',
+      }),
+    ];
+
+    const stats = computeMemberStats(records, members);
+    expect(stats[0].logged).toBe(3);
+    expect(stats[0].byKind.special_mass.logged).toBe(3);
+    expect(stats[0].finalPercent).toBe(100);
+
+    const parish = computeParishStats(records, members);
+    expect(parish.totalSessions).toBe(3);
+  });
+
   it('merges Sunday 1st/2nd Mass so either attendance is not Absent', () => {
     const records: AttendanceRecord[] = [
       record({
