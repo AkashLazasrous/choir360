@@ -4,6 +4,7 @@ import { AttendanceStatus, Mass, Member, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { calculatePaymentShares } from '../../utils/choirStats';
 import { ALL_MASS_CATEGORIES, isPaymentMass } from './shared';
+import { AmPmTimeField } from './AmPmTimeField';
 
 export type MassAttendanceSavePayload = {
   mass: Mass;
@@ -386,12 +387,11 @@ export const MassList: React.FC<MassListProps> = ({
                     onChange={(e) => setEditingMass({ ...editingMass, date: e.target.value })}
                     className="apple-input" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="apple-label">Time</label>
-                  <input value={editingMass.time}
-                    onChange={(e) => setEditingMass({ ...editingMass, time: e.target.value })}
-                    className="apple-input" />
-                </div>
+                <AmPmTimeField
+                  label="Time"
+                  value={editingMass.time}
+                  onChange={(time) => setEditingMass({ ...editingMass, time })}
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="apple-label">Language</label>

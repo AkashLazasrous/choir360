@@ -3,6 +3,7 @@ import { BookOpen, IndianRupee } from 'lucide-react';
 import { Mass, MassCategory, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { derivePaymentStatus } from '../../utils/choirStats';
+import { AmPmTimeField } from './AmPmTimeField';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { omitUndefinedDeep, optionalNumber, optionalString } from '../../utils/omitUndefined';
 import { massCategoryToActivityKind } from '../../utils/attendanceTaxonomy';
@@ -173,11 +174,11 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
             <input type="date" value={massDate} onChange={(e) => setMassDate(e.target.value)}
               className="apple-input text-sm" />
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Start Time</label>
-            <input value={massTime} onChange={(e) => setMassTime(e.target.value)} placeholder="06:30 AM"
-              className="apple-input text-sm" />
-          </div>
+          <AmPmTimeField
+            value={massTime}
+            onChange={setMassTime}
+            label="Start Time"
+          />
         </div>
 
         <div className="space-y-1">
