@@ -6,15 +6,8 @@ type MetricCarouselProps = {
   onSelect?: (id: string) => void;
 };
 
-const ACCENT: Record<MetricCard['accent'], string> = {
-  teal: 'from-[#0e3d4c] to-[#134556]',
-  gold: 'from-[#8a6a10] to-[#5c4a12]',
-  mint: 'from-[#0f766e] to-[#042f2e]',
-  rose: 'from-[#134556] to-[#050a14]',
-};
-
 /**
- * Pattern 2 — Segmented horizontal swiping cards with snap scroll.
+ * Aurex-style metric carousel — white cards, soft shadow, dark ink.
  */
 export const MetricCarousel: React.FC<MetricCarouselProps> = ({
   metrics,
@@ -31,19 +24,19 @@ export const MetricCarousel: React.FC<MetricCarouselProps> = ({
         type="button"
         role="listitem"
         onClick={() => onSelect?.(m.id)}
-        className={`md-metric-card snap-center shrink-0 rounded-[1.25rem] bg-gradient-to-br ${ACCENT[m.accent]} p-4 text-left text-[#f5f5f7] shadow-[0_8px_28px_rgba(0,0,0,0.35)]`}
+        className="md-metric-card snap-center shrink-0 rounded-[1.5rem] border border-black/[0.06] bg-white p-4 text-left text-[#121212] shadow-[0_10px_30px_rgba(18,18,18,0.08)]"
       >
-        <p className="text-[11px] font-medium uppercase tracking-wider text-white/55">
+        <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8a8a8a]">
           {m.label}
         </p>
-        <p className="mt-2 text-[28px] font-semibold leading-none tracking-[-0.03em] text-amber-200">
+        <p className="mt-2 text-[28px] font-semibold leading-none tracking-[-0.03em] text-[#121212]">
           {m.value}
         </p>
-        <p className="mt-2 text-[12px] leading-snug text-white/65">{m.sub}</p>
+        <p className="mt-2 text-[12px] leading-snug text-[#5c5c5c]">{m.sub}</p>
         {typeof m.progress === 'number' && (
-          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/15">
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-black/[0.06]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
+              className="h-full rounded-full bg-[#121212]"
               style={{ width: `${Math.min(100, Math.max(0, m.progress))}%` }}
             />
           </div>

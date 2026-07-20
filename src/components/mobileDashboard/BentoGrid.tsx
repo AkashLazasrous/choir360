@@ -157,45 +157,45 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
       case 'streak':
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-300/15 text-amber-200">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <Flame className="h-4 w-4" />
             </div>
-            <p className="text-[26px] font-semibold tracking-[-0.03em] text-amber-200">
+            <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#121212]">
               {streakDays}
             </p>
-            <p className="text-[12px] text-[#a1a1a6]">day streak</p>
+            <p className="text-[12px] text-[#5c5c5c]">day streak</p>
           </>
         );
       case 'next_liturgy':
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <CalendarDays className="h-4 w-4" />
             </div>
             {nextMass ? (
               <>
-                <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#f5f5f7]">
+                <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#121212]">
                   {nextMass.name}
                 </p>
-                <p className="mt-1 text-[12px] text-[#86868b]">
+                <p className="mt-1 text-[12px] text-[#8a8a8a]">
                   {nextMass.date} · {nextMass.time}
                 </p>
               </>
             ) : (
-              <p className="text-[13px] text-[#86868b]">No mass scheduled</p>
+              <p className="text-[13px] text-[#8a8a8a]">No mass scheduled</p>
             )}
           </>
         );
       case 'active_members':
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <UsersRound className="h-4 w-4" />
             </div>
-            <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+            <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#121212]">
               {active.length}
             </p>
-            <p className="text-[12px] text-[#a1a1a6]">
+            <p className="text-[12px] text-[#5c5c5c]">
               {pendingMembers.length > 0
                 ? `+${pendingMembers.length} pending`
                 : 'confirmed'}
@@ -205,13 +205,13 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
       case 'pending_collection':
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-300/15 text-amber-200">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <IndianRupee className="h-4 w-4" />
             </div>
-            <p className="text-[20px] font-semibold tracking-[-0.03em] text-amber-200">
+            <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#121212]">
               {formatINR(variant === 'member' ? personalShareInr : pendingInr)}
             </p>
-            <p className="text-[12px] text-[#a1a1a6]">
+            <p className="text-[12px] text-[#5c5c5c]">
               {variant === 'member' ? 'from paid special masses' : 'to collect'}
             </p>
           </>
@@ -220,33 +220,33 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
         const memberPct = personalAttendancePercent ?? health.averageAttendance;
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-teal-300/15 text-teal-200">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <TrendingUp className="h-4 w-4" />
             </div>
             {variant === 'member' ? (
               <>
-                <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+                <p className="text-[26px] font-semibold tracking-[-0.03em] text-[#121212]">
                   {memberPct}%
                 </p>
-                <p className="mt-1 text-[12px] text-[#a1a1a6]">your attendance rate</p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <p className="mt-1 text-[12px] text-[#5c5c5c]">your attendance rate</p>
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
+                    className="h-full rounded-full bg-[#111111]"
                     style={{ width: `${Math.min(100, memberPct)}%` }}
                   />
                 </div>
               </>
             ) : (
               <>
-                <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#f5f5f7]">
+                <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#121212]">
                   {health.healthLabel}
                 </p>
-                <p className="mt-1 text-[12px] text-[#a1a1a6]">
+                <p className="mt-1 text-[12px] text-[#5c5c5c]">
                   Score {health.healthScore} · avg {health.averageAttendance}%
                 </p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-black/[0.06]">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-teal-300 to-amber-300"
+                    className="h-full rounded-full bg-[#111111]"
                     style={{ width: `${health.healthScore}%` }}
                   />
                 </div>
@@ -258,7 +258,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
       case 'quick_links':
         return (
           <>
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-[#f5f5f7]">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
               <Link2 className="h-4 w-4" />
             </div>
             <div className="mt-1 flex flex-wrap gap-2">
@@ -281,7 +281,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
                     e.stopPropagation();
                     onNavigate(l.tab);
                   }}
-                  className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-teal-100"
+                  className="rounded-full bg-[#efebe4] px-2.5 py-1 text-[11px] font-semibold text-[#121212]"
                 >
                   {l.label}
                 </span>
@@ -297,13 +297,13 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
   return (
     <section aria-label="Dashboard widgets">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#86868b]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a8a8a]">
           Your widgets
         </p>
         <button
           type="button"
           onClick={() => setEditMode((e) => !e)}
-          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-white/8 px-3 text-[12px] font-semibold text-amber-200"
+          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-[#efebe4] px-3 text-[12px] font-semibold text-[#121212]"
         >
           {editMode ? (
             <>
@@ -318,7 +318,7 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
       </div>
 
       {editMode && (
-        <p className="mb-2 text-[11px] text-[#86868b]">
+        <p className="mb-2 text-[11px] text-[#8a8a8a]">
           Drag tiles by the handle to reorder. Layout is saved on this device.
         </p>
       )}
@@ -343,14 +343,14 @@ export const BentoGrid: React.FC<BentoGridProps> = ({
               onDragEnd={() => setDragKey(null)}
               className={`md-bento-tile md-bento-span-${span} ${
                 dragKey === key ? 'opacity-60' : ''
-              } ${editMode ? 'ring-1 ring-amber-300/30' : ''}`}
+              } ${editMode ? 'ring-1 ring-black/15' : ''}`}
             >
               {editMode && (
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#86868b]">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-[#8a8a8a]">
                     {titles[key]}
                   </span>
-                  <GripVertical className="h-4 w-4 text-[#86868b]" aria-hidden />
+                  <GripVertical className="h-4 w-4 text-[#8a8a8a]" aria-hidden />
                 </div>
               )}
               <button

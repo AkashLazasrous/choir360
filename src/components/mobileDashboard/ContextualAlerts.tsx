@@ -98,21 +98,21 @@ export const ContextualAlerts: React.FC<ContextualAlertsProps> = ({
       <button
         type="button"
         onClick={() => onNavigate(primary.tab)}
-        className="md-alert-chip flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left"
+        className="md-alert-chip flex w-full items-center gap-3 rounded-[1.25rem] border border-black/[0.06] bg-white px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(18,18,18,0.06)]"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-300/15 text-amber-200">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]">
           <Bell className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-semibold text-[#f5f5f7]">{primary.title}</span>
-          <span className="block truncate text-[11px] text-[#a1a1a6]">{primary.body}</span>
+          <span className="block text-[13px] font-semibold text-[#121212]">{primary.title}</span>
+          <span className="block truncate text-[11px] text-[#5c5c5c]">{primary.body}</span>
         </span>
         {alerts.length > 1 && (
-          <span className="shrink-0 rounded-full bg-teal-300/20 px-2 py-0.5 text-[10px] font-bold text-teal-200">
+          <span className="shrink-0 rounded-full bg-[#111111] px-2 py-0.5 text-[10px] font-bold text-white">
             +{alerts.length - 1}
           </span>
         )}
-        <ChevronRight className="h-4 w-4 shrink-0 text-[#86868b]" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-[#8a8a8a]" />
       </button>
 
       {alerts.length > 1 && (
@@ -122,7 +122,7 @@ export const ContextualAlerts: React.FC<ContextualAlertsProps> = ({
               key={a.id}
               type="button"
               onClick={() => onNavigate(a.tab)}
-              className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-medium text-[#e5e5ea]"
+              className="ax-chip shrink-0"
             >
               {a.title}
             </button>

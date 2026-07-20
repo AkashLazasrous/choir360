@@ -48,7 +48,7 @@ export const DashboardSheet: React.FC<DashboardSheetProps> = ({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="absolute inset-x-0 bottom-0 max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] border-t border-white/10 bg-[#0a1628] shadow-2xl"
+            className="absolute inset-x-0 bottom-0 max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] border-t border-black/[0.06] bg-[#f6f3ee] shadow-[0_-16px_48px_rgba(18,18,18,0.14)]"
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -61,26 +61,26 @@ export const DashboardSheet: React.FC<DashboardSheetProps> = ({
               if (info.offset.y > 90 || info.velocity.y > 600) onClose();
             }}
           >
-            <div className="flex flex-col items-center bg-[linear-gradient(160deg,#134556_0%,#0a1628_55%,#000000_100%)] px-4 pb-4 pt-3 text-[#f5f5f7]">
-              <div className="app-sheet-grabber app-sheet-grabber-on-dark" aria-hidden />
+            <div className="flex flex-col items-center bg-white px-4 pb-4 pt-3 text-[#121212]">
+              <div className="app-sheet-grabber" aria-hidden />
               <div className="mt-3 flex w-full items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[18px] font-semibold tracking-[-0.025em]">{title}</p>
                   {subtitle && (
-                    <p className="mt-0.5 text-[12px] text-[#a1a1a6]">{subtitle}</p>
+                    <p className="mt-0.5 text-[12px] text-[#5c5c5c]">{subtitle}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#f5f5f7]"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
             </div>
-            <div className="mobile-scroll-contain max-h-[calc(88dvh-7rem)] overflow-y-auto px-4 py-4 text-[#f5f5f7]">
+            <div className="mobile-scroll-contain max-h-[calc(88dvh-7rem)] overflow-y-auto px-4 py-4 text-[#121212]">
               {children}
             </div>
           </motion.div>

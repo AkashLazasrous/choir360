@@ -50,12 +50,12 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
             exit={{ opacity: 0 }}
             onClick={() => onMoreOpenChange(false)}
           >
-            <div className="absolute inset-0 bg-[#050a14]/40 backdrop-blur-[6px]" />
+            <div className="absolute inset-0 bg-black/25 backdrop-blur-[6px]" />
             <motion.div
               role="dialog"
               aria-modal="true"
               aria-label="More destinations"
-              className="app-more-sheet absolute left-0 right-0 overflow-hidden rounded-t-[1.75rem] border-t border-[var(--choir-separator)] bg-[var(--choir-paper)]/96 shadow-[0_-12px_48px_rgba(5,10,20,0.18)] backdrop-blur-2xl"
+              className="app-more-sheet absolute left-0 right-0 overflow-hidden rounded-t-[1.75rem] border-t border-black/[0.06] bg-[#f6f3ee] shadow-[0_-12px_48px_rgba(18,18,18,0.14)]"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -141,15 +141,15 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
               {isActive && (
                 <motion.span
                   layoutId="bottomnav-active-pill"
-                  className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[var(--choir-forest)]/12"
+                  className="absolute inset-x-1.5 top-1 bottom-1 rounded-[980px] bg-black/[0.07]"
                   transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                 />
               )}
               <span className="relative flex flex-col items-center gap-0.5">
                 <Icon
                   className={
-                    'h-6 w-6 transition-colors ' +
-                    (isActive ? 'text-[var(--choir-forest)]' : 'text-[var(--choir-ink-tertiary)]')
+                    'h-5 w-5 transition-colors ' +
+                    (isActive ? 'text-[#111111]' : 'text-[#8a8a8a]')
                   }
                   strokeWidth={isActive ? 2.4 : 1.6}
                 />
@@ -157,8 +157,8 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
                   className={
                     'text-[10px] tracking-[-0.01em] ' +
                     (isActive
-                      ? 'font-bold text-[var(--choir-forest)]'
-                      : 'font-medium text-[var(--choir-ink-tertiary)]')
+                      ? 'font-bold text-[#111111]'
+                      : 'font-medium text-[#8a8a8a]')
                   }
                 >
                   {short}
@@ -183,15 +183,15 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
           {moreActive && !primaryIds.includes(activeTab) && (
             <motion.span
               layoutId="bottomnav-active-pill"
-              className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-[var(--choir-forest)]/12"
+              className="absolute inset-x-1.5 top-1 bottom-1 rounded-[980px] bg-black/[0.07]"
               transition={{ type: 'spring', stiffness: 420, damping: 34 }}
             />
           )}
           <span className="relative flex flex-col items-center gap-0.5">
             <LayoutGrid
               className={
-                'h-6 w-6 ' +
-                (moreActive ? 'text-[var(--choir-forest)]' : 'text-[var(--choir-ink-tertiary)]')
+                'h-5 w-5 ' +
+                (moreActive ? 'text-[#111111]' : 'text-[#8a8a8a]')
               }
               strokeWidth={moreActive ? 2.4 : 1.6}
             />
@@ -199,8 +199,8 @@ export const AppBottomNav: React.FC<AppBottomNavProps> = ({
               className={
                 'text-[10px] tracking-[-0.01em] ' +
                 (moreActive
-                  ? 'font-bold text-[var(--choir-forest)]'
-                  : 'font-medium text-[var(--choir-ink-tertiary)]')
+                  ? 'font-bold text-[#111111]'
+                  : 'font-medium text-[#8a8a8a]')
               }
             >
               More

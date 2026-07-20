@@ -93,10 +93,10 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* Mobile parish context (replaces sidebar cram) */}
         <div className="min-w-0 flex-1 sm:hidden">
-          <p className="truncate text-[13px] font-semibold tracking-[-0.015em] text-[#f5f5f7]">
+          <p className="truncate text-[13px] font-semibold tracking-[-0.015em] text-[#121212] lg:text-[#f5f5f7]">
             {parishLabel}
           </p>
-          <p className="truncate text-[10px] text-[#86868b]">Parish choir</p>
+          <p className="truncate text-[10px] text-[#8a8a8a]">Parish choir</p>
         </div>
 
         {/* Desktop search — hidden on marketing website mode */}
@@ -175,7 +175,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute right-0 top-[calc(100%+6px)] z-50 flex gap-1 rounded-2xl border border-white/10 bg-[#0a1628]/95 p-1.5 shadow-2xl backdrop-blur-xl"
+                  className="absolute right-0 top-[calc(100%+6px)] z-50 flex gap-1 rounded-2xl border border-black/[0.06] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,18,18,0.12)]"
                 >
                   {languages.map((language) => (
                     <button
@@ -188,8 +188,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                       className={
                         'min-h-[36px] rounded-xl px-2.5 text-[11px] font-semibold ' +
                         (currentLang === language.id
-                          ? 'bg-amber-300 text-[#050a14]'
-                          : 'text-[#a1a1a6]')
+                          ? 'bg-[#111111] text-white'
+                          : 'text-[#5c5c5c]')
                       }
                     >
                       {language.id.toUpperCase()}
@@ -209,16 +209,19 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               onClick={() => setAlertsOpen((o) => !o)}
             >
               <Bell
-                className={'h-5 w-5 ' + (hasAlerts ? 'text-amber-200' : 'text-[#a1a1a6]')}
+                className={
+                  'h-5 w-5 ' +
+                  (hasAlerts ? 'text-[#121212] lg:text-amber-200' : 'text-[#5c5c5c] lg:text-[#a1a1a6]')
+                }
                 strokeWidth={hasAlerts ? 2.25 : 1.75}
               />
               {hasAlerts && (
-                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-300 px-1 text-[9px] font-bold text-[#050a14]">
+                <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[#111111] px-1 text-[9px] font-bold text-white lg:bg-amber-300 lg:text-[#050a14]">
                   {contextualAlerts.length}
                 </span>
               )}
               {!hasAlerts && notificationDot && (
-                <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-amber-300" />
+                <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-[#111111] lg:bg-amber-300" />
               )}
             </button>
             <AnimatePresence>
@@ -228,12 +231,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-                  className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(18.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#050a14]/95 shadow-2xl backdrop-blur-xl"
+                  className="absolute right-0 top-[calc(100%+6px)] z-50 w-[min(18.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_16px_40px_rgba(18,18,18,0.12)] lg:border-white/10 lg:bg-[#050a14]/95"
                 >
-                  <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-                    <p className="text-[12px] font-semibold text-[#f5f5f7]">Alerts</p>
+                  <div className="flex items-center justify-between border-b border-black/[0.06] px-3 py-2 lg:border-white/10">
+                    <p className="text-[12px] font-semibold text-[#121212] lg:text-[#f5f5f7]">Alerts</p>
                     <button type="button" aria-label="Close alerts" onClick={() => setAlertsOpen(false)}>
-                      <X className="h-4 w-4 text-[#86868b]" />
+                      <X className="h-4 w-4 text-[#8a8a8a]" />
                     </button>
                   </div>
                   {hasAlerts ? (
@@ -242,7 +245,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                         <li key={a.id}>
                           <button
                             type="button"
-                            className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-white/5"
+                            className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-black/[0.04] lg:hover:bg-white/5"
                             onClick={() => {
                               setAlertsOpen(false);
                               onAlertNavigate?.(a.tab);
@@ -252,24 +255,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                               className={
                                 'mt-1 h-2 w-2 shrink-0 rounded-full ' +
                                 (a.tone === 'gold'
-                                  ? 'bg-amber-300'
+                                  ? 'bg-amber-400'
                                   : a.tone === 'warn'
                                     ? 'bg-orange-400'
-                                    : 'bg-teal-300')
+                                    : 'bg-[#111111]')
                               }
                             />
                             <span className="min-w-0">
-                              <span className="block text-[13px] font-semibold text-[#f5f5f7]">
+                              <span className="block text-[13px] font-semibold text-[#121212] lg:text-[#f5f5f7]">
                                 {a.title}
                               </span>
-                              <span className="block text-[11px] text-[#86868b]">{a.body}</span>
+                              <span className="block text-[11px] text-[#5c5c5c] lg:text-[#86868b]">{a.body}</span>
                             </span>
                           </button>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="px-3 py-4 text-[12px] text-[#86868b]">No new alerts</p>
+                    <p className="px-3 py-4 text-[12px] text-[#5c5c5c] lg:text-[#86868b]">No new alerts</p>
                   )}
                 </motion.div>
               )}
@@ -336,16 +339,16 @@ export const MobileSearchSheet: React.FC<{
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -16, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="absolute left-0 right-0 top-0 border-b border-white/10 bg-[#0a1628]/95 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl"
+          className="absolute left-0 right-0 top-0 border-b border-black/[0.06] bg-[#f6f3ee]/97 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-xl"
         >
           <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center rounded-2xl border border-white/12 bg-white/[0.08] px-3">
-              <Search className="h-4 w-4 text-[#86868b]" />
+            <div className="flex flex-1 items-center rounded-2xl border border-black/[0.08] bg-white px-3">
+              <Search className="h-4 w-4 text-[#8a8a8a]" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => onQueryChange(e.target.value)}
-                className="w-full bg-transparent px-2.5 py-3 text-[15px] text-[#f5f5f7] outline-none placeholder:text-[#86868b]"
+                className="w-full bg-transparent px-2.5 py-3 text-[15px] text-[#121212] outline-none placeholder:text-[#8a8a8a]"
                 placeholder="Search…"
                 aria-label="Search"
               />
@@ -353,7 +356,7 @@ export const MobileSearchSheet: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-[#a1a1a6] hover:bg-white/10"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-[#5c5c5c] hover:bg-black/[0.05]"
               aria-label="Close"
             >
               <X className="h-5 w-5" />

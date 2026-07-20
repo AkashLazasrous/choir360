@@ -75,13 +75,13 @@ export const ScrubChart: React.FC<ScrubChartProps> = ({
     <figure className={`md-scrub-chart ${className}`}>
       <div className="mb-2 flex items-end justify-between gap-2">
         <div>
-          <figcaption className="text-[11px] font-medium uppercase tracking-wider text-[#86868b]">
+          <figcaption className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#8a8a8a]">
             {title}
           </figcaption>
-          <p className="mt-0.5 text-[22px] font-semibold tracking-[-0.03em] text-[#f5c24c]" aria-live="polite">
+          <p className="mt-0.5 text-[22px] font-semibold tracking-[-0.03em] text-[#121212]" aria-live="polite">
             {active.value}
             {unit}
-            <span className="ml-2 text-[12px] font-medium text-[#a1a1a6]">{active.label}</span>
+            <span className="ml-2 text-[12px] font-medium text-[#5c5c5c]">{active.label}</span>
           </p>
         </div>
       </div>
@@ -95,7 +95,7 @@ export const ScrubChart: React.FC<ScrubChartProps> = ({
         aria-valuenow={clampedIndex}
         aria-valuetext={`${active.value}${unit} on ${active.label}`}
         tabIndex={0}
-        className="relative h-28 touch-none select-none rounded-2xl bg-black/40 px-1 pt-3 pb-1 outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+        className="relative h-28 touch-none select-none rounded-2xl bg-[#efebe4] px-1 pt-3 pb-1 outline-none focus-visible:ring-2 focus-visible:ring-black/20"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onKeyDown={(e) => {
@@ -109,8 +109,8 @@ export const ScrubChart: React.FC<ScrubChartProps> = ({
         <svg className="h-full w-full" viewBox={`0 0 ${Math.max(safePoints.length - 1, 1) * 40} 100`} preserveAspectRatio="none" aria-hidden>
           <defs>
             <linearGradient id={`${id}-fill`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
+              <stop offset="0%" stopColor="#121212" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#121212" stopOpacity="0" />
             </linearGradient>
           </defs>
           {safePoints.length > 1 && (
@@ -131,7 +131,7 @@ export const ScrubChart: React.FC<ScrubChartProps> = ({
               />
               <polyline
                 fill="none"
-                stroke="#f5c24c"
+                stroke="#121212"
                 strokeWidth="2.5"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -145,12 +145,12 @@ export const ScrubChart: React.FC<ScrubChartProps> = ({
 
         {/* Scrub cursor */}
         <div
-          className="pointer-events-none absolute top-2 bottom-1 w-px bg-amber-300/80"
+          className="pointer-events-none absolute top-2 bottom-1 w-px bg-[#121212]/50"
           style={{
             left: `${safePoints.length <= 1 ? 50 : (clampedIndex / (safePoints.length - 1)) * 100}%`,
           }}
         >
-          <div className="absolute -left-1.5 top-0 h-3 w-3 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(245,194,76,0.8)]" />
+          <div className="absolute -left-1.5 top-0 h-3 w-3 rounded-full bg-[#121212] shadow-[0_2px_8px_rgba(0,0,0,0.2)]" />
         </div>
       </div>
     </figure>

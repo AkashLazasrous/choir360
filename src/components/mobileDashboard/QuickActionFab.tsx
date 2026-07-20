@@ -86,10 +86,10 @@ export const QuickActionFab: React.FC<QuickActionFabProps> = ({
                       setOpen(false);
                       action.onClick();
                     }}
-                    className="flex items-center gap-2.5 rounded-full border border-white/10 bg-[#0a1628]/95 py-2 pl-3 pr-3.5 text-[#f5f5f7] shadow-xl backdrop-blur-xl"
+                    className="flex items-center gap-2.5 rounded-full border border-black/[0.06] bg-white py-2 pl-3 pr-3.5 text-[#121212] shadow-[0_10px_28px_rgba(18,18,18,0.12)]"
                   >
                     <span className="text-[12px] font-semibold">{action.label}</span>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-teal-400 to-amber-300 text-[#050a14]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#111111] text-white">
                       <Icon className="h-4 w-4" />
                     </span>
                   </motion.button>
@@ -102,7 +102,7 @@ export const QuickActionFab: React.FC<QuickActionFabProps> = ({
             aria-expanded={open}
             aria-label={open ? 'Close quick actions' : 'Open quick actions'}
             onClick={() => setOpen((o) => !o)}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#2dd4bf] via-[#14b8a6] to-[#f5c24c] text-[#050a14] shadow-[0_8px_28px_rgba(45,212,191,0.45)]"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_10px_28px_rgba(18,18,18,0.28)]"
           >
             {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
           </button>

@@ -36,8 +36,8 @@ export const TimeRangeToggle: React.FC<TimeRangeToggleProps> = ({
           className={
             'min-h-[32px] min-w-[36px] rounded-full px-2.5 text-[11px] font-semibold tracking-wide transition ' +
             (selected
-              ? 'bg-[#0e3d4c] text-amber-200 shadow-sm'
-              : 'text-[#64748b] active:text-[#0e3d4c]')
+              ? 'bg-[#111111] text-white shadow-sm'
+              : 'text-[#8a8a8a] active:text-[#121212]')
           }
         >
           {labels?.[r] ?? r}

@@ -321,20 +321,20 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
     <article
       className={
         isMobile
-          ? 'rounded-[1.25rem] border border-white/8 bg-black/50 p-3.5'
+          ? 'rounded-[1.5rem] border border-black/[0.06] bg-white p-3.5 shadow-[0_10px_30px_rgba(18,18,18,0.06)]'
           : 'apple-card p-5 sm:p-6'
       }
     >
       <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4">
         <div className="min-w-0">
-          <p className={isMobile ? 'text-[11px] font-semibold uppercase tracking-wider text-[#86868b]' : 'apple-caption'}>
+          <p className={isMobile ? 'text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8a8a8a]' : 'apple-caption'}>
             Parish liturgy log
           </p>
-          <h3 className={isMobile ? 'mt-0.5 text-[16px] font-semibold tracking-[-0.02em] text-[#f5f5f7]' : 'apple-title mt-0.5'}>
+          <h3 className={isMobile ? 'mt-0.5 text-[16px] font-semibold tracking-[-0.02em] text-[#121212]' : 'apple-title mt-0.5'}>
             Logged masses & practices
           </h3>
           {entries.length > 0 && (
-            <p className={isMobile ? 'mt-0.5 text-[11px] text-[#86868b]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
+            <p className={isMobile ? 'mt-0.5 text-[11px] text-[#8a8a8a]' : 'mt-0.5 text-[12px] text-[#86868b]'}>
               Latest {entries.length} by date · Clear hides from Overview; Remove deletes storage
             </p>
           )}
@@ -347,7 +347,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
               onClick={() => void handleClearAll()}
               className={
                 isMobile
-                  ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 text-[12px] font-semibold text-amber-200 disabled:opacity-50'
+                  ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full bg-[#efebe4] px-3 text-[12px] font-semibold text-[#121212] disabled:opacity-50'
                   : 'btn-pill btn-pill-secondary !min-h-[44px] !text-[13px] inline-flex items-center gap-1.5'
               }
             >
@@ -360,7 +360,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
             onClick={() => onNavigate('masses')}
             className={
               isMobile
-                ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full border border-white/12 px-3 text-[12px] font-semibold text-[#f5f5f7]'
+                ? 'inline-flex min-h-[40px] items-center gap-1 rounded-full bg-[#111111] px-3 text-[12px] font-semibold text-white'
                 : 'btn-pill btn-pill-secondary !min-h-[44px] !text-[13px]'
             }
           >
@@ -375,23 +375,23 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
           onClick={() => onNavigate('attendance')}
           className={
             isMobile
-              ? 'flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-white/14 px-4 py-6 text-center'
+              ? 'flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-black/10 bg-[#f6f3ee] px-4 py-6 text-center'
               : 'apple-empty w-full rounded-2xl border border-dashed border-black/10 bg-[#f5f5f7]'
           }
         >
           <div
             className={
               isMobile
-                ? 'flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-amber-300'
+                ? 'flex h-11 w-11 items-center justify-center rounded-full bg-[#efebe4] text-[#121212]'
                 : 'flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0e3d4c]'
             }
           >
             <BookOpen className="h-5 w-5" />
           </div>
-          <h3 className={isMobile ? 'text-[14px] font-semibold text-[#f5f5f7]' : undefined}>
+          <h3 className={isMobile ? 'text-[14px] font-semibold text-[#121212]' : undefined}>
             No masses or practices logged yet
           </h3>
-          <p className={isMobile ? 'text-[12px] text-[#86868b]' : undefined}>
+          <p className={isMobile ? 'text-[12px] text-[#5c5c5c]' : undefined}>
             Log attendance for a mass or practice — it will stay here until an admin removes it.
           </p>
         </button>
@@ -405,16 +405,26 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
             return (
               <li
                 key={`${entry.activityKind}-${entry.id}-${entry.date}`}
-                className="rounded-xl border border-white/10 bg-white/[0.04]"
+                className={
+                  isMobile
+                    ? 'rounded-xl border border-black/[0.06] bg-[#f6f3ee]'
+                    : 'rounded-xl border border-white/10 bg-white/[0.04]'
+                }
               >
                 <div className="flex items-start gap-3 px-3 py-3 sm:px-4 sm:py-3.5">
                   <div
                     className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                      entry.kind === 'practice'
-                        ? 'bg-sky-500/20 text-sky-300'
-                        : i === 0
-                          ? 'bg-[#0e3d4c] text-amber-300'
-                          : 'bg-white/10 text-[#a1a1a6]'
+                      isMobile
+                        ? entry.kind === 'practice'
+                          ? 'bg-sky-100 text-sky-700'
+                          : i === 0
+                            ? 'bg-[#111111] text-white'
+                            : 'bg-white text-[#5c5c5c]'
+                        : entry.kind === 'practice'
+                          ? 'bg-sky-500/20 text-sky-300'
+                          : i === 0
+                            ? 'bg-[#0e3d4c] text-amber-300'
+                            : 'bg-white/10 text-[#a1a1a6]'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -422,20 +432,44 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-[14px] font-semibold text-[#f5f5f7] sm:text-[15px]">
+                      <p
+                        className={
+                          isMobile
+                            ? 'truncate text-[14px] font-semibold text-[#121212] sm:text-[15px]'
+                            : 'truncate text-[14px] font-semibold text-[#f5f5f7] sm:text-[15px]'
+                        }
+                      >
                         {entry.name}
                       </p>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#c7c7cc]">
+                      <span
+                        className={
+                          isMobile
+                            ? 'rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5c5c5c]'
+                            : 'rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#c7c7cc]'
+                        }
+                      >
                         {category === 'practice' ? 'Practice' : category === 'special_mass' ? 'Special' : 'Mass'}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-[#a1a1a6] sm:text-[12px]">
+                    <p
+                      className={
+                        isMobile
+                          ? 'mt-0.5 text-[11px] text-[#5c5c5c] sm:text-[12px]'
+                          : 'mt-0.5 text-[11px] text-[#a1a1a6] sm:text-[12px]'
+                      }
+                    >
                       {entry.subtitle} · {entry.date} · {entry.time}
                       {entry.loggedCount > 0 ? ` · ${entry.loggedCount} marked` : ''}
                     </p>
 
                     {!open && entry.songNotes ? (
-                      <p className="mt-1.5 line-clamp-2 text-[12px] text-[#c7c7cc]">
+                      <p
+                        className={
+                          isMobile
+                            ? 'mt-1.5 line-clamp-2 text-[12px] text-[#5c5c5c]'
+                            : 'mt-1.5 line-clamp-2 text-[12px] text-[#c7c7cc]'
+                        }
+                      >
                         <Music2 className="mr-1 inline h-3 w-3 opacity-70" />
                         {entry.songNotes.split(/\r?\n/).filter(Boolean).join(' · ')}
                       </p>
@@ -447,7 +481,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                         onClick={() => openNotes(entry)}
                         className={
                           isMobile
-                            ? 'min-h-[36px] rounded-full border border-white/14 px-3 text-[11px] font-semibold text-[#f5f5f7]'
+                            ? 'min-h-[36px] rounded-full border border-black/[0.08] bg-white px-3 text-[11px] font-semibold text-[#121212]'
                             : 'btn-pill btn-pill-secondary btn-pill-xs'
                         }
                       >
@@ -458,7 +492,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                         onClick={() => onNavigate(manageTab(entry.kind))}
                         className={
                           isMobile
-                            ? 'min-h-[36px] rounded-full px-2 text-[11px] font-medium text-[#a1a1a6]'
+                            ? 'min-h-[36px] rounded-full px-2 text-[11px] font-medium text-[#5c5c5c]'
                             : 'btn-pill btn-pill-ghost btn-pill-xs'
                         }
                       >
@@ -471,7 +505,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                           onClick={() => void handleClear(entry)}
                           className={
                             isMobile
-                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-amber-200 disabled:opacity-50'
+                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-[#8a6a10] disabled:opacity-50'
                               : 'btn-pill btn-pill-ghost btn-pill-xs inline-flex items-center gap-1 !text-[#8a6a10]'
                           }
                         >
@@ -490,7 +524,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                           onClick={() => void handleRemove(entry)}
                           className={
                             isMobile
-                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-rose-300 disabled:opacity-50'
+                              ? 'inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 text-[11px] font-medium text-rose-600 disabled:opacity-50'
                               : 'btn-pill btn-pill-ghost btn-pill-xs inline-flex items-center gap-1 !text-[#ff6b7a]'
                           }
                         >
@@ -506,7 +540,13 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
 
                     {open && (
                       <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                        <label className="block text-[11px] font-medium text-[#a1a1a6] sm:text-[12px]">
+                        <label
+                          className={
+                            isMobile
+                              ? 'block text-[11px] font-medium text-[#5c5c5c] sm:text-[12px]'
+                              : 'block text-[11px] font-medium text-[#a1a1a6] sm:text-[12px]'
+                          }
+                        >
                           Song list {isAdmin ? '(one song per line)' : ''}
                         </label>
                         {isAdmin && onSaveSongNotes ? (
@@ -520,7 +560,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                               placeholder={'e.g.\nEntrance hymn\nGloria\nCommunion song'}
                               className={
                                 isMobile
-                                  ? 'w-full rounded-xl border border-white/12 bg-black/40 px-3 py-2 text-[13px] text-[#f5f5f7] placeholder:text-[#86868b]'
+                                  ? 'w-full rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-[13px] text-[#121212] placeholder:text-[#8a8a8a]'
                                   : 'apple-textarea !min-h-[6rem] !text-[13px]'
                               }
                             />
@@ -530,7 +570,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                               onClick={() => void handleSave(entry)}
                               className={
                                 isMobile
-                                  ? 'inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-amber-300 px-3 text-[12px] font-semibold text-[#050a14] disabled:opacity-50'
+                                  ? 'inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-[#111111] px-3 text-[12px] font-semibold text-white disabled:opacity-50'
                                   : 'btn-pill btn-pill-primary btn-pill-sm inline-flex items-center gap-1.5'
                               }
                             >
@@ -543,7 +583,13 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
                             </button>
                           </>
                         ) : (
-                          <p className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[13px] whitespace-pre-wrap text-[#c7c7cc]">
+                          <p
+                            className={
+                              isMobile
+                                ? 'rounded-xl border border-black/[0.06] bg-white px-3 py-2 text-[13px] whitespace-pre-wrap text-[#5c5c5c]'
+                                : 'rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[13px] whitespace-pre-wrap text-[#c7c7cc]'
+                            }
+                          >
                             {entry.songNotes || 'No songs noted yet. Ask a choir admin to add the list.'}
                           </p>
                         )}
@@ -558,7 +604,7 @@ export const LoggedLiturgySection: React.FC<LoggedLiturgySectionProps> = ({
       )}
 
       {message && (
-        <p className="mt-2 text-[12px] text-amber-300">
+        <p className={isMobile ? 'mt-2 text-[12px] text-[#5c5c5c]' : 'mt-2 text-[12px] text-amber-300'}>
           {message}
         </p>
       )}
