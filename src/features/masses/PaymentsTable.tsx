@@ -90,6 +90,11 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                     <p className="mt-0.5 text-[13px] text-[#86868b]">{p.mobile}</p>
                     <p className="mt-1 text-[14px] font-medium text-[#3a3a3c]">{p.massType}</p>
                     <p className="text-[12px] text-[#86868b]">{p.massDate} · {p.massTime}</p>
+                    {(p.receivedBy || p.whoPaid) && (
+                      <p className="mt-1 text-[12px] text-[#636366]">
+                        Received by {p.receivedBy || p.whoPaid}
+                      </p>
+                    )}
                   </div>
                   <span className={received ? 'apple-badge-forest' : 'apple-badge-gold'}>
                     {received ? 'Received' : 'Pending'}
@@ -136,6 +141,7 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
             <thead>
               <tr className="border-b border-black/[0.06] text-[12px] font-medium text-[#86868b]">
                 <th className="py-2.5 font-medium">Sponsor / Party</th>
+                <th className="py-2.5 font-medium">Received By</th>
                 <th className="py-2.5 font-medium">Solemn Rite</th>
                 <th className="py-2.5 text-right font-medium">Proposed</th>
                 <th className="py-2.5 text-right font-medium">Pending</th>
@@ -153,6 +159,9 @@ export const PaymentsTable: React.FC<PaymentsTableProps> = ({
                     <td className="py-3">
                       <p className="font-semibold text-[#1d1d1f]">{p.partyName}</p>
                       <p className="text-[12px] text-[#86868b]">{p.mobile}</p>
+                    </td>
+                    <td className="py-3 text-[13px] text-[#3a3a3c]">
+                      {p.receivedBy || p.whoPaid || '—'}
                     </td>
                     <td className="py-3">
                       <p className="font-medium text-[#3a3a3c]">{p.massType}</p>

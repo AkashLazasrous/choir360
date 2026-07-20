@@ -196,7 +196,12 @@ export type SpecialMassBilling = 'free' | 'paid';
 
 export interface SpecialMassPaymentDetails {
   amount?: number;
+  /** @deprecated Prefer receivedBy / partyName — legacy payer free-text */
   whoPaid?: string;
+  /** Choir member who collected the payment */
+  receivedByMemberId?: string;
+  /** Display name of the member who collected the payment */
+  receivedBy?: string;
   notes?: string;
   dateReceived?: string;
   paymentMode?: string;
@@ -262,8 +267,12 @@ export interface Payment {
   pendingAmount: number;
   /** Date payment was received (ISO string) */
   dateReceived?: string;
-  /** Who made the payment */
+  /** @deprecated Prefer receivedBy — legacy payer free-text */
   whoPaid?: string;
+  /** Choir member id who collected the payment */
+  receivedByMemberId?: string;
+  /** Display name of the member who collected the payment */
+  receivedBy?: string;
   /** Cash / UPI / Cheque / NEFT */
   paymentMode?: string;
   receiptNo?: string;

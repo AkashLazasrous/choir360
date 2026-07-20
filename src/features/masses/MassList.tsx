@@ -217,7 +217,7 @@ export const MassList: React.FC<MassListProps> = ({
     const payment = linked ?? {
       id: `payment-${mass.id}`,
       massId: mass.id,
-      partyName: mass.specialMassPayment?.whoPaid || 'Sponsor',
+      partyName: mass.specialMassPayment?.whoPaid || mass.name || 'Sponsor',
       mobile: '',
       massType: mass.category,
       massDate: mass.date,

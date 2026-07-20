@@ -1372,6 +1372,8 @@ type SpecialMassBilling = "free" | "paid";
 type SpecialMassPaymentDetails = {
   amount?: number;
   whoPaid?: string;
+  receivedByMemberId?: string;
+  receivedBy?: string;
   notes?: string;
   dateReceived?: string;
   paymentMode?: string;
@@ -1479,6 +1481,10 @@ function parseAttendanceSession(raw: unknown, index: number): AttendanceSessionB
       specialMassPayment = {
         amount: Number.isFinite(amount) && amount >= 0 ? amount : undefined,
         whoPaid: typeof pay.whoPaid === "string" ? pay.whoPaid.trim().slice(0, 200) : undefined,
+        receivedByMemberId: typeof pay.receivedByMemberId === "string"
+          ? pay.receivedByMemberId.trim().slice(0, 128)
+          : undefined,
+        receivedBy: typeof pay.receivedBy === "string" ? pay.receivedBy.trim().slice(0, 200) : undefined,
         notes: typeof pay.notes === "string" ? pay.notes.trim().slice(0, 1000) : undefined,
         dateReceived: typeof pay.dateReceived === "string" && /^\d{4}-\d{2}-\d{2}$/.test(pay.dateReceived)
           ? pay.dateReceived
@@ -2176,8 +2182,8 @@ async function syncPaidMassPaymentAndShares(opts: {
       ...envelopeForWrite(tenant, adminUid, status, paymentPrev, now),
       id: paymentId,
       massId,
-      partyName: (typeof payHint?.whoPaid === "string" && payHint.whoPaid.trim())
-        || (typeof paymentPrev?.partyName === "string" ? paymentPrev.partyName : "Sponsor"),
+      partyName: (typeof paymentPrev?.partyName === "string" && paymentPrev.partyName.trim())
+        || "Sponsor",
       mobile: typeof paymentPrev?.mobile === "string" ? paymentPrev.mobile : "",
       massType: typeof massData.category === "string" ? massData.category : "Special Mass",
       massDate: session.date,
@@ -2187,6 +2193,10 @@ async function syncPaidMassPaymentAndShares(opts: {
       pendingAmount: pending,
       dateReceived: typeof payHint?.dateReceived === "string" ? payHint.dateReceived : paymentPrev?.dateReceived,
       whoPaid: typeof payHint?.whoPaid === "string" ? payHint.whoPaid : paymentPrev?.whoPaid,
+      receivedByMemberId: typeof payHint?.receivedByMemberId === "string"
+        ? payHint.receivedByMemberId
+        : paymentPrev?.receivedByMemberId,
+      receivedBy: typeof payHint?.receivedBy === "string" ? payHint.receivedBy : paymentPrev?.receivedBy,
       paymentMode: typeof payHint?.paymentMode === "string" ? payHint.paymentMode : paymentPrev?.paymentMode,
       remarks: typeof payHint?.notes === "string" ? payHint.notes : paymentPrev?.remarks,
       status,

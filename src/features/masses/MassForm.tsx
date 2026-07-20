@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { BookOpen, IndianRupee } from 'lucide-react';
-import { Mass, MassCategory, Payment } from '../../types';
+import { Mass, MassCategory, Member, Payment } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { derivePaymentStatus } from '../../utils/choirStats';
 import { AmPmTimeField } from './AmPmTimeField';
+import { ReceivedBySelect } from './ReceivedBySelect';
 import { ALL_MASS_CATEGORIES, createUniqueId, isPaymentMass } from './shared';
 import { omitUndefinedDeep, optionalNumber, optionalString } from '../../utils/omitUndefined';
 import { massCategoryToActivityKind } from '../../utils/attendanceTaxonomy';
 
 interface MassFormProps {
   isAdmin: boolean;
+  members: Member[];
   onAddMass: (newMass: Mass) => Promise<{ ok: boolean; error?: string }> | void;
   onAddPayment: (newPayment: Payment) => Promise<{ ok: boolean; error?: string }> | void;
 }
 
 /** "Log Liturgy" card: creates a mass and, for payment rites, its payment record. */
-export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPayment }) => {
+export const MassForm: React.FC<MassFormProps> = ({ isAdmin, members, onAddMass, onAddPayment }) => {
   const [massName,     setMassName]     = useState('');
   const [massCategory, setMassCategory] = useState<MassCategory>('Sunday Mass');
   const [massDate,     setMassDate]     = useState(new Date().toISOString().slice(0, 10));
@@ -29,7 +31,8 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
   const [amountReceived,   setAmountReceived]   = useState<boolean>(false);
   const [receivedAmount,   setReceivedAmount]   = useState<number>(0);
   const [dateReceived,     setDateReceived]     = useState('');
-  const [whoPaid,          setWhoPaid]          = useState('');
+  const [receivedByMemberId, setReceivedByMemberId] = useState('');
+  const [receivedBy,       setReceivedBy]       = useState('');
   const [paymentMode,      setPaymentMode]      = useState('Cash');
   const [receiptNo,        setReceiptNo]        = useState('');
   const [paymentRemarks,   setPaymentRemarks]   = useState('');
@@ -47,7 +50,8 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
     const specialMassPayment = billingType === 'paid'
       ? omitUndefinedDeep({
           amount: optionalNumber(amountProposed > 0 ? amountProposed : undefined),
-          whoPaid: optionalString(whoPaid),
+          receivedByMemberId: optionalString(receivedByMemberId),
+          receivedBy: optionalString(receivedBy),
           notes: optionalString(paymentRemarks),
           dateReceived: optionalString(dateReceived),
           paymentMode: optionalString(paymentMode),
@@ -91,7 +95,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
       const newPayment = omitUndefinedDeep({
         id: pid,
         massId,
-        partyName: partyName.trim() || whoPaid.trim() || 'Sponsor',
+        partyName: partyName.trim() || 'Sponsor',
         mobile: '',
         massType: massCategory,
         massDate,
@@ -101,7 +105,8 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
         pendingAmount: pending,
         dateReceived: optionalString(dateReceived),
         status,
-        whoPaid: optionalString(whoPaid),
+        receivedByMemberId: optionalString(receivedByMemberId),
+        receivedBy: optionalString(receivedBy),
         paymentMode: optionalString(paymentMode),
         receiptNo: optionalString(receiptNo),
         remarks: optionalString(paymentRemarks),
@@ -119,7 +124,7 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
     }
 
     setMassName(''); setPartyName(''); setAmountProposed(0); setAmountReceived(false);
-    setReceivedAmount(0); setDateReceived(''); setWhoPaid('');
+    setReceivedAmount(0); setDateReceived(''); setReceivedByMemberId(''); setReceivedBy('');
     setPaymentMode('Cash'); setReceiptNo(''); setPaymentRemarks('');
     setBillingType('paid');
     setMassSuccess(`✓ Logged: ${massName}`);
@@ -264,11 +269,14 @@ export const MassForm: React.FC<MassFormProps> = ({ isAdmin, onAddMass, onAddPay
                         </select>
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase">Who Paid</label>
-                      <input value={whoPaid} onChange={(e) => setWhoPaid(e.target.value)} placeholder="Payer name"
-                        className="apple-input text-sm" />
-                    </div>
+                    <ReceivedBySelect
+                      members={members}
+                      value={receivedByMemberId}
+                      onChange={(memberId, displayName) => {
+                        setReceivedByMemberId(memberId);
+                        setReceivedBy(displayName);
+                      }}
+                    />
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-400 uppercase">Receipt No. (optional)</label>
                       <input value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)}

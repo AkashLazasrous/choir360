@@ -43,6 +43,7 @@ import {
 } from './parseAttendanceCsv';
 import { dedupeImportSessions } from '../../utils/attendanceActivity';
 import { omitUndefinedDeep } from '../../utils/omitUndefined';
+import { ReceivedBySelect } from '../masses/ReceivedBySelect';
 import { AttendanceLeaderboard } from './AttendanceLeaderboard';
 import { computeAttendanceLeaderboard } from '../../utils/attendanceLeaderboard';
 
@@ -169,7 +170,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
   const [marks, setMarks] = useState<Record<string, AttendanceStatus | null>>({});
   const [specialBilling, setSpecialBilling] = useState<SpecialMassBilling>('free');
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentWho, setPaymentWho] = useState('');
+  const [paymentReceivedById, setPaymentReceivedById] = useState('');
+  const [paymentReceivedBy, setPaymentReceivedBy] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [paymentMode, setPaymentMode] = useState('Cash');
@@ -251,11 +253,23 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     if (!mass) return;
     setSpecialBilling(mass.specialMassBilling ?? 'free');
     setPaymentAmount(mass.specialMassPayment?.amount != null ? String(mass.specialMassPayment.amount) : '');
-    setPaymentWho(mass.specialMassPayment?.whoPaid ?? '');
+    const savedId = mass.specialMassPayment?.receivedByMemberId ?? '';
+    const savedName = (
+      mass.specialMassPayment?.receivedBy
+      ?? mass.specialMassPayment?.whoPaid
+      ?? ''
+    ).trim();
+    const matched = savedId
+      ? activeMembers.find((m) => m.id === savedId)
+      : savedName
+        ? activeMembers.find((m) => `${m.firstName} ${m.lastName}`.trim().toLowerCase() === savedName.toLowerCase())
+        : undefined;
+    setPaymentReceivedById(matched?.id ?? savedId);
+    setPaymentReceivedBy(matched ? `${matched.firstName} ${matched.lastName}`.trim() : savedName);
     setPaymentNotes(mass.specialMassPayment?.notes ?? '');
     setPaymentDate(mass.specialMassPayment?.dateReceived ?? '');
     setPaymentMode(mass.specialMassPayment?.paymentMode ?? 'Cash');
-  }, [kind, date, existingParent]);
+  }, [kind, date, existingParent, activeMembers]);
 
   // Auto-switch to Update when the selected date/kind already has synced marks.
   useEffect(() => {
@@ -308,7 +322,8 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
     const amount = Number(paymentAmount);
     const payment = omitUndefinedDeep({
       amount: Number.isFinite(amount) && amount > 0 ? amount : undefined,
-      whoPaid: paymentWho.trim() || undefined,
+      receivedByMemberId: paymentReceivedById.trim() || undefined,
+      receivedBy: paymentReceivedBy.trim() || undefined,
       notes: paymentNotes.trim() || undefined,
       dateReceived: paymentDate || undefined,
       paymentMode: paymentMode || undefined,
@@ -925,7 +940,12 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                 {!canEdit && specialMassParent && (
                   <p className="text-[13px] text-[#3a3a3c]">
                     {specialMassParent.specialMassBilling === 'paid'
-                      ? `Paid${specialMassParent.specialMassPayment?.amount != null ? ` · ${formatINR(specialMassParent.specialMassPayment.amount)}` : ''}${specialMassParent.specialMassPayment?.whoPaid ? ` · ${specialMassParent.specialMassPayment.whoPaid}` : ''}`
+                      ? `Paid${specialMassParent.specialMassPayment?.amount != null ? ` · ${formatINR(specialMassParent.specialMassPayment.amount)}` : ''}${
+                        specialMassParent.specialMassPayment?.receivedBy
+                          || specialMassParent.specialMassPayment?.whoPaid
+                          ? ` · received by ${specialMassParent.specialMassPayment?.receivedBy || specialMassParent.specialMassPayment?.whoPaid}`
+                          : ''
+                      }`
                       : 'Free'}
                     {specialMassParent.specialMassPayment?.notes
                       ? ` — ${specialMassParent.specialMassPayment.notes}`
@@ -959,15 +979,18 @@ export const ActivityAttendance: React.FC<ActivityAttendanceProps> = ({
                             placeholder="0"
                           />
                         </label>
-                        <label className="space-y-1.5">
-                          <span className="apple-label">Who paid</span>
-                          <input
-                            value={paymentWho}
-                            onChange={(e) => setPaymentWho(e.target.value)}
-                            className="apple-input"
-                            placeholder="Payer / sponsor"
-                          />
-                        </label>
+                        <ReceivedBySelect
+                          members={members}
+                          value={paymentReceivedById}
+                          onChange={(memberId, displayName) => {
+                            setPaymentReceivedById(memberId);
+                            setPaymentReceivedBy(displayName);
+                          }}
+                          disabled={!canEdit}
+                          className="space-y-1.5"
+                          labelClassName="apple-label"
+                          selectClassName="apple-select"
+                        />
                         <label className="space-y-1.5">
                           <span className="apple-label">Date received</span>
                           <input

@@ -160,7 +160,7 @@ export const MassManagement: React.FC<MassManagementProps> = ({
 
       {/* Form + Payments table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <MassForm isAdmin={isAdmin} onAddMass={onAddMass} onAddPayment={onAddPayment} />
+        <MassForm isAdmin={isAdmin} members={members} onAddMass={onAddMass} onAddPayment={onAddPayment} />
         <PaymentsTable
           masses={masses}
           payments={payments}
